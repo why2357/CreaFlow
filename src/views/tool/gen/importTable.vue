@@ -19,14 +19,26 @@
       </el-form-item>
     </el-form>
     <el-row>
-      <el-table @row-click="clickRow" ref="tableRef" :data="dbTableList" @selection-change="handleSelectionChange" height="260px">
+      <el-table
+        @row-click="clickRow"
+        ref="tableRef"
+        :data="dbTableList"
+        @selection-change="handleSelectionChange"
+        height="260px"
+      >
         <el-table-column type="selection" width="55"></el-table-column>
         <el-table-column prop="tableName" label="表名称" :show-overflow-tooltip="true"></el-table-column>
         <el-table-column prop="tableComment" label="表描述" :show-overflow-tooltip="true"></el-table-column>
         <el-table-column prop="createTime" label="创建时间"></el-table-column>
         <el-table-column prop="updateTime" label="更新时间"></el-table-column>
       </el-table>
-      <pagination v-show="total > 0" :total="total" v-model:page="queryParams.pageNum" v-model:limit="queryParams.pageSize" @pagination="getList" />
+      <pagination
+        v-show="total > 0"
+        :total="total"
+        v-model:page="queryParams.pageNum"
+        v-model:limit="queryParams.pageSize"
+        @pagination="getList"
+      />
     </el-row>
     <template #footer>
       <div class="dialog-footer">
@@ -38,86 +50,86 @@
 </template>
 
 <script setup lang="ts">
-import { listDbTable, importTable, getDataNames } from '@/api/tool/gen';
-import { DbTableQuery, DbTableVO } from '@/api/tool/gen/types';
+  import { listDbTable, importTable, getDataNames } from '@/api/tool/gen';
+  import { DbTableQuery, DbTableVO } from '@/api/tool/gen/types';
 
-const total = ref(0);
-const visible = ref(false);
-const tables = ref<Array<string>>([]);
-const dbTableList = ref<Array<DbTableVO>>([]);
-const { proxy } = getCurrentInstance() as ComponentInternalInstance;
+  const total = ref(0);
+  const visible = ref(false);
+  const tables = ref<Array<string>>([]);
+  const dbTableList = ref<Array<DbTableVO>>([]);
+  const { proxy } = getCurrentInstance() as ComponentInternalInstance;
 
-const tableRef = ref<ElTableInstance>();
-const queryFormRef = ref<ElFormInstance>();
+  const tableRef = ref<ElTableInstance>();
+  const queryFormRef = ref<ElFormInstance>();
 
-const queryParams = reactive<DbTableQuery>({
-  pageNum: 1,
-  pageSize: 10,
-  dataName: '',
-  tableName: '',
-  tableComment: ''
-});
-const dataNameList = ref<Array<string>>([]);
+  const queryParams = reactive<DbTableQuery>({
+    pageNum: 1,
+    pageSize: 10,
+    dataName: '',
+    tableName: '',
+    tableComment: ''
+  });
+  const dataNameList = ref<Array<string>>([]);
 
-const emit = defineEmits(["ok"]);
+  const emit = defineEmits(['ok']);
 
-/** 查询参数列表 */
-const show = (dataName: string) => {
-  getDataNameList();
-  if (dataName) {
-    queryParams.dataName = dataName;
-  } else {
-    queryParams.dataName = 'master';
-  }
-  getList();
-  visible.value = true;
-}
-/** 单击选择行 */
-const clickRow = (row: DbTableVO) => {
-  // ele bug
-  tableRef.value?.toggleRowSelection(row, false);
-}
-/** 多选框选中数据 */
-const handleSelectionChange = (selection: DbTableVO[]) => {
-  tables.value = selection.map(item => item.tableName);
-}
-/** 查询表数据 */
-const getList = async () => {
-  const res = await listDbTable(queryParams);
-  dbTableList.value = res.rows;
-  total.value = res.total;
-}
-/** 搜索按钮操作 */
-const handleQuery = () => {
-  queryParams.pageNum = 1;
-  getList();
-}
-/** 重置按钮操作 */
-const resetQuery = () => {
-  queryFormRef.value?.resetFields();
-  handleQuery();
-}
-/** 导入按钮操作 */
-const handleImportTable = async () => {
-  const tableNames = tables.value.join(",");
-  if (tableNames == "") {
-    proxy?.$modal.msgError("请选择要导入的表");
-    return;
-  }
-  const res = await importTable({ tables: tableNames, dataName: queryParams.dataName });
-  proxy?.$modal.msgSuccess(res.msg);
-  if (res.code === 200) {
-    visible.value = false;
-    emit("ok");
-  }
-}
-/** 查询多数据源名称 */
-const getDataNameList = async () => {
-  const res = await getDataNames()
-  dataNameList.value = res.data;
-}
+  /** 查询参数列表 */
+  const show = (dataName: string) => {
+    getDataNameList();
+    if (dataName) {
+      queryParams.dataName = dataName;
+    } else {
+      queryParams.dataName = 'master';
+    }
+    getList();
+    visible.value = true;
+  };
+  /** 单击选择行 */
+  const clickRow = (row: DbTableVO) => {
+    // ele bug
+    tableRef.value?.toggleRowSelection(row, false);
+  };
+  /** 多选框选中数据 */
+  const handleSelectionChange = (selection: DbTableVO[]) => {
+    tables.value = selection.map((item) => item.tableName);
+  };
+  /** 查询表数据 */
+  const getList = async () => {
+    const res = await listDbTable(queryParams);
+    dbTableList.value = res.rows;
+    total.value = res.total;
+  };
+  /** 搜索按钮操作 */
+  const handleQuery = () => {
+    queryParams.pageNum = 1;
+    getList();
+  };
+  /** 重置按钮操作 */
+  const resetQuery = () => {
+    queryFormRef.value?.resetFields();
+    handleQuery();
+  };
+  /** 导入按钮操作 */
+  const handleImportTable = async () => {
+    const tableNames = tables.value.join(',');
+    if (tableNames == '') {
+      proxy?.$modal.msgError('请选择要导入的表');
+      return;
+    }
+    const res = await importTable({ tables: tableNames, dataName: queryParams.dataName });
+    proxy?.$modal.msgSuccess(res.msg);
+    if (res.code === 200) {
+      visible.value = false;
+      emit('ok');
+    }
+  };
+  /** 查询多数据源名称 */
+  const getDataNameList = async () => {
+    const res = await getDataNames();
+    dataNameList.value = res.data;
+  };
 
-defineExpose({
-  show,
-});
+  defineExpose({
+    show
+  });
 </script>

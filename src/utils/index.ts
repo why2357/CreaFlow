@@ -1,5 +1,24 @@
+import { UploadReq } from '@/api/tool/upload/type';
+import i18n from '@/lang/index';
 import { parseTime } from '@/utils/sskj';
+import { uploadFile } from '@/utils/uploadFile';
+import { to } from 'await-to-js';
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// @ts-ignore
 
+export function timeFix() {
+  const time = new Date();
+  const hour = time.getHours();
+  return hour < 9
+    ? i18n.global.t('homePage.morning')
+    : hour <= 12
+    ? i18n.global.t('homePage.forenoon')
+    : hour <= 14
+    ? i18n.global.t('homePage.noon')
+    : hour < 18
+    ? i18n.global.t('homePage.afternoon')
+    : i18n.global.t('homePage.evening');
+}
 /**
  * 表格时间格式化
  */
@@ -225,6 +244,7 @@ export const debounce = (func: any, wait: number, immediate: boolean) => {
   };
 
   return (...args: any) => {
+    // eslint-disable-next-line @typescript-eslint/no-this-alias
     context = this;
     timestamp = +new Date();
     const callNow = immediate && !timeout;
@@ -316,3 +336,263 @@ export const removeClass = (ele: HTMLElement, cls: string) => {
 export const isExternal = (path: string) => {
   return /^(https?:|http?:|mailto:|tel:)/.test(path);
 };
+
+// 文件流转blob对象下载
+/**
+ * @data 文件流
+ * @type 文件类型
+ * @fileName 文件名字
+ */
+export function downloadFile(data: any, type: string, fileName: string) {
+  const blob = new Blob([data], { type: type });
+  // 获取heads中的filename文件名
+  const downloadElement = document.createElement('a');
+  // 创建下载的链接
+  const href = window.URL.createObjectURL(blob);
+  downloadElement.href = href;
+  // 下载后文件名
+  downloadElement.download = fileName;
+  document.body.appendChild(downloadElement);
+  // 点击下载
+  downloadElement.click();
+  // 下载完成移除元素
+  document.body.removeChild(downloadElement);
+  // 释放掉blob对象
+  window.URL.revokeObjectURL(href);
+}
+// 视频图片下载
+export function downloadVideo(url: string, name?: string) {
+  const xhr = new XMLHttpRequest();
+  // 使用open()方法初始化一个请求，第一个参数为请求的类型，第二个参数为请求的地址，第三个参数为是否异步
+  xhr.open('GET', url, true);
+  // 设置响应的数据类型
+  xhr.responseType = 'blob';
+  // 当请求加载完成时，触发onload事件
+  xhr.onload = () => {
+    // 如果请求的状态码为200，表示请求成功
+    if (xhr.status === 200) {
+      // 创建一个blob对象，第一个参数为响应的数据，第二个参数为blob对象的类型
+      const blob = new Blob([xhr.response], { type: xhr.getResponseHeader('content-type') as string });
+      // 创建一个a标签
+      const link = document.createElement('a');
+      // 为a标签设置href属性，值为blob对象的URL
+      link.href = URL.createObjectURL(blob);
+      // 为a标签设置下载文件名
+      link.download = name as string;
+      // 点击a标签，开始下载文件
+      link.click();
+    }
+  };
+  // 发送请求
+  xhr.send();
+}
+
+export function dispatchEventStroage() {
+  const signSetItem = localStorage.setItem;
+  localStorage.setItem = function (key, val) {
+    const setEvent: any = new Event('setItemEvent');
+    setEvent.key = key;
+    setEvent.newValue = val;
+    window.dispatchEvent(setEvent);
+    // eslint-disable-next-line prefer-rest-params
+    signSetItem.apply(this, arguments as any);
+  };
+}
+
+/**
+ * 该函数接受字节作为输入，转换成对应的KB、MB或GB字符串，精确到两位小数。
+ * @param {number} bytes - 字节数 decimals保留几位小数
+ * @return {string} 转换后的字符串，带单位
+ *
+ */
+export function formatBytes(bytes: string | number, decimals = 2) {
+  // 'Bytes',
+  const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'];
+  // 0 Bytes
+  if (bytes === 0) return '0 Bytes';
+  const k = 1024;
+  const dm = decimals < 0 ? 0 : decimals;
+  const i = Math.floor(Math.log(bytes as number) / Math.log(k));
+  return parseFloat(((bytes as number) / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
+}
+
+/**
+ * 获取一个视频的时长
+ * @param {File} file - 字节数 decimals保留几位小数
+ * @return {Promise<number>} 视频时长，单位毫秒
+ */
+export function getVideoDuration(file: File): Promise<number> {
+  return new Promise((resolve, reject) => {
+    if (file) {
+      const videoElement = document.createElement('video');
+      videoElement.preload = 'metadata';
+      videoElement.onloadedmetadata = function () {
+        const duration = videoElement.duration * 1000;
+        resolve(Math.round(duration));
+        URL.revokeObjectURL(videoElement.src); // 清理资源
+      };
+      videoElement.onerror = function () {
+        reject(null);
+        console.error('无法加载视频文件');
+      };
+      // 使用对象URL将文件赋给video元素
+      videoElement.src = URL.createObjectURL(file);
+    } else {
+      reject(null);
+    }
+  });
+}
+
+/**
+ * 获取一个音频的时长
+ * @param {File} file - 字节数 decimals保留几位小数
+ * @return {Promise<number>} 视频时长，单位毫秒
+ */
+export function getAudioDuration(file: File): Promise<number> {
+  return new Promise((resolve, reject) => {
+    if (file) {
+      const audioElement = document.createElement('audio');
+      audioElement.preload = 'metadata';
+      audioElement.addEventListener('loadedmetadata', () => {
+        const duration = Math.ceil(audioElement.duration) * 1000; // 获取音频时长,获取到的时长单位是秒，需要转成毫秒
+        resolve(duration);
+        URL.revokeObjectURL(audioElement.src); // 清理资源
+      });
+      audioElement.addEventListener('error', () => {
+        reject(null);
+        console.error('无法加载音频文件');
+      });
+      // 使用对象URL将文件赋给video元素
+      audioElement.src = URL.createObjectURL(file);
+    } else {
+      reject(null);
+    }
+  });
+}
+
+/**
+ * 获取视频的首帧图片
+ * @param {File} file
+ * @return {Promise<string>} 视频首帧图片，上传后的url
+ */
+export function getVideoFirstFrame(req: UploadReq): Promise<string> {
+  const { file, ...others } = req;
+  return new Promise((resolve, reject) => {
+    if (file) {
+      const videoElement = document.createElement('video');
+      videoElement.crossOrigin = 'anonymous';
+      videoElement.autoplay = true;
+      videoElement.muted = true;
+      videoElement.preload = 'metadata';
+
+      // loadeddata 事件可能在视频的实际内容完全准备好之前触发，因此使用 canplay 事件可能更可靠。
+      videoElement.addEventListener('canplay', async () => {
+        // if (videoElement.readyState >= 2) {
+        const [_, res] = await to(captureFrame(videoElement, others));
+        if (res) {
+          resolve(res);
+        }
+        URL.revokeObjectURL(videoElement.src); // 清理资源
+        // }
+      });
+      videoElement.addEventListener('error', () => {
+        reject(null);
+        console.error('无法加载视频文件');
+      });
+      // 使用对象URL将文件赋给video元素
+      videoElement.src = URL.createObjectURL(file);
+    } else {
+      reject(null);
+    }
+  });
+}
+
+const captureFrame = (video: HTMLVideoElement, req: Partial<UploadReq>): Promise<string> => {
+  return new Promise((resolve, reject) => {
+    const canvas = document.createElement('canvas');
+    const context = canvas.getContext('2d');
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    context?.drawImage(video, 0, 0, canvas.width, canvas.height);
+    canvas.toBlob((blob) => {
+      if (!blob) {
+        reject();
+        return;
+      }
+      const originalFileName = req.originalFileName || 'cover';
+      const imgFile = new File([blob], originalFileName, { type: blob.type });
+      uploadFile({
+        ...req,
+        fileSuffix: `.png`,
+        file: imgFile,
+        originalFileName,
+        fileType: 'material/image'
+      })
+        .then((res) => {
+          resolve(res.url);
+        })
+        .catch(() => {
+          reject();
+        });
+    }, 'image/png');
+  });
+};
+
+interface VideoInfo {
+  duration: number;
+  frameUrl: string;
+}
+/**
+ * 获取一个视频的时长和第一帧图片
+ * @return {Promise<VideoInfo>} 视频时长，单位毫秒
+ */
+export function getVideoInfo(req: UploadReq): Promise<VideoInfo> {
+  const { file, ...others } = req;
+  return new Promise((resolve, reject) => {
+    if (file) {
+      const videoElement = document.createElement('video');
+      videoElement.crossOrigin = 'anonymous';
+      videoElement.autoplay = true;
+      videoElement.muted = true;
+      videoElement.preload = 'metadata';
+      videoElement.addEventListener('loadeddata', async () => {
+        const duration = videoElement.duration * 1000;
+        if (videoElement.readyState >= 2) {
+          const [_, res] = await to(captureFrame(videoElement, others));
+          if (res) {
+            resolve({
+              duration: Math.round(duration),
+              frameUrl: res
+            });
+          } else {
+            resolve({
+              duration: Math.round(duration),
+              frameUrl: ''
+            });
+          }
+          URL.revokeObjectURL(videoElement.src); // 清理资源
+        }
+      });
+      videoElement.onerror = function (err) {
+        reject(null);
+        console.error('无法加载视频文件', err);
+      };
+      // 使用对象URL将文件赋给video元素
+      videoElement.src = URL.createObjectURL(file);
+    } else {
+      reject(null);
+    }
+  });
+}
+
+export function dataURLtoBlob(dataurl: any) {
+  const arr = dataurl.split(','),
+    mime = arr[0].match(/:(.*?);/)[1],
+    bstr = atob(arr[1]);
+  let n = bstr.length;
+  const u8arr = new Uint8Array(n);
+  while (n--) {
+    u8arr[n] = bstr.charCodeAt(n);
+  }
+  return new Blob([u8arr], { type: mime });
+}

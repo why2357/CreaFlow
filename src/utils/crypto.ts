@@ -64,3 +64,49 @@ export const decryptWithAes = (message: string, aesKey: CryptoJS.lib.WordArray) 
   });
   return decrypted.toString(CryptoJS.enc.Utf8);
 };
+
+/**
+ * 使用Md5对文件加密
+ * @param file
+ * @returns {string}
+ */
+export const md5File = async (file: any): Promise<string> => {
+  return new Promise((resolve, reject) => {
+    const fileReader = new FileReader();
+    const bufferSize = 1024 * 1024; // 1MB chunks
+    let chunkSize = 0;
+    const md5 = CryptoJS.algo.MD5.create();
+
+    fileReader.onload = function (e: any) {
+      const buffer = e.target.result;
+      const wordArray = CryptoJS.lib.WordArray.create(buffer);
+      md5.update(wordArray);
+
+      chunkSize++;
+
+      if (chunkSize * bufferSize >= file.size) {
+        // 所有块都处理完毕，获取最终的哈希值
+        const hash = md5.finalize();
+        const result = hash.toString(CryptoJS.enc.Hex);
+        resolve(result);
+      } else {
+        // 继续读取下一块
+        loadNextChunk();
+      }
+    };
+
+    fileReader.onerror = function (e) {
+      reject(e);
+      console.error('File could not be read!');
+    };
+
+    function loadNextChunk() {
+      const start = chunkSize * bufferSize;
+      const end = Math.min(file.size, start + bufferSize);
+      const slice = file.slice(start, end);
+      fileReader.readAsArrayBuffer(slice);
+    }
+
+    loadNextChunk(); // 开始读取第一块
+  });
+};

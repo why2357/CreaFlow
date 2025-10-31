@@ -1,11 +1,11 @@
-import { defineStore } from 'pinia';
-import router, { constantRoutes, dynamicRoutes } from '@/router';
-import store from '@/store';
 import { getRouters } from '@/api/menu';
-import Layout from '@/layout/index.vue';
 import ParentView from '@/components/ParentView/index.vue';
 import InnerLink from '@/layout/components/InnerLink/index.vue';
+import Layout from '@/layout/index.vue';
 import auth from '@/plugins/auth';
+import router, { constantRoutes, dynamicRoutes } from '@/router';
+import store from '@/store';
+import { defineStore } from 'pinia';
 import { RouteOption } from 'vue-router';
 // 匹配views里面所有的.vue文件
 const modules = import.meta.glob('./../../views/**/*.vue');
@@ -16,6 +16,23 @@ export const usePermissionStore = defineStore('permission', () => {
   const defaultRoutes = ref<RouteOption[]>([]);
   const topbarRouters = ref<RouteOption[]>([]);
   const sidebarRouters = ref<RouteOption[]>([]);
+
+  // 静态菜单配置 - 这些菜单将始终显示在侧边栏
+  const staticMenus = ref<RouteOption[]>([
+    // {
+    //   path: '',
+    //   component: Layout,
+    //   redirect: '/index',
+    //   children: [
+    //     {
+    //       path: '/index',
+    //       component: () => import('@/views/workbench/project-admin/index.vue'),
+    //       name: 'Index',
+    //       meta: { title: '首页', icon: 'dashboard', affix: true }
+    //     }
+    //   ]
+    // },
+  ]);
 
   const setRoutes = (newRoutes: RouteOption[]): void => {
     addRoutes.value = newRoutes;
@@ -28,8 +45,12 @@ export const usePermissionStore = defineStore('permission', () => {
     topbarRouters.value = routes;
   };
   const setSidebarRouters = (routes: RouteOption[]): void => {
-    sidebarRouters.value = routes;
+    // 合并静态菜单和动态菜单
+    const mergedRoutes = [...staticMenus.value, ...routes];
+    console.log('Setting sidebar routers:', mergedRoutes);
+    sidebarRouters.value = mergedRoutes;
   };
+
   const generateRoutes = async (): Promise<RouteOption[]> => {
     const res = await getRouters();
     const { data } = res;
@@ -44,6 +65,7 @@ export const usePermissionStore = defineStore('permission', () => {
       router.addRoute(route);
     });
     setRoutes(rewriteRoutes);
+    // 合并静态菜单、常量路由和动态路由
     setSidebarRouters(constantRoutes.concat(sidebarRoutes));
     setDefaultRoutes(sidebarRoutes);
     setTopbarRoutes(defaultRoutes);
@@ -101,15 +123,32 @@ export const usePermissionStore = defineStore('permission', () => {
       if (lastRouter) {
         el.path = lastRouter.path + '/' + el.path;
         if (el.children && el.children.length) {
-          children = children.concat(filterChildren(el.children, el))
-          return
+          children = children.concat(filterChildren(el.children, el));
+          return;
         }
       }
       children = children.concat(el);
     });
     return children;
   };
-  return { routes, setRoutes, generateRoutes, setSidebarRouters, topbarRouters, sidebarRouters, defaultRoutes };
+  // 初始化静态菜单
+  const initStaticMenus = (): void => {
+    console.log('Initializing static menus:', staticMenus.value);
+    setSidebarRouters([]);
+    console.log('After init, sidebarRouters:', sidebarRouters.value);
+  };
+
+  return {
+    routes,
+    setRoutes,
+    generateRoutes,
+    setSidebarRouters,
+    topbarRouters,
+    sidebarRouters,
+    defaultRoutes,
+    staticMenus,
+    initStaticMenus
+  };
 });
 
 // 动态路由遍历，验证是否具备权限

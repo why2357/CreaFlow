@@ -20,7 +20,7 @@
 
 import { getToken } from '@/utils/auth';
 import useNoticeStore from '@/store/modules/notice';
-import { ElNotification } from "element-plus";
+import { ElNotification } from 'element-plus';
 
 const { addNotice } = useNoticeStore();
 
@@ -38,7 +38,9 @@ export const initWebSocket = (url: any) => {
   }
   socketUrl = url;
   // 初始化 websocket
-  websocket = new WebSocket(url + '?Authorization=Bearer ' + getToken() + '&clientid=' + import.meta.env.VITE_APP_CLIENT_ID);
+  websocket = new WebSocket(
+    url + '?Authorization=Bearer ' + getToken() + '&clientid=' + import.meta.env.VITE_APP_CLIENT_ID
+  );
   websocketonopen();
   websocketonmessage();
   websocketonerror();
@@ -135,7 +137,7 @@ export const websocketonmessage = () => {
       message: e.data,
       type: 'success',
       duration: 3000
-    })
+    });
     return e.data;
   };
 };

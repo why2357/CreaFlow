@@ -6,7 +6,12 @@
           <el-input v-model="queryParams.userName" placeholder="请输入用户名称" clearable @keyup.enter="handleQuery" />
         </el-form-item>
         <el-form-item label="手机号码" prop="phonenumber">
-          <el-input v-model="queryParams.phonenumber" placeholder="请输入手机号码" clearable @keyup.enter="handleQuery" />
+          <el-input
+            v-model="queryParams.phonenumber"
+            placeholder="请输入手机号码"
+            clearable
+            @keyup.enter="handleQuery"
+          />
         </el-form-item>
         <el-form-item>
           <el-button type="primary" icon="Search" @click="handleQuery">搜索</el-button>
@@ -14,7 +19,13 @@
         </el-form-item>
       </el-form>
       <el-row>
-        <el-table @row-click="clickRow" ref="tableRef" :data="userList" @selection-change="handleSelectionChange" height="260px">
+        <el-table
+          @row-click="clickRow"
+          ref="tableRef"
+          :data="userList"
+          @selection-change="handleSelectionChange"
+          height="260px"
+        >
           <el-table-column type="selection" width="55"></el-table-column>
           <el-table-column label="用户名称" prop="userName" :show-overflow-tooltip="true" />
           <el-table-column label="用户昵称" prop="nickName" :show-overflow-tooltip="true" />
@@ -31,7 +42,13 @@
             </template>
           </el-table-column>
         </el-table>
-        <pagination v-if="total > 0" :total="total" v-model:page="queryParams.pageNum" v-model:limit="queryParams.pageSize" @pagination="getList" />
+        <pagination
+          v-if="total > 0"
+          :total="total"
+          v-model:page="queryParams.pageNum"
+          v-model:limit="queryParams.pageSize"
+          @pagination="getList"
+        />
       </el-row>
       <template #footer>
         <div class="dialog-footer">
@@ -44,89 +61,88 @@
 </template>
 
 <script setup name="SelectUser" lang="ts">
-import { authUserSelectAll, unallocatedUserList } from "@/api/system/role";
-import { UserVO } from '@/api/system/user/types';
-import { UserQuery } from '@/api/system/user/types';
+  import { authUserSelectAll, unallocatedUserList } from '@/api/system/role';
+  import { UserVO } from '@/api/system/user/types';
+  import { UserQuery } from '@/api/system/user/types';
 
+  const props = defineProps({
+    roleId: {
+      type: [Number, String]
+    }
+  });
 
-const props = defineProps({
-  roleId: {
-    type: [Number, String]
-  }
-})
+  const { proxy } = getCurrentInstance() as ComponentInternalInstance;
+  const { sys_normal_disable } = toRefs<any>(proxy?.useDict('sys_normal_disable'));
 
-const { proxy } = getCurrentInstance() as ComponentInternalInstance;
-const { sys_normal_disable } = toRefs<any>(proxy?.useDict('sys_normal_disable'));
+  const userList = ref<UserVO[]>([]);
+  const visible = ref(false);
+  const total = ref(0);
+  const userIds = ref<Array<string | number>>([]);
 
-const userList = ref<UserVO[]>([]);
-const visible = ref(false);
-const total = ref(0);
-const userIds = ref<Array<string | number>>([]);
+  const queryParams = reactive<UserQuery>({
+    pageNum: 1,
+    pageSize: 10,
+    roleId: undefined,
+    userName: undefined,
+    phonenumber: undefined
+  });
 
-const queryParams = reactive<UserQuery>({
-  pageNum: 1,
-  pageSize: 10,
-  roleId: undefined,
-  userName: undefined,
-  phonenumber: undefined
-})
+  const tableRef = ref<ElTableInstance>();
+  const queryFormRef = ref<ElFormInstance>();
 
-const tableRef = ref<ElTableInstance>();
-const queryFormRef = ref<ElFormInstance>();
+  const show = () => {
+    queryParams.roleId = props.roleId;
+    getList();
+    visible.value = true;
+  };
 
-const show = () => {
-  queryParams.roleId = props.roleId;
-  getList();
-  visible.value = true;
-}
+  /**
+   * 选择行
+   */
+  const clickRow = (row: any) => {
+    // ele的bug
+    tableRef.value?.toggleRowSelection(row, false);
+  };
+  /** 多选框选中数据 */
+  const handleSelectionChange = (selection: UserVO[]) => {
+    userIds.value = selection.map((item: UserVO) => item.userId);
+  };
 
-/**
- * 选择行
- */
-const clickRow = (row: any) => {
-  // ele的bug
-  tableRef.value?.toggleRowSelection(row, false);
-}
-/** 多选框选中数据 */
-const handleSelectionChange = (selection: UserVO[]) => {
-  userIds.value = selection.map((item: UserVO) => item.userId);
-}
+  /** 查询数据 */
+  const getList = async () => {
+    const res = await unallocatedUserList(queryParams);
+    userList.value = res.rows;
+    total.value = res.total;
+  };
+  /** 搜索按钮操作 */
+  const handleQuery = () => {
+    queryParams.pageNum = 1;
+    getList();
+  };
+  /** 重置按钮操作 */
+  const resetQuery = () => {
+    queryFormRef.value?.resetFields();
+    getList();
+  };
 
-/** 查询数据 */
-const getList = async () => {
-  const res = await unallocatedUserList(queryParams);
-  userList.value = res.rows;
-  total.value = res.total;
-}
-/** 搜索按钮操作 */
-const handleQuery = () => {
-  queryParams.pageNum = 1;
-  getList();
-}
-/** 重置按钮操作 */
-const resetQuery = () => {
-  queryFormRef.value?.resetFields();
-  getList();
-}
-
-const emit = defineEmits(["ok"]);
-/**选择授权用户操作 */
-const handleSelectUser = async () => {
-  const roleId = queryParams.roleId;
-  const ids = userIds.value.join(',');
-  if (ids == "") {
-    proxy?.$modal.msgError('请选择要分配的用户');
-    return;
-  }
-  await authUserSelectAll({ roleId, userIds: ids });
-  proxy?.$modal.msgSuccess('分配成功');
-  emit('ok');
-  visible.value = false;
-}
-// 暴露
-defineExpose({
-  show,
-});
+  const emit = defineEmits(['ok']);
+  /**选择授权用户操作 */
+  const handleSelectUser = async () => {
+    const roleId = queryParams.roleId;
+    const ids = userIds.value.join(',');
+    if (ids == '') {
+      proxy?.$modal.msgError('请选择要分配的用户');
+      return;
+    }
+    await authUserSelectAll({ roleId, userIds: ids });
+    proxy?.$modal.msgSuccess('分配成功');
+    emit('ok');
+    visible.value = false;
+  };
+  // 暴露
+  defineExpose({
+    show
+  });
 </script>
 
 <style scoped></style>

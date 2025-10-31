@@ -1,4 +1,4 @@
-import { createWebHistory, createRouter, RouteOption } from 'vue-router';
+import { createRouter, createWebHistory, RouteOption } from 'vue-router';
 /* Layout */
 import Layout from '@/layout/index.vue';
 
@@ -69,9 +69,55 @@ export const constantRoutes: RouteOption[] = [
     children: [
       {
         path: '/index',
-        component: () => import('@/views/index.vue'),
+        component: () => import('@/views/workbench/project-admin/index.vue'),
         name: 'Index',
-        meta: { title: '首页', icon: 'dashboard', affix: true }
+        meta: { title: '工作台', icon: 'logo-work', affix: true }
+      }
+    ]
+  },
+  // {
+  //   path: '',
+  //   component: Layout,
+  //   redirect: 'workbench',
+  //   children: [
+  //     {
+  //       path: 'workbench',
+  //       component: () => import('@/views/workbench/project-admin/index.vue'),
+  //       name: 'Workbench',
+  //       meta: { title: '工作台', icon: 'logo_shipin' }
+  //     }
+  //   ]
+  // },
+  {
+    path: '/project-creation/:id',
+    name: 'ProjectCreation',
+    hidden: true,
+    component: () => import('@/views/workbench/project-creation/index.vue'),
+    meta: { title: '项目制作', noCache: true }
+  },
+  {
+    path: '',
+    component: Layout,
+    redirect: 'property',
+    children: [
+      {
+        path: '/property',
+        component: () => import('@/views/workbench/project-admin/index.vue'),
+        name: 'Property',
+        meta: { title: '资产', icon: 'logo-wenjian' }
+      }
+    ]
+  },
+  {
+    path: '',
+    component: Layout,
+    redirect: 'member',
+    children: [
+      {
+        path: '/member',
+        component: () => import('@/views/member-admin/index.vue'),
+        name: 'Member',
+        meta: { title: '成员', icon: 'logo-wenjian' }
       }
     ]
   },

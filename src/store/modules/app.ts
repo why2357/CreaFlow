@@ -2,9 +2,9 @@ import zhCN from 'element-plus/es/locale/lang/zh-cn';
 import enUS from 'element-plus/es/locale/lang/en';
 
 export const useAppStore = defineStore('app', () => {
-  const sidebarStatus = useStorage('sidebarStatus', '1');
+  // 侧边栏始终保持打开状态
   const sidebar = reactive({
-    opened: sidebarStatus.value ? !!+sidebarStatus.value : true,
+    opened: true,
     withoutAnimation: false,
     hide: false
   });
@@ -22,23 +22,13 @@ export const useAppStore = defineStore('app', () => {
   });
 
   const toggleSideBar = (withoutAnimation: boolean) => {
-    if (sidebar.hide) {
-      return false;
-    }
-
-    sidebar.opened = !sidebar.opened;
-    sidebar.withoutAnimation = withoutAnimation;
-    if (sidebar.opened) {
-      sidebarStatus.value = '1';
-    } else {
-      sidebarStatus.value = '0';
-    }
+    // 禁用侧边栏切换功能，始终保持打开
+    return false;
   };
 
   const closeSideBar = ({ withoutAnimation }: any): void => {
-    sidebarStatus.value = '0';
-    sidebar.opened = false;
-    sidebar.withoutAnimation = withoutAnimation;
+    // 禁用侧边栏关闭功能，始终保持打开
+    return;
   };
   const toggleDevice = (d: string): void => {
     device.value = d;
