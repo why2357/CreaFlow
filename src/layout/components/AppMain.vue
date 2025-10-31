@@ -12,69 +12,65 @@
 </template>
 
 <script setup name="AppMain" lang="ts">
-import useTagsViewStore from '@/store/modules/tagsView';
-import useSettingsStore from '@/store/modules/settings';
-import IframeToggle  from './IframeToggle/index.vue'
-import { ComponentInternalInstance } from "vue";
-const { proxy } = getCurrentInstance() as ComponentInternalInstance;
-const tagsViewStore = useTagsViewStore();
+  import useTagsViewStore from '@/store/modules/tagsView';
+  import useSettingsStore from '@/store/modules/settings';
+  import IframeToggle from './IframeToggle/index.vue';
+  import { ComponentInternalInstance } from 'vue';
+  const { proxy } = getCurrentInstance() as ComponentInternalInstance;
+  const tagsViewStore = useTagsViewStore();
 
-// 随机动画集合
-const animante = ref<string>('');
-const animationEnable = ref(useSettingsStore().animationEnable);
-watch(()=> useSettingsStore().animationEnable, (val) => {
-    animationEnable.value = val;
-    if (val) {
-        animante.value = proxy?.animate.animateList[Math.round(Math.random() * proxy?.animate.animateList.length)] as string;
-    } else {
+  // 随机动画集合
+  const animante = ref<string>('');
+  const animationEnable = ref(useSettingsStore().animationEnable);
+  watch(
+    () => useSettingsStore().animationEnable,
+    (val) => {
+      animationEnable.value = val;
+      if (val) {
+        animante.value = proxy?.animate.animateList[
+          Math.round(Math.random() * proxy?.animate.animateList.length)
+        ] as string;
+      } else {
         animante.value = proxy?.animate.defaultAnimate as string;
-    }
-}, { immediate: true });
+      }
+    },
+    { immediate: true }
+  );
 </script>
 
 <style lang="scss" scoped>
-.app-main {
-  /* 50= navbar  50  */
-  min-height: calc(100vh - 50px);
-  width: 100%;
-  position: relative;
-  overflow: hidden;
-}
-
-.fixed-header+.app-main {
-  padding-top: 50px;
-}
-
-.hasTagsView {
   .app-main {
-    /* 84 = navbar + tags-view = 50 + 34 */
-    min-height: calc(100vh - 84px);
+    position: relative;
+    width: 100%;
+
+    /* 60 = navbar */
+    min-height: calc(100vh - 60px);
+    overflow: hidden;
   }
 
-  .fixed-header+.app-main {
-    padding-top: 84px;
+  .fixed-header + .app-main {
+    padding-top: 60px;
   }
-}
 </style>
 <style lang="scss">
-// fix css style bug in open el-dialog
-.el-popup-parent--hidden {
-  .fixed-header {
-    padding-right: 6px;
+  // fix css style bug in open el-dialog
+  .el-popup-parent--hidden {
+    .fixed-header {
+      padding-right: 6px;
+    }
   }
-}
 
-::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
-}
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
 
-::-webkit-scrollbar-track {
-  background-color: #f1f1f1;
-}
+  ::-webkit-scrollbar-track {
+    background-color: #f1f1f1;
+  }
 
-::-webkit-scrollbar-thumb {
-  background-color: #c0c0c0;
-  border-radius: 3px;
-}
+  ::-webkit-scrollbar-thumb {
+    border-radius: 3px;
+    background-color: #c0c0c0;
+  }
 </style>

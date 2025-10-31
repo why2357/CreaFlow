@@ -130,11 +130,6 @@ h6 {
   width: 100%;
 }
 
-.pagination-container .el-pagination {
-  //right: 0;
-  //position: absolute;
-}
-
 @media (max-width: 768px) {
   .pagination-container .el-pagination > .el-pagination__jump {
     display: none !important;
@@ -227,6 +222,28 @@ h6 {
   color: #ffffff;
 }
 
+/* 紫色主按钮样式 */
+.el-button--primary {
+  background: #5252ff !important;
+  border-color: rgba(82, 82, 255, 1) !important;
+  color: #ffffff !important;
+
+  &:hover,
+  &:focus {
+    background: #5252ff !important;
+    border-color: rgba(100, 100, 255, 1) !important;
+    color: #ffffff !important;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(82, 82, 255, 0.3) !important;
+  }
+
+  &:active {
+    background: #5252ff !important;
+    border-color: #bfbafb !important;
+    transform: translateY(0);
+  }
+}
+
 /* text color */
 .text-navy {
   color: #1ab394;
@@ -287,4 +304,15 @@ h6 {
 /* 表格右侧工具栏样式 */
 .top-right-btn {
   margin-left: auto;
+}
+
+.footer-btn {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 4px;
+  width: 80px;
+  height: 32px;
+  padding: 8px 16px;
+  border-radius: 8px !important;
 }

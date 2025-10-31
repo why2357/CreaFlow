@@ -1,13 +1,13 @@
-import { DeptVO } from './../dept/types';
-import { RoleVO } from '@/api/system/role/types';
 import { PostVO } from '@/api/system/post/types';
+import { RoleVO } from '@/api/system/role/types';
+import { DeptVO } from './../dept/types';
 
 /**
  * 用户信息
  */
 export interface UserInfo {
   user: UserVO;
-  roles: string[];
+  roles: RoleVO[];
   permissions: string[];
 }
 
@@ -28,6 +28,7 @@ export interface UserQuery extends PageQuery {
 export interface UserVO extends BaseEntity {
   userId: string | number;
   deptId: number;
+  roles: string[];
   userName: string;
   nickName: string;
   userType: string;
@@ -42,7 +43,6 @@ export interface UserVO extends BaseEntity {
   loginDate: string;
   remark: string;
   dept: DeptVO;
-  roles: RoleVO[];
   roleIds: any;
   postIds: any;
   roleId: any;
@@ -83,4 +83,53 @@ export interface ResetPwdForm {
   oldPassword: string;
   newPassword: string;
   confirmPassword: string;
+}
+
+/**
+ * 成员查询对象类型
+ */
+export interface MemberQuery extends PageQuery {
+  createDateEnd?: string;
+  createDateStart?: string;
+  isAsc?: string;
+  nickName?: string;
+  orderByColumn?: string;
+  phoneNumber?: string;
+  tenantId?: string;
+  userId?: number;
+  userName?: string;
+  userTypeCode?: number;
+}
+
+/**
+ * 成员返回对象
+ */
+export interface MemberVO {
+  avatar?: string;
+  consumePoint?: number;
+  createBy?: string;
+  createTime?: Date;
+  deptId?: number;
+  email?: string;
+  loginDate?: Date;
+  loginIp?: string;
+  nickName?: string;
+  phonenumber?: string;
+  remark?: string;
+  sex?: string;
+  status?: number;
+  tenantId?: string;
+  updateBy?: string;
+  updateTime?: Date;
+  userId?: number;
+  userName?: string;
+  userType?: string;
+  userTypeCode?: number;
+}
+
+/**
+ * 新增成员请求参数
+ */
+export interface MemberAddBo {
+  phoneNumber: string;
 }
