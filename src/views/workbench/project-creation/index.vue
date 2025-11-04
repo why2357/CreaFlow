@@ -191,22 +191,18 @@
   onMounted(async () => {
     const projectId = route.params.id || route.query.id;
     if (projectId) {
-      // 如果URL中有step参数，使用URL参数（用于新建项目跳转）
-      // 否则initProject会自动恢复工作流记录中的步骤
-      const step = route.query.step;
-      if (step) {
-        const stepNumber = parseInt(step as string);
-        if (stepNumber >= 1 && stepNumber <= 5) {
-          // 预加载目标步骤的组件（在初始化前）
-          preloadComponent(stepNumber);
-          // 传递强制步骤参数给initProject
-          await projectStore.initProject(projectId as string, stepNumber);
-        } else {
-          await projectStore.initProject(projectId as string);
-        }
-      } else {
-        // 没有URL参数，使用工作流记录恢复
-        await projectStore.initProject(projectId as string);
+      // 统一使用工作流记录恢复流程
+      // 如果URL中有step参数，作为默认步骤传递（当工作流记录为空时使用）
+      const step = route.query.step ? parseInt(route.query.step as string) : undefined;
+
+      // 调用统一的初始化逻辑
+      await projectStore.initProject(projectId as string, step);
+
+      // 如果URL中有step参数，初始化完成后移除它，避免刷新时出现问题
+      if (route.query.step) {
+        router.replace({
+          path: `/project-creation/${projectId}`
+        });
       }
     } else {
       ElMessage.error('项目ID不存在');

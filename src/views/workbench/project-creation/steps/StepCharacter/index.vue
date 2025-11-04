@@ -256,8 +256,20 @@
 
   // 初始化
   onMounted(() => {
-    loadCharacterData();
-    setupHorizontalScroll();
+    // 等待项目初始化完成后再加载数据
+    const waitForInit = () => {
+      if (projectStore.isInitializing) {
+        // 如果还在初始化，延迟50ms后重试
+        console.log('[StepCharacter] 等待项目初始化完成...');
+        setTimeout(waitForInit, 50);
+      } else {
+        // 初始化完成，加载数据
+        console.log('[StepCharacter] 项目初始化完成，开始加载角色数据');
+        loadCharacterData();
+        setupHorizontalScroll();
+      }
+    };
+    waitForInit();
   });
 
   // 设置横向滚动

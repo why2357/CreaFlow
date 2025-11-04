@@ -203,7 +203,7 @@
       });
 
       await delMember(userId as number);
-      ElMessage.success('Delete successfully');
+      ElMessage.success('删除成功');
       await getList();
     } catch (error: any) {
       if (error !== 'cancel') {

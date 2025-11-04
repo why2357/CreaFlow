@@ -159,33 +159,50 @@ export const useProjectStore = defineStore('project', {
           this.currentStep = forceStep;
         }
 
-        // 并行加载项目信息和工作流记录（优化加载速度）
+        // 并行加载项目信息和工作流记录（统一获取工作流记录，不再跳过）
         const [, processRecord] = await Promise.allSettled([
           this.loadProjectInfo(Number(projectId)),
-          forceStep ? Promise.resolve(null) : getReferPage({ projectId: Number(projectId) }).then((res) => res.data)
+          getReferPage({ projectId: Number(projectId) }).then((res) => res.data)
         ]);
-
-        // 如果有强制步骤参数，直接使用（如新建项目跳转到角色步骤）
-        if (forceStep && forceStep >= 1 && forceStep <= 5) {
-          // 加载第一个剧集（如果有）
-          if (this.episodeInfoList.length > 0) {
-            await this.switchEpisodeFromInfo(this.episodeInfoList[0]);
-          }
-          return;
-        }
 
         // 提取工作流记录
         const record =
           processRecord.status === 'fulfilled' ? (processRecord.value as ProjectProcessRecordVo | null) : null;
 
         console.log('[initProject] 工作流记录:', record);
+        console.log('[initProject] forceStep参数:', forceStep);
 
-        // 先预设步骤（仅设置步骤号，不设置视图模式）
+        // 确定要使用的步骤：优先使用工作流记录，如果没有则使用forceStep，最后兜底使用步骤1
+        let targetStep = 1;
         if (record?.currentPage) {
-          const step = this.mapWorkflowPageToStep(record.currentPage);
-          console.log(`[initProject] 映射步骤: currentPage=${record.currentPage} -> step=${step}`);
-          this.currentStep = step;
+          // 有工作流记录，使用记录中的步骤（忽略forceStep）
+          targetStep = this.mapWorkflowPageToStep(record.currentPage);
+          console.log(`[initProject] 使用工作流记录步骤: currentPage=${record.currentPage} -> step=${targetStep}`);
+        } else if (forceStep && forceStep >= 1 && forceStep <= 5) {
+          // 没有工作流记录但有forceStep（新建项目场景），使用forceStep
+          targetStep = forceStep;
+          console.log(`[initProject] 工作流记录为空，使用forceStep: step=${targetStep}`);
+
+          // 创建工作流记录，保存当前步骤
+          try {
+            const currentPage = this.mapStepToWorkflowPage(targetStep);
+            await createProcessRecord({
+              projectId: Number(projectId),
+              episodeId: undefined, // 首次进入可能还没有剧集
+              currentPage
+            });
+            console.log('[initProject] 创建工作流记录成功:', { projectId, step: targetStep, currentPage });
+          } catch (error) {
+            console.error('[initProject] 创建工作流记录失败:', error);
+            // 继续执行，不阻塞初始化
+          }
+        } else {
+          // 没有工作流记录也没有forceStep，使用默认步骤1
+          console.log('[initProject] 工作流记录为空且无forceStep，使用默认步骤1');
         }
+
+        // 设置当前步骤
+        this.currentStep = targetStep;
 
         // 然后加载剧集
         if (record?.episodeId && this.episodeInfoList.length > 0) {
@@ -220,7 +237,7 @@ export const useProjectStore = defineStore('project', {
         requestAnimationFrame(() => {
           setTimeout(() => {
             this.isInitializing = false;
-          }, 300); // 延长到300ms，让步骤条的active状态平滑过渡
+          }, 100); // 缩短延迟时间，避免用户看到空白页面过久
         });
       }
     },
