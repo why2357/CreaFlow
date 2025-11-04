@@ -23,8 +23,13 @@
       </div>
 
       <!-- 右侧新增按钮 -->
-      <el-button type="primary" @click="handleAddCharacterGroup" v-if="filteredLibraries.length !== 0">
-        <el-icon><Plus /></el-icon>
+      <el-button
+        class="add-rigtop"
+        type="primary"
+        @click="handleAddCharacterGroup"
+        v-if="filteredLibraries.length !== 0"
+      >
+        <el-icon style="margin-right: 6px"><Plus /></el-icon>
         新增角色
       </el-button>
     </div>
@@ -75,7 +80,7 @@
               :max-files="imageAttr.allMaxLen"
               :max-size="imageAttr.singleMaxSize"
               :accept="imageAttr.suffix"
-              @upload="(files) => handleUploadFiles(files, library)"
+              @upload="(files:any) => handleUploadFiles(files, library)"
             />
 
             <!-- 服装卡片滚动容器 -->
@@ -389,8 +394,7 @@
       addGroupDialog.value = false;
       await loadCharacterData();
     } catch (error) {
-      console.error('创建角色失败:', error);
-      ElMessage.error('创建角色失败');
+      console.log('创建角色失败:', error);
     } finally {
       submitting.value = false;
     }
@@ -602,6 +606,17 @@
     align-items: center;
     justify-content: space-between;
     padding: 16px 24px;
+    .add-rigtop {
+      display: flex;
+      width: 118px;
+      height: 32px;
+      padding: 0 20px;
+      gap: 6px;
+      border-radius: 8px;
+      background: #5252ff;
+      color: #fff;
+      font-size: 14px;
+    }
   }
 
   .episode-filter {
@@ -616,15 +631,17 @@
     }
 
     .filter-tab {
+      display: flex;
+      height: 28px;
+      padding: 4px 16px;
       flex-shrink: 0;
-      padding: 6px 16px;
       border: 1px solid #d9d9d9;
       border-radius: 4px;
-      background: white;
       color: #595959;
       font-size: 14px;
       cursor: pointer;
       transition: all 0.3s;
+      border-radius: 6px;
 
       &:hover {
         border-color: #5252ff;
@@ -707,7 +724,8 @@
       // 固定上传卡片
       > :first-child {
         flex-shrink: 0;
-        width: 200px;
+        min-width: 120px;
+        max-width: 200px;
         position: sticky;
         left: 0;
         z-index: 2;
@@ -722,7 +740,7 @@
         flex: 1;
         overflow-x: auto;
         overflow-y: hidden;
-        padding-bottom: 8px;
+        // padding-bottom: 8px;
 
         // 隐藏滚动条，但保持滚动功能
         scrollbar-width: thin;

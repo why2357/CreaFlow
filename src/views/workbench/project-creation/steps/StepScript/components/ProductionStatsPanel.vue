@@ -10,9 +10,7 @@
     <div class="panel-content">
       <!-- 空状态 -->
       <div v-if="memberData.length === 0" class="empty-state">
-        <el-icon :size="48" color="#c0c4cc"><DataAnalysis /></el-icon>
         <span class="empty-title">暂无生产数据</span>
-        <span class="empty-hint">{{ emptyHint }}</span>
       </div>
 
       <!-- 数据表格 -->
@@ -32,12 +30,12 @@
               <span class="member-name">{{ member.name }}</span>
             </div>
             <div class="col col-shot">
-              <span class="value">{{ member.shots }}</span>
-              <span class="total">/ {{ member.shotTotal }}</span>
+              <span class="value">{{ member.validImgCount }}</span>
+              <span class="total">/ {{ member.imgTaskCount }}</span>
             </div>
             <div class="col col-video">
-              <span class="value">{{ member.videos }}</span>
-              <span class="total">/ {{ member.videoTotal }}</span>
+              <span class="value">{{ member.validVideoCount }}</span>
+              <span class="total">/ {{ member.videoTaskCount }}</span>
             </div>
             <div class="col col-score" :class="`score-${member.scoreColor}`">
               {{ member.score }}
@@ -53,7 +51,6 @@
   import type { UserProcessInfo } from '@/api/workbench/project/types';
   import { useProjectStore } from '@/store/modules/project';
   import { getRoleColor, getRoleShortName } from '@/utils/roleUtils';
-  import { DataAnalysis } from '@element-plus/icons-vue';
   import { computed, onMounted, watch } from 'vue';
 
   const projectStore = useProjectStore();
@@ -86,10 +83,10 @@
           name: user.memberName || '未命名',
           icon,
           color,
-          shots: user.validImgCount || 0,
-          shotTotal: user.imgTaskCount || 0,
-          videos: user.validVideoCount || 0,
-          videoTotal: user.videoTaskCount || 0,
+          validImgCount: user.validImgCount || 0,
+          imgTaskCount: user.imgTaskCount || 0,
+          validVideoCount: user.validVideoCount || 0,
+          videoTaskCount: user.videoTaskCount || 0,
           score: user.pointsCount || 0,
           scoreColor: getScoreColor(user.pointsCount || 0)
         };
@@ -185,6 +182,7 @@
       align-items: center;
       justify-content: center;
       gap: 12px;
+      height: 100%;
       min-height: 200px;
       padding: 40px 20px;
       text-align: center;

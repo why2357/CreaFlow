@@ -5,7 +5,7 @@
         <el-input
           v-model="form.name"
           :placeholder="placeholder"
-          maxlength="20"
+          maxlength="15"
           show-word-limit
           @keyup.enter="handleSubmit"
         />
@@ -54,7 +54,7 @@
   const rules = computed<FormRules>(() => ({
     name: [
       { required: true, message: `请输入${props.label}`, trigger: 'blur' },
-      { min: 1, max: 20, message: `${props.label}长度在 1 到 20 个字符`, trigger: 'blur' }
+      { min: 1, max: 15, message: `${props.label}长度在 1 到 15 个字符`, trigger: 'blur' }
     ]
   }));
 

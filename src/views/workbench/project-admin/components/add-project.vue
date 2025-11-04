@@ -67,7 +67,7 @@
         </div>
       </el-form-item>
 
-      <el-form-item label="画面尺寸" prop="pictureRatio">
+      <el-form-item label="画布尺寸" prop="pictureRatio">
         <div class="size-options">
           <div
             v-for="item in sizeOptions"
@@ -139,7 +139,7 @@
       { required: true, message: '请输入项目名称', trigger: 'blur' },
       { max: 30, message: '项目名称不能超过30个字符', trigger: 'blur' }
     ],
-    pictureRatio: [{ required: true, message: '请选择画面尺寸', trigger: 'change' }]
+    pictureRatio: [{ required: true, message: '请选择画布尺寸', trigger: 'change' }]
   });
 
   // ------- 成员添加 --------

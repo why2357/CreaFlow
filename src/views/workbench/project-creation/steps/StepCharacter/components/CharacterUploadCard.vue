@@ -177,7 +177,7 @@
     display: flex;
     justify-content: center;
     align-items: center;
-    min-height: 280px;
+    // min-height: 280px;
     overflow: hidden;
     border: 2px dashed #d9d9d9;
     border-radius: 8px;

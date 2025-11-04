@@ -41,7 +41,7 @@
                 maxlength="11"
               >
                 <template #prefix>
-                  <svg-icon icon-class="icon-shou-ji" no-theme no-prefix />
+                  <svg-icon icon-class="icon-phone" no-theme no-prefix />
                 </template>
               </el-input>
             </el-form-item>
@@ -57,7 +57,7 @@
                 @keyup.enter="handleLogin"
               >
                 <template #prefix>
-                  <svg-icon icon-class="icon-yan-zheng-ma" no-theme no-prefix />
+                  <svg-icon icon-class="icon-code" no-theme no-prefix />
                 </template>
               </el-input>
               <div class="phone-code">
@@ -107,9 +107,9 @@
           <div v-if="loginType === 'sms'" style="width: 86%; font-size: 13px; margin-top: 20px">
             <el-checkbox v-model="privacyChecked" style="margin-right: 5px; transform: translate(0, 3px)" />
             <span style="color: #666">我已阅读并同意网站的</span>
-            <span @click="openPrivacyDoc('service')" class="link-text">服务协议</span>
+            <span @click="openPrivacyDoc('service')" class="link-text"> 服务协议 </span>
             <span style="color: #666">和</span>
-            <span @click="openPrivacyDoc('privacy')" class="link-text">隐私政策</span>
+            <span @click="openPrivacyDoc('privacy')" class="link-text"> 隐私政策 </span>
           </div>
         </div>
       </div>
@@ -738,8 +738,8 @@
       align-items: center;
       /* 在1280px屏幕上为400px，使用calc实现比例自适应 */
       width: calc(100vw * 400 / 1280);
-      min-width: 360px;
-      max-width: 500px;
+      min-width: 400px;
+      max-width: 600px;
       background: white;
       box-shadow: -2px 0 8px rgb(0 0 0 / 10%);
 
@@ -747,17 +747,19 @@
         width: 90%;
         max-width: 400px;
         padding: 20px;
+        position: relative;
+        top: -100px;
 
         .tab-box {
           display: flex;
-          margin-bottom: 40px;
-          border-bottom: 2px solid #f0f0f0;
+          align-items: center;
+          margin-bottom: 50px;
 
           .tab-box-item {
             flex: 1;
-            padding: 12px 0;
-            color: #333;
-            font-size: 18px;
+            padding: 12px 24px;
+            color: #4e5969;
+            font-size: 20px;
             font-weight: 500;
             text-align: center;
             cursor: pointer;
@@ -765,7 +767,9 @@
             position: relative;
 
             &.active {
-              color: #667eea;
+              color: #1d2129;
+              font-size: 24px;
+              font-weight: 600;
 
               &::after {
                 content: '';
@@ -773,9 +777,9 @@
                 bottom: -2px;
                 left: 50%;
                 transform: translateX(-50%);
-                width: 40px;
-                height: 3px;
-                background: #667eea;
+                width: 75px;
+                height: 4px;
+                background: #0360fc;
                 border-radius: 2px;
               }
             }
@@ -819,18 +823,19 @@
                 display: inline-block;
                 width: 100%;
                 height: 40px;
-                color: #667eea;
+                color: #5252ff;
                 font-size: 14px;
                 line-height: 40px;
                 text-align: center;
                 cursor: pointer;
-                background: #f0f2ff;
-                border-radius: 8px;
                 transition: all 0.3s;
+                border-radius: 4px;
+                border: 1px solid #eee;
+                background: #fff;
 
-                &:hover {
-                  background: #e0e4ff;
-                }
+                // &:hover {
+                //   background: #e0e4ff;
+                // }
               }
 
               .code-send {
@@ -900,31 +905,27 @@
           }
 
           .link-text {
-            color: #667eea;
+            color: #5252ff;
             cursor: pointer;
-
-            &:hover {
-              text-decoration: underline;
-            }
           }
         }
       }
     }
   }
 
-  // 响应式设计
-  @media (max-width: 768px) {
-    .login-container {
-      .left-box {
-        display: none;
-      }
+  // // 响应式设计
+  // @media (max-width: 768px) {
+  //   .login-container {
+  //     .left-box {
+  //       display: none;
+  //     }
 
-      .right-box {
-        width: 100%;
-        max-width: 100%;
-      }
-    }
-  }
+  //     .right-box {
+  //       width: 100%;
+  //       max-width: 100%;
+  //     }
+  //   }
+  // }
 
   // 绑定手机号弹窗样式
   :deep(.el-dialog) {

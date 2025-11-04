@@ -2,7 +2,7 @@
   <el-dialog
     v-model="dialogVisible"
     title="新建剧集"
-    width="670px"
+    width="800px"
     :close-on-click-modal="false"
     @closed="handleClosed"
   >
@@ -43,6 +43,7 @@
           <!-- 文本输入模式 -->
           <div v-if="inputMode === 'text'" class="text-input-wrapper">
             <el-input
+              style="width: 100%"
               v-model="form.storyText"
               type="textarea"
               placeholder="请输入剧情内容"
@@ -93,7 +94,7 @@
             <div class="upload-content">
               <el-icon class="upload-icon"><UploadFilled /></el-icon>
               <div class="upload-text">将文件拖到此处，或<span class="upload-link">点击上传</span></div>
-              <div class="upload-tip">您可以上传剧本的，支持：excel、doc、docx格式</div>
+              <div class="upload-tip">您可以上传剧本的，支持：excel格式</div>
             </div>
           </el-upload>
         </el-form-item>
@@ -113,35 +114,39 @@
 </template>
 
 <script setup lang="ts">
+  import { createEpisodeByTemplate, createEpisodeByText } from '@/api/workbench/episode';
   import type { EpisodeCreateRequest } from '@/api/workbench/project/types';
+  import { useProjectStore } from '@/store/modules/project';
+  import { convertModelsToOptions, getDefaultModel, getModelName } from '@/utils/projectUtils';
   import { ArrowDown, Check, MagicStick, UploadFilled } from '@element-plus/icons-vue';
   import type { FormInstance, FormRules, UploadFile } from 'element-plus';
+  import { ElMessage } from 'element-plus';
   import { computed, ref, watch } from 'vue';
 
   interface Props {
     modelValue: boolean;
-    loading?: boolean;
     projectId: number;
     nextEpisodeNumber: number;
   }
 
   interface Emits {
     (e: 'update:modelValue', value: boolean): void;
-    (e: 'confirm', data: EpisodeCreateRequest, file?: File): void;
+    (e: 'success'): void;
   }
 
-  const props = withDefaults(defineProps<Props>(), {
-    loading: false
-  });
+  const props = defineProps<Props>();
 
   const emit = defineEmits<Emits>();
 
-  // 模型选项
-  const modelOptions = [
-    { label: 'Gemini 2.5 Pro', value: 'gemini' },
-    { label: 'Nano Banana', value: 'nano-banana' },
-    { label: 'Jimeng', value: 'jimeng' }
-  ];
+  const projectStore = useProjectStore();
+
+  // 加载状态
+  const loading = ref(false);
+
+  // 动态获取模型选项（文生文模型用于剧本生成）
+  const modelOptions = computed(() => {
+    return convertModelsToOptions(projectStore.t2tModelInfoList);
+  });
 
   // 表单引用
   const formRef = ref<FormInstance>();
@@ -167,8 +172,7 @@
 
   // 当前模型名称
   const currentModelName = computed(() => {
-    const model = modelOptions.find((m) => m.value === form.value.modelCode);
-    return model?.label || 'Gemini 2.5 Pro';
+    return getModelName(projectStore.t2tModelInfoList, form.value.modelCode) || '请选择模型';
   });
 
   // 表单验证规则
@@ -180,13 +184,13 @@
         validator: (_rule, _value, callback) => {
           if (inputMode.value === 'text' && !form.value.storyText.trim()) {
             callback(new Error('请输入剧情内容'));
-          } else if (inputMode.value === 'upload' && fileList.value.length === 0) {
+          } else if (inputMode.value === 'upload' && !uploadedFile.value) {
             callback(new Error('请上传剧本文件'));
           } else {
             callback();
           }
         },
-        trigger: 'blur'
+        trigger: 'change'
       }
     ]
   };
@@ -212,9 +216,9 @@
   // 初始化表单
   const initForm = () => {
     form.value = {
-      episodeName: `EP${String(props.nextEpisodeNumber).padStart(2, '0')}`,
+      episodeName: '',
       storyText: '',
-      modelCode: 'gemini',
+      modelCode: getDefaultModel(projectStore.t2tModelInfoList),
       projectId: props.projectId
     };
     inputMode.value = 'text';
@@ -243,8 +247,11 @@
   };
 
   // 文件变化
-  const handleFileChange = (file: UploadFile) => {
+  const handleFileChange = (file: UploadFile, fileListParam: UploadFile[]) => {
     uploadedFile.value = file.raw;
+    fileList.value = fileListParam;
+    // 清除验证错误
+    formRef.value?.clearValidate('storyText');
   };
 
   // 文件移除
@@ -269,8 +276,41 @@
         return;
       }
 
-      // 触发确认事件
-      emit('confirm', form.value, uploadedFile.value);
+      try {
+        loading.value = true;
+
+        if (inputMode.value === 'text') {
+          // 剧情文本模式：调用 /hivision/story/episode/create
+          await createEpisodeByText({
+            projectId: form.value.projectId,
+            episodeName: form.value.episodeName,
+            storyText: form.value.storyText,
+            modelCode: form.value.modelCode
+          });
+          ElMessage.success('剧集创建成功');
+        } else {
+          // 上传拆分剧本模式：调用 /hivision/story/episode/template/upload
+          if (!uploadedFile.value) {
+            ElMessage.error('请上传剧本文件');
+            return;
+          }
+          await createEpisodeByTemplate({
+            projectId: form.value.projectId,
+            episodeName: form.value.episodeName,
+            file: uploadedFile.value
+          });
+        }
+
+        // 关闭对话框
+        dialogVisible.value = false;
+        // 触发成功事件，通知父组件刷新列表
+        emit('success');
+      } catch (error) {
+        console.error('创建剧集失败:', error);
+        ElMessage.error('创建剧集失败，请重试');
+      } finally {
+        loading.value = false;
+      }
     });
   };
 
@@ -333,6 +373,7 @@
   // 文本输入区域
   .text-input-wrapper {
     position: relative;
+    width: 100%;
 
     .story-textarea {
       :deep(.el-textarea__inner) {
@@ -386,6 +427,7 @@
       border-radius: 8px;
       background: #fafafa;
       transition: all 0.3s;
+      width: 770px;
 
       &:hover {
         border-color: #5252ff;

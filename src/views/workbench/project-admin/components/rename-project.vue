@@ -30,7 +30,7 @@
   // 打开对话框
   const open = (project: Project) => {
     currentProjectId.value = project.projectId;
-    projectName.value = project.name || project.projectName || '';
+    projectName.value = project.projectName || '';
     visible.value = true;
   };
 

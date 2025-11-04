@@ -11,7 +11,49 @@ import type {
   SceneDetailResponse
 } from '../project/types';
 
+// 新增类型定义
+export interface LibraryListQuery {
+  createBy?: string;
+  createTime?: Date;
+  id?: number;
+  isAsc?: string;
+  libraryType?: number; // 库类型 1-角色 2-场景
+  name?: string;
+  orderByColumn?: string;
+  pageNum?: number;
+  pageSize?: number;
+  params?: { [key: string]: any };
+  projectId?: number;
+  remark?: string;
+  status?: number; // 启用状态 0-启用 1-禁用
+  updateBy?: string;
+  updateTime?: Date;
+  userId?: number;
+}
+
+export interface LibraryListItem {
+  id?: number;
+  libraryType?: number;
+  name?: string;
+  projectId?: number;
+  status?: number;
+  tenantId?: string;
+  userId?: number;
+}
+
 // ==================== 资源库管理 ====================
+
+/**
+ * 获取资源库列表
+ * @param query 查询参数
+ */
+export const listLibrary = (query: LibraryListQuery): AxiosPromise<LibraryListItem[]> => {
+  return request({
+    url: '/hivision/story/library/list',
+    method: 'get',
+    params: query
+  });
+};
 
 /**
  * 创建资源库

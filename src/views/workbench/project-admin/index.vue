@@ -241,8 +241,7 @@
 
       ElMessage.success('重命名成功');
     } catch (error) {
-      console.error('重命名项目失败:', error);
-      ElMessage.error('重命名项目失败，请稍后重试');
+      console.log('重命名项目失败:', error);
     }
   };
 
@@ -250,7 +249,7 @@
   const handleDelete = async (project: Project) => {
     try {
       await ElMessageBox.confirm(
-        `确定要删除项目 "${project.projectName || project.name}" 吗？此操作不可恢复。`,
+        `确定要删除项目 "${project.projectName}" 吗？此操作不可恢复。`,
         '删除项目',
         {
           confirmButtonText: '确定',

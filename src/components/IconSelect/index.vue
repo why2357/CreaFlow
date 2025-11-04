@@ -12,8 +12,8 @@
           @click="visible = !visible"
           class="cursor-pointer text-[#999] absolute right-[10px] top-0 height-[32px] leading-[32px]"
         >
-          <i-ep-caret-top v-show="visible"></i-ep-caret-top>
-          <i-ep-caret-bottom v-show="!visible"></i-ep-caret-bottom>
+          <el-icon v-show="visible"><caret-top /></el-icon>
+          <el-icon v-show="!visible"><caret-bottom /></el-icon>
         </div>
       </template>
 
@@ -41,6 +41,7 @@
 <script setup lang="ts">
   import icons from '@/components/IconSelect/requireIcons';
   import { propTypes } from '@/utils/propTypes';
+  import { CaretTop, CaretBottom } from '@element-plus/icons-vue';
 
   const props = defineProps({
     modelValue: propTypes.string.isRequired,

@@ -2,7 +2,7 @@
   <div class="progress-panel panel-card">
     <div class="panel-header">
       <div class="header-left">
-        <svg-icon icon-class="fy-word" class="header-icon" />
+        <svg-icon icon-class="fy-jindu" class="header-icon" />
         <span class="title">项目进度</span>
       </div>
       <div class="progress-badge">{{ progress }}%</div>
@@ -11,9 +11,7 @@
     <div class="panel-content">
       <!-- 空状态 -->
       <div v-if="!hasEpisodes" class="empty-state">
-        <el-icon :size="48" color="#c0c4cc"><TrendCharts /></el-icon>
-        <span class="empty-title">暂无进度数据</span>
-        <span class="empty-hint">请先创建剧集</span>
+        <span class="empty-title">暂无进度</span>
       </div>
 
       <!-- 进度列表 -->
@@ -72,7 +70,6 @@
 
 <script setup lang="ts" name="ProgressPanel">
   import { useProjectStore } from '@/store/modules/project';
-  import { TrendCharts } from '@element-plus/icons-vue';
   import { computed, onMounted, watch } from 'vue';
 
   const projectStore = useProjectStore();
@@ -94,12 +91,15 @@
   const progress = computed(() => {
     // 优先使用当前剧集的进度
     if (currentEpisodeInfo.value?.episodePercent) {
-      const percent = currentEpisodeInfo.value.episodePercent.replace('%', '');
+      const episodePercent = currentEpisodeInfo.value.episodePercent;
+      // 确保是字符串类型再调用 replace
+      const percent = typeof episodePercent === 'string' ? episodePercent.replace('%', '') : String(episodePercent);
       return parseInt(percent) || 0;
     }
     // 否则使用全局进度
     if (projectStore.allEpisodePercent) {
-      const percent = projectStore.allEpisodePercent.replace('%', '');
+      const allPercent = projectStore.allEpisodePercent;
+      const percent = typeof allPercent === 'string' ? allPercent.replace('%', '') : String(allPercent);
       return parseInt(percent) || 0;
     }
     return 0;

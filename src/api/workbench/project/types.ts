@@ -80,9 +80,6 @@ export interface Project {
   coverOssId?: number; // 封面OSSID
   coverUrl?: string; // 封面URL
 
-  // 兼容前端旧字段（可选）
-  name?: string; // 等同于 projectName
-  size?: string; // 画面尺寸（如果需要）
   members?: ProjectMember[];
   status?: 'active' | 'archived';
   coverImage?: string; // 等同于 coverUrl
@@ -208,6 +205,17 @@ export interface EpisodeInfo {
 }
 
 /**
+ * AI模型信息
+ */
+export interface AiModelInfoDto {
+  /** 模型码 */
+  modelCode?: string;
+  /** 模型名称 */
+  modelName?: string;
+  [property: string]: any;
+}
+
+/**
  * 项目详细信息响应
  */
 export interface ProjectInfoResponse {
@@ -218,6 +226,12 @@ export interface ProjectInfoResponse {
   episodeInfoList: EpisodeInfo[]; // 剧集信息
   materialStaticsInfo: MaterialStaticsInfo; // 素材统计信息
   teamUserInfoList: TeamUserDetail[]; // 团队信息
+  /** 图生视频模型 */
+  i2vModelInfoList?: AiModelInfoDto[];
+  /** 文生图模型 */
+  t2iModelInfoList?: AiModelInfoDto[];
+  /** 文生文模型 */
+  t2tModelInfoList?: AiModelInfoDto[];
 }
 
 /**
@@ -228,10 +242,9 @@ export interface Episode {
   projectId: string | number;
   name: string; // EP01, EP02, etc.
   currentStep: number; // 当前停留的步骤 (1-5)
-  step4ViewMode?: 'storyboard' | 'grid' | 'waterfall'; // 第4步的视图模式：分镜表/故事板/瀑布流
+  step4ViewMode?: 'storyboard' | 'grid' | 'waterfall'; // 第4步的视图模式：分镜头/故事板/瀑布流
   progress: number; // 完成进度百分比 (0-100)
   scriptContent?: string; // 剧本内容
-  scrollPosition?: number; // 滚动位置
   createTime?: string;
   updateTime?: string;
 }
@@ -246,7 +259,7 @@ export interface EpisodeForm {
 }
 
 /**
- * 剧集创建请求参数（新接口）
+ * 剧集创建请求参数（剧情文本模式）
  */
 export interface EpisodeCreateRequest {
   /** 集名 */
@@ -257,6 +270,18 @@ export interface EpisodeCreateRequest {
   projectId: number;
   /** 剧情 */
   storyText: string;
+}
+
+/**
+ * 剧集模板上传请求参数（上传拆分剧本模式）
+ */
+export interface EpisodeTemplateUploadRequest {
+  /** 集名 */
+  episodeName: string;
+  /** 文件 */
+  file: File;
+  /** 项目id */
+  projectId: number;
 }
 
 /**
@@ -348,8 +373,12 @@ export interface Shot {
   id: string | number;
   episodeId: string | number;
   shotNumber: number; // 镜号
+  basicId?: number; // 场景基础信息ID（用于编辑接口）
   sceneImage?: string; // 画面图片
-  sceneDescription: string; // 画面描述
+  sceneDescription: string; // 画面描述（完整描述，用于编辑）
+  sceneDesc?: string; // 特写镜头描述
+  sceneHint?: string; // 场景描述
+  sceneLocationImage?: string; // 场景图片
   dialogue: string; // 台词
   characters: string[]; // 人物列表
   sceneLocation: string; // 场景
@@ -360,7 +389,7 @@ export interface Shot {
 }
 
 /**
- * 分镜表单
+ * 分镜头单
  */
 export interface ShotForm {
   id?: string | number;
@@ -374,7 +403,7 @@ export interface ShotForm {
 }
 
 /**
- * 生成分镜表单
+ * 生成分镜头单
  */
 export interface GenerateStoryboardForm {
   episodeId: string | number;
@@ -501,7 +530,7 @@ export enum WorkflowPage {
   SCRIPT = 1, // 剧本
   CHARACTER = 2, // 角色
   SCENE = 3, // 场景
-  STORYBOARD = 4, // 分镜表
+  STORYBOARD = 4, // 分镜头
   STORY_BOARD = 5, // 故事板
   WATERFALL = 6, // 瀑布流
   VIDEO = 7 // 视频
@@ -513,7 +542,7 @@ export enum WorkflowPage {
 export interface ProcessRecordCreateRequest {
   projectId: number; // 项目id
   episodeId?: number; // 剧集id（可选）
-  currentPage: number; // 当前工作流节点 1-剧本 2-角色 3-场景 4-分镜表 5-故事板 6-瀑布流 7-视频
+  currentPage: number; // 当前工作流节点 1-剧本 2-角色 3-场景 4-分镜头 5-故事板 6-瀑布流 7-视频
 }
 
 /**
@@ -531,7 +560,7 @@ export interface ProjectProcessRecordVo {
   projectId?: number; // 项目id
   episodeId?: number; // 剧集id
   teamUserId?: number; // 协作者用户id
-  currentPage?: number; // 当前工作流节点 1-剧本 2-角色 3-场景 4-分镜表 5-故事板 6-瀑布流 7-视频
+  currentPage?: number; // 当前工作流节点 1-剧本 2-角色 3-场景 4-分镜头 5-故事板 6-瀑布流 7-视频
   status?: number; // 启用状态 0-启用 1-禁用
 }
 

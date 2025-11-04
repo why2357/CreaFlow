@@ -23,8 +23,8 @@
       </div>
 
       <!-- 右侧新增按钮 -->
-      <el-button type="primary" @click="handleAddSceneGroup" v-if="filteredLibraries.length !== 0">
-        <el-icon><Plus /></el-icon>
+      <el-button class="add-rigtop" type="primary" @click="handleAddSceneGroup" v-if="filteredLibraries.length !== 0">
+        <el-icon style="margin-right: 6px"><Plus /></el-icon>
         新增场景
       </el-button>
     </div>
@@ -37,7 +37,7 @@
         <div>暂无场景，点击新增场景开始创建</div>
         <el-button class="add-sty" type="primary" @click="handleAddSceneGroup">
           <el-icon><Plus /></el-icon>
-          新增场景
+          新建
         </el-button>
       </div>
 
@@ -81,7 +81,7 @@
               :max-files="imageAttr.allMaxLen"
               :max-size="imageAttr.singleMaxSize"
               :accept="imageAttr.suffix"
-              @upload="(files) => handleUploadFiles(files, library)"
+              @upload="(files:any) => handleUploadFiles(files, library)"
             />
 
             <!-- 场景图片滚动容器 -->
@@ -151,7 +151,7 @@
     <el-dialog v-model="renameDialog" :title="renameTitle" width="400px" :close-on-click-modal="false">
       <el-form :model="renameForm" label-width="80px">
         <el-form-item label="名称">
-          <el-input v-model="renameForm.name" placeholder="请输入名称" maxlength="20" show-word-limit />
+          <el-input v-model="renameForm.name" placeholder="请输入名称" maxlength="15" show-word-limit />
         </el-form-item>
       </el-form>
       <template #footer>
@@ -552,6 +552,17 @@
     align-items: center;
     justify-content: space-between;
     padding: 16px 24px;
+    .add-rigtop {
+      display: flex;
+      width: 118px;
+      height: 32px;
+      padding: 0 20px;
+      gap: 6px;
+      border-radius: 8px;
+      background: #5252ff;
+      color: #fff;
+      font-size: 14px;
+    }
   }
 
   .episode-filter {
@@ -567,9 +578,9 @@
 
     .filter-tab {
       flex-shrink: 0;
-      padding: 6px 16px;
+      padding: 4px 16px;
       border: 1px solid #d9d9d9;
-      border-radius: 4px;
+      border-radius: 6px;
       background: white;
       color: #595959;
       font-size: 14px;
@@ -679,7 +690,7 @@
         flex: 1;
         overflow-x: auto;
         overflow-y: hidden;
-        padding-bottom: 8px;
+        // padding-bottom: 8px;
 
         // 隐藏滚动条，但保持滚动功能
         scrollbar-width: thin;
@@ -720,7 +731,7 @@
       // 场景卡片不换行
       .scene-card {
         flex-shrink: 0;
-        width: 200px;
+        // width: 200px;
       }
     }
   }

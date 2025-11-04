@@ -93,7 +93,7 @@ export const constantRoutes: RouteOption[] = [
     name: 'ProjectCreation',
     hidden: true,
     component: () => import('@/views/workbench/project-creation/index.vue'),
-    meta: { title: '项目制作', noCache: true }
+    meta: { title: '项目制作', noCache: true, icon: '' }
   },
   {
     path: '',
@@ -102,7 +102,7 @@ export const constantRoutes: RouteOption[] = [
     children: [
       {
         path: '/property',
-        component: () => import('@/views/workbench/project-admin/index.vue'),
+        component: () => import('@/views/property-admin/index.vue'),
         name: 'Property',
         meta: { title: '资产', icon: 'logo-wenjian' }
       }
@@ -117,7 +117,7 @@ export const constantRoutes: RouteOption[] = [
         path: '/member',
         component: () => import('@/views/member-admin/index.vue'),
         name: 'Member',
-        meta: { title: '成员', icon: 'logo-wenjian' }
+        meta: { title: '成员', icon: 'logo-chengyuan' }
       }
     ]
   },
