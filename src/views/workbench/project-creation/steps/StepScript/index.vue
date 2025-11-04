@@ -378,6 +378,7 @@
     () => projectStore.currentEpisodeId,
     () => {
       // 重置状态
+      scriptContent.value = ''; // 清空剧本内容缓存
       paragraphs.value = [];
       currentPage = 0;
       hasMore.value = true;

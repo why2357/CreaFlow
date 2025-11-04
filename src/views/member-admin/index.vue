@@ -77,12 +77,12 @@
         </el-table-column>
         <el-table-column label="操作" align="center" width="250" class-name="small-padding fixed-width">
           <template #default="scope">
-            <el-tooltip content="用量统计" placement="top">
+            <!-- <el-tooltip content="用量统计" placement="top">
               <el-button link type="success" @click="handleUsageStats(scope.row)"> 用量统计 </el-button>
             </el-tooltip>
             <el-tooltip content="模型统计" placement="top">
               <el-button link type="primary" @click="handleModelStats(scope.row)"> 模型统计 </el-button>
-            </el-tooltip>
+            </el-tooltip> -->
             <el-tooltip content="删除账号" placement="top">
               <el-button link type="danger" @click="handleDelete(scope.row)"> 删除账号 </el-button>
             </el-tooltip>

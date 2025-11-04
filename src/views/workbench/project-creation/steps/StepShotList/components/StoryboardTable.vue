@@ -42,7 +42,7 @@
         <el-table-column prop="sceneHint" label="画面描述" min-width="200">
           <template #default="{ row }">
             <div v-if="!isEditing(row, 'sceneDesc')" class="editable-cell" @click="startEdit(row, 'sceneDesc')">
-              <div class="scene-description">{{ row.sceneDesc }}</div>
+              <div class="scene-description" v-html="highlightCharacterNames(row.sceneDesc, row.characters)"></div>
               <el-icon class="edit-icon"><Edit /></el-icon>
             </div>
             <div v-else class="editing-cell">
@@ -60,7 +60,7 @@
               </div>
             </div>
             <div v-if="!isEditing(row, 'sceneHint')" class="editable-cell" @click="startEdit(row, 'sceneHint')">
-              <div class="scene-description">{{ row.sceneHint }}</div>
+              <div class="scene-description" v-html="highlightCharacterNames(row.sceneHint, row.characters)"></div>
               <el-icon class="edit-icon"><Edit /></el-icon>
             </div>
             <div v-else class="editing-cell">
@@ -83,7 +83,7 @@
         <el-table-column prop="dialogue" label="台词" min-width="150">
           <template #default="{ row }">
             <div v-if="!isEditing(row, 'dialogue')" class="editable-cell" @click="startEdit(row, 'dialogue')">
-              <div class="dialogue">{{ row.dialogue }}</div>
+              <div class="dialogue" v-html="highlightCharacterNames(row.dialogue, row.characters)"></div>
               <el-icon class="edit-icon"><Edit /></el-icon>
             </div>
             <div v-else class="editing-cell">
@@ -106,16 +106,13 @@
         <el-table-column prop="characters" label="人物" width="120">
           <template #default="{ row }">
             <div class="characters">
-              <el-tag
+              <el-image
                 v-for="(character, index) in row.characters"
                 :key="index"
-                size="small"
-                type="primary"
-                round
-                class="character-tag"
-              >
-                {{ character }}
-              </el-tag>
+                :src="character.materialInfoVo?.previewOssUrl || character.materialInfoVo?.originOssUrl"
+                fit="cover"
+                class="character-avatar"
+              />
             </div>
           </template>
         </el-table-column>
@@ -360,6 +357,42 @@
     }
   };
 
+  // 高亮文本中的角色名称
+  const highlightCharacterNames = (text: string, characters: any[]) => {
+    if (!text || !characters || characters.length === 0) {
+      return text || '';
+    }
+
+    // 提取所有角色名称
+    const characterNames = characters
+      .map((char) => char.characterName)
+      .filter((name) => name && name.trim());
+
+    if (characterNames.length === 0) {
+      return text;
+    }
+
+    // 按名称长度降序排序，避免短名称覆盖长名称
+    characterNames.sort((a, b) => b.length - a.length);
+
+    // 转义 HTML 特殊字符
+    let escapedText = text
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#039;');
+
+    // 替换所有匹配的角色名称为加粗样式
+    characterNames.forEach((name) => {
+      const escapedName = name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      const regex = new RegExp(escapedName, 'g');
+      escapedText = escapedText.replace(regex, `<strong>${name}</strong>`);
+    });
+
+    return escapedText;
+  };
+
   // 暴露方法给父组件
   defineExpose({
     resetEditState
@@ -469,9 +502,14 @@
         display: flex;
         flex-wrap: wrap;
         gap: 4px;
+        justify-content: center;
+        align-items: center;
 
-        .character-tag {
-          margin: 0;
+        .character-avatar {
+          width: 40px;
+          height: 40px;
+          border-radius: 100%;
+          cursor: pointer;
         }
       }
 

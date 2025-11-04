@@ -23,7 +23,7 @@
       </div>
 
       <!-- 右侧新增按钮 -->
-      <el-button class="add-rigtop" type="primary" @click="handleAddSceneGroup" v-if="filteredLibraries.length !== 0">
+      <el-button class="add-rigtop" type="primary" @click="handleAddSceneGroup" v-if="libraryList.length !== 0">
         <el-icon style="margin-right: 6px"><Plus /></el-icon>
         新增场景
       </el-button>
@@ -32,7 +32,7 @@
     <!-- 场景列表内容区域 -->
     <div class="scene-content" v-loading="loading">
       <!-- 空状态 -->
-      <div class="empty-box" v-if="filteredLibraries.length === 0 && !loading">
+      <div class="empty-box" v-if="libraryList.length === 0 && !loading">
         <img style="width: 200px; height: 200px" src="../../../../../assets/images/no-text.png" alt="" />
         <div>暂无场景，点击新增场景开始创建</div>
         <el-button class="add-sty" type="primary" @click="handleAddSceneGroup">
@@ -43,17 +43,45 @@
 
       <!-- 场景分组显示 -->
       <div v-else class="scenes-container">
-        <div v-for="library in filteredLibraries" :key="library.libraryId" class="scene-group">
+        <div v-for="library in libraryList" :key="library.libraryId" class="scene-group">
           <!-- 场景组标题 -->
           <div class="group-header">
             <div class="group-title">
               <span class="group-name">{{ library.name }}</span>
+              <!-- 编辑集数按钮 -->
+              <div v-if="episodeList.length > 0" class="episode-section">
+                <EpisodeSelector
+                  v-if="currentEditLibrary?.libraryId === library.libraryId"
+                  v-model="episodePopoverVisible"
+                  :episode-list="episodeList"
+                  :selected-episode-ids="selectedEpisodeIds"
+                  :loading="submitting"
+                  @confirm="confirmEditEpisodes"
+                  @close="handleEpisodeSelectorClose"
+                >
+                  <template #reference>
+                    <el-button size="small" @click="handleEditEpisodes(library)">+ 编辑集数</el-button>
+                  </template>
+                </EpisodeSelector>
+                <el-button v-else size="small" @click="handleEditEpisodes(library)">+ 编辑集数</el-button>
+
+                <!-- 集数标签显示 -->
+                <div v-if="library.episodeList && library.episodeList.length > 0" class="episode-tags">
+                  <el-tag
+                    v-for="(ep, idx) in getDisplayEpisodes(library.episodeList)"
+                    :key="idx"
+                    size="small"
+                    type="warning"
+                  >
+                    {{ typeof ep === 'string' ? ep : ep.episodeName }}
+                  </el-tag>
+                  <el-tag v-if="getExtraEpisodeCount(library.episodeList) > 0" size="small" type="warning">
+                    +{{ getExtraEpisodeCount(library.episodeList) }}
+                  </el-tag>
+                </div>
+              </div>
             </div>
             <div class="group-actions">
-              <!-- 编辑集数按钮 -->
-              <el-button v-if="episodeList.length > 0" size="small" @click="handleEditEpisodes(library)">
-                + 编辑集数
-              </el-button>
               <el-dropdown trigger="click" @command="(cmd: string) => handleGroupCommand(cmd, library)">
                 <el-button class="dro-btn" text>
                   <el-icon><MoreFilled /></el-icon>
@@ -159,29 +187,12 @@
         <el-button type="primary" @click="confirmRename" :loading="submitting">确认</el-button>
       </template>
     </el-dialog>
-
-    <!-- 编辑集数对话框 -->
-    <el-dialog v-model="episodeDialog" title="选择集数" width="500px" :close-on-click-modal="false">
-      <div class="episode-selector">
-        <div class="selected-info">
-          <span>已选择 {{ selectedEpisodeIds.length }} 个剧集</span>
-        </div>
-        <el-checkbox-group v-model="selectedEpisodeIds" class="episode-checkboxes">
-          <el-checkbox v-for="episode in episodeList" :key="episode.episodeId" :label="episode.episodeId">
-            {{ episode.episodeName }}
-          </el-checkbox>
-        </el-checkbox-group>
-      </div>
-      <template #footer>
-        <el-button @click="episodeDialog = false">取消</el-button>
-        <el-button type="primary" @click="confirmEditEpisodes" :loading="submitting">确认</el-button>
-      </template>
-    </el-dialog>
   </div>
 </template>
 
 <script setup lang="ts">
   import {
+    bindEpisode,
     createLibrary,
     createLibraryDetail,
     deleteLibrary,
@@ -200,8 +211,9 @@
   import { uploadFile } from '@/utils/uploadFile';
   import { Delete, Edit, MoreFilled, Picture, Plus } from '@element-plus/icons-vue';
   import { ElMessage, ElMessageBox } from 'element-plus';
-  import { computed, nextTick, onMounted, onUnmounted, ref } from 'vue';
+  import { nextTick, onMounted, onUnmounted, ref } from 'vue';
   import AddItemDialog from '../StepCharacter/components/AddItemDialog.vue';
+  import EpisodeSelector from '../components/EpisodeSelector.vue';
   import SceneUploadCard from './components/SceneUploadCard.vue';
 
   const projectStore = useProjectStore();
@@ -224,7 +236,7 @@
   // 对话框状态
   const addGroupDialog = ref(false);
   const renameDialog = ref(false);
-  const episodeDialog = ref(false);
+  const episodePopoverVisible = ref(false);
 
   // 上传相关
   const uploading = ref(false);
@@ -236,35 +248,14 @@
   const currentEditLibrary = ref<LibraryItemInfo | null>(null);
   const selectedEpisodeIds = ref<number[]>([]);
 
-  // 计算过滤后的场景库
-  const filteredLibraries = computed(() => {
-    if (selectedEpisodeId.value === null) {
-      return libraryList.value;
-    }
-
-    // 按剧集筛选
-    return libraryList.value
-      .map((lib) => {
-        const filteredSubs = (lib.librarySubInfoList || []).filter((sub) =>
-          sub.episodeList?.some((ep) => ep.episodeId === selectedEpisodeId.value)
-        );
-
-        return {
-          ...lib,
-          librarySubInfoList: filteredSubs
-        };
-      })
-      .filter((lib) => (lib.librarySubInfoList?.length || 0) > 0 || selectedEpisodeId.value === null);
-  });
-
-  // 获取显示的剧集（最多2个）
+  // 获取显示的剧集（最多3个）
   const getDisplayEpisodes = (episodes: EpisodeInfo[]) => {
-    return episodes.slice(0, 2);
+    return episodes.slice(0, 3);
   };
 
   // 获取超出数量
   const getExtraEpisodeCount = (episodes: EpisodeInfo[]) => {
-    return Math.max(0, episodes.length - 2);
+    return Math.max(0, episodes.length - 3);
   };
 
   // 初始化
@@ -328,12 +319,19 @@
   });
 
   // 加载场景数据
-  const loadSceneData = async () => {
+  const loadSceneData = async (episodeId?: number | null) => {
     loading.value = true;
     try {
-      const res = await getSceneDetail({
+      const params: any = {
         projectId: Number(projectStore.currentProjectId)
-      });
+      };
+
+      // 如果有剧集ID,添加到参数中
+      if (episodeId !== undefined && episodeId !== null) {
+        params.episodeId = episodeId;
+      }
+
+      const res = await getSceneDetail(params);
 
       sceneData.value = res.data;
       episodeList.value = res.data?.episodeInfoList ?? [];
@@ -354,6 +352,8 @@
   // 剧集筛选
   const handleEpisodeFilter = (episodeId: number | null) => {
     selectedEpisodeId.value = episodeId;
+    // 调用接口重新加载数据
+    loadSceneData(episodeId);
   };
 
   // 新增场景组
@@ -524,18 +524,38 @@
   const handleEditEpisodes = (library: LibraryItemInfo) => {
     currentEditLibrary.value = library;
     selectedEpisodeIds.value = library.episodeList?.map((ep) => ep.episodeId!).filter(Boolean) ?? [];
-    episodeDialog.value = true;
+    episodePopoverVisible.value = true;
   };
 
-  const confirmEditEpisodes = async () => {
-    if (!currentEditLibrary.value) return;
+  // 关闭集数选择器
+  const handleEpisodeSelectorClose = () => {
+    currentEditLibrary.value = null;
+  };
 
-    // TODO: 这里需要调用后端接口更新剧集关联
-    // 目前后端接口中没有提供更新剧集关联的 API
-    // 可能需要重新创建或者有专门的关联接口
+  const confirmEditEpisodes = async (selectedIds: number[]) => {
+    if (!currentEditLibrary.value || !currentEditLibrary.value.libraryId) {
+      ElMessage.warning('缺少必要的参数');
+      return;
+    }
 
-    ElMessage.info('剧集关联功能需要后端提供相应接口');
-    episodeDialog.value = false;
+    submitting.value = true;
+    try {
+      await bindEpisode({
+        episodeIdList: selectedIds,
+        libraryType: LibraryType.SCENE, // 2：场景
+        relationId: currentEditLibrary.value.libraryId // 场景关联剧集时给libraryId
+      });
+
+      ElMessage.success('剧集关联成功');
+      episodePopoverVisible.value = false;
+      // 刷新数据以更新显示
+      await loadSceneData();
+    } catch (error) {
+      console.error('剧集关联失败:', error);
+      ElMessage.error('剧集关联失败');
+    } finally {
+      submitting.value = false;
+    }
   };
 </script>
 
@@ -648,10 +668,27 @@
       margin-bottom: 16px;
 
       .group-title {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+
         .group-name {
           color: #262626;
           font-size: 18px;
           font-weight: 600;
+        }
+
+        .episode-section {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+
+          .episode-tags {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            flex-wrap: wrap;
+          }
         }
       }
 
@@ -816,28 +853,6 @@
           background: white;
           box-shadow: 0 2px 8px rgb(0 0 0 / 15%);
         }
-      }
-    }
-  }
-
-  // 对话框样式
-  .episode-selector {
-    .selected-info {
-      margin-bottom: 16px;
-      padding: 8px 12px;
-      border-radius: 4px;
-      background: #f5f5f5;
-      color: #595959;
-      font-size: 14px;
-    }
-
-    .episode-checkboxes {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 12px;
-
-      .el-checkbox {
-        margin-right: 0;
       }
     }
   }

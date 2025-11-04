@@ -82,6 +82,8 @@ export interface HivisionProjectMaterialVo {
  * 人物服装信息 CharacterClothingInfo
  */
 export interface CharacterClothingInfo {
+  /** 角色名称 */
+  characterName?: string;
   /** 服装id */
   clothingId?: number;
   /** 服装名称 */

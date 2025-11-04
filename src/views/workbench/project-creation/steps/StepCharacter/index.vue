@@ -23,12 +23,7 @@
       </div>
 
       <!-- 右侧新增按钮 -->
-      <el-button
-        class="add-rigtop"
-        type="primary"
-        @click="handleAddCharacterGroup"
-        v-if="filteredLibraries.length !== 0"
-      >
+      <el-button class="add-rigtop" type="primary" @click="handleAddCharacterGroup" v-if="libraryList.length !== 0">
         <el-icon style="margin-right: 6px"><Plus /></el-icon>
         新增角色
       </el-button>
@@ -37,7 +32,7 @@
     <!-- 角色列表内容区域 -->
     <div class="character-content" v-loading="loading">
       <!-- 空状态 -->
-      <div class="empty-box" v-if="filteredLibraries.length === 0 && !loading">
+      <div class="empty-box" v-if="libraryList.length === 0 && !loading">
         <img style="width: 200px; height: 200px" src="../../../../../assets/images/no-member.png" alt="" />
         <div>暂无角色，点击新增角色开始创建</div>
         <el-button class="add-sty" type="primary" @click="handleAddCharacterGroup">
@@ -48,7 +43,7 @@
 
       <!-- 角色分组显示 -->
       <div v-else class="characters-container">
-        <div v-for="library in filteredLibraries" :key="library.libraryId" class="character-group">
+        <div v-for="library in libraryList" :key="library.libraryId" class="character-group">
           <!-- 角色组标题 -->
           <div class="group-header">
             <div class="group-title">
@@ -143,7 +138,20 @@
 
                 <!-- 编辑集数按钮 -->
                 <div class="costume-footer" v-if="episodeList.length > 0">
-                  <el-button size="small" @click="handleEditEpisodes(costume)">+ 编辑集数</el-button>
+                  <EpisodeSelector
+                    v-if="currentEditCostume?.libraryDetailId === costume.libraryDetailId"
+                    v-model="episodePopoverVisible"
+                    :episode-list="episodeList"
+                    :selected-episode-ids="selectedEpisodeIds"
+                    :loading="submitting"
+                    @confirm="confirmEditEpisodes"
+                    @close="handleEpisodeSelectorClose"
+                  >
+                    <template #reference>
+                      <el-button size="small" @click="handleEditEpisodes(costume)">+ 编辑集数</el-button>
+                    </template>
+                  </EpisodeSelector>
+                  <el-button v-else size="small" @click="handleEditEpisodes(costume)">+ 编辑集数</el-button>
                 </div>
               </div>
             </div>
@@ -174,29 +182,12 @@
         <el-button type="primary" @click="confirmRename" :loading="submitting">确认</el-button>
       </template>
     </el-dialog>
-
-    <!-- 编辑集数对话框 -->
-    <el-dialog v-model="episodeDialog" title="选择集数" width="500px" :close-on-click-modal="false">
-      <div class="episode-selector">
-        <div class="selected-info">
-          <span>已选择 {{ selectedEpisodeIds.length }} 个剧集</span>
-        </div>
-        <el-checkbox-group v-model="selectedEpisodeIds" class="episode-checkboxes">
-          <el-checkbox v-for="episode in episodeList" :key="episode.episodeId" :label="episode.episodeId">
-            {{ episode.episodeName }}
-          </el-checkbox>
-        </el-checkbox-group>
-      </div>
-      <template #footer>
-        <el-button @click="episodeDialog = false">取消</el-button>
-        <el-button type="primary" @click="confirmEditEpisodes" :loading="submitting">确认</el-button>
-      </template>
-    </el-dialog>
   </div>
 </template>
 
 <script setup lang="ts">
   import {
+    bindEpisode,
     createLibrary,
     createLibraryDetail,
     deleteLibrary,
@@ -216,7 +207,8 @@
   import { uploadFile } from '@/utils/uploadFile';
   import { Delete, Edit, MoreFilled, Picture, Plus } from '@element-plus/icons-vue';
   import { ElMessage, ElMessageBox } from 'element-plus';
-  import { computed, nextTick, onMounted, onUnmounted, ref } from 'vue';
+  import { nextTick, onMounted, onUnmounted, ref } from 'vue';
+  import EpisodeSelector from '../components/EpisodeSelector.vue';
   import AddItemDialog from './components/AddItemDialog.vue';
   import CharacterUploadCard from './components/CharacterUploadCard.vue';
 
@@ -240,7 +232,7 @@
   // 对话框状态
   const addGroupDialog = ref(false);
   const renameDialog = ref(false);
-  const episodeDialog = ref(false);
+  const episodePopoverVisible = ref(false);
 
   // 上传相关
   const uploading = ref(false);
@@ -252,35 +244,14 @@
   const currentEditCostume = ref<LibrarySubInfo | null>(null);
   const selectedEpisodeIds = ref<number[]>([]);
 
-  // 计算过滤后的角色库
-  const filteredLibraries = computed(() => {
-    if (selectedEpisodeId.value === null) {
-      return libraryList.value;
-    }
-
-    // 按剧集筛选
-    return libraryList.value
-      .map((lib) => {
-        const filteredSubs = (lib.librarySubInfoList || []).filter((sub) =>
-          sub.episodeList?.some((ep) => ep.episodeId === selectedEpisodeId.value)
-        );
-
-        return {
-          ...lib,
-          librarySubInfoList: filteredSubs
-        };
-      })
-      .filter((lib) => (lib.librarySubInfoList?.length || 0) > 0 || selectedEpisodeId.value === null);
-  });
-
   // 获取显示的剧集（最多3个）
   const getDisplayEpisodes = (episodes: EpisodeInfo[]) => {
-    return episodes.slice(0, 2);
+    return episodes.slice(0, 3);
   };
 
   // 获取超出数量
   const getExtraEpisodeCount = (episodes: EpisodeInfo[]) => {
-    return Math.max(0, episodes.length - 2);
+    return Math.max(0, episodes.length - 3);
   };
 
   // 初始化
@@ -348,12 +319,19 @@
   });
 
   // 加载角色数据
-  const loadCharacterData = async () => {
+  const loadCharacterData = async (episodeId?: number | null) => {
     loading.value = true;
     try {
-      const res = await getCharacterDetail({
+      const params: any = {
         projectId: Number(projectStore.currentProjectId)
-      });
+      };
+
+      // 如果有剧集ID,添加到参数中
+      if (episodeId !== undefined && episodeId !== null) {
+        params.episodeId = episodeId;
+      }
+
+      const res = await getCharacterDetail(params);
 
       characterData.value = res.data;
       episodeList.value = res.data?.episodeInfoList ?? [];
@@ -374,6 +352,8 @@
   // 剧集筛选
   const handleEpisodeFilter = (episodeId: number | null) => {
     selectedEpisodeId.value = episodeId;
+    // 调用接口重新加载数据
+    loadCharacterData(episodeId);
   };
 
   // 新增角色组
@@ -577,19 +557,40 @@
   // 编辑集数
   const handleEditEpisodes = (costume: LibrarySubInfo) => {
     currentEditCostume.value = costume;
-    selectedEpisodeIds.value = costume.episodeList?.map((ep) => ep.episodeId!).filter(Boolean) ?? [];
-    episodeDialog.value = true;
+    selectedEpisodeIds.value =
+      costume.episodeList?.map((ep) => ep.episodeId).filter((id): id is number => typeof id === 'number') ?? [];
+    episodePopoverVisible.value = true;
   };
 
-  const confirmEditEpisodes = async () => {
-    if (!currentEditCostume.value) return;
+  // 关闭集数选择器
+  const handleEpisodeSelectorClose = () => {
+    currentEditCostume.value = null;
+  };
 
-    // TODO: 这里需要调用后端接口更新剧集关联
-    // 目前后端接口中没有提供更新剧集关联的 API
-    // 可能需要重新创建或者有专门的关联接口
+  const confirmEditEpisodes = async (selectedIds: number[]) => {
+    if (!currentEditCostume.value || !currentEditCostume.value.libraryDetailId) {
+      ElMessage.warning('缺少必要的参数');
+      return;
+    }
 
-    ElMessage.info('剧集关联功能需要后端提供相应接口');
-    episodeDialog.value = false;
+    submitting.value = true;
+    try {
+      await bindEpisode({
+        episodeIdList: selectedIds,
+        libraryType: LibraryType.CHARACTER, // 1：服装（角色）
+        relationId: currentEditCostume.value.libraryDetailId
+      });
+
+      ElMessage.success('剧集关联成功');
+      episodePopoverVisible.value = false;
+      // 刷新数据以更新图片右上角的集数标签显示
+      await loadCharacterData();
+    } catch (error) {
+      console.error('剧集关联失败:', error);
+      ElMessage.error('剧集关联失败');
+    } finally {
+      submitting.value = false;
+    }
   };
 </script>
 
@@ -932,28 +933,6 @@
 
     .el-button {
       width: 100%;
-    }
-  }
-
-  // 对话框样式
-  .episode-selector {
-    .selected-info {
-      margin-bottom: 16px;
-      padding: 8px 12px;
-      border-radius: 4px;
-      background: #f5f5f5;
-      color: #595959;
-      font-size: 14px;
-    }
-
-    .episode-checkboxes {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 12px;
-
-      .el-checkbox {
-        margin-right: 0;
-      }
     }
   }
 </style>

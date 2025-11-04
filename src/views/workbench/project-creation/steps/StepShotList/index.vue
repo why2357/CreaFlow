@@ -175,8 +175,8 @@
       sceneLocationImage: scene.envMaterialInfoVo?.previewOssUrl || scene.envMaterialInfoVo?.originOssUrl || '',
       // 台词
       dialogue: scene.dialogues || '',
-      // 人物列表（从服装信息中提取）
-      characters: scene.characterClothingInfoList?.map((c) => c.clothingName || '') || [],
+      // 人物列表（直接使用服装信息列表）
+      characters: scene.characterClothingInfoList || [],
       // 场景名称（使用场景提示作为场景名称）
       sceneLocation: scene.sceneHint || '',
       // 收藏状态（默认未收藏）

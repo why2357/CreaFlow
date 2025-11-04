@@ -43,37 +43,36 @@
             <span v-if="step.key !== 4" class="step-name">{{ step.name }}</span>
 
             <!-- 分镜表步骤显示下拉菜单 -->
-            <el-dropdown
-              v-if="step.key === 4"
-              trigger="hover"
-              placement="bottom"
-              :hide-on-click="true"
-              @command="handleStoryboardViewChange"
-            >
-              <div style="display: flex">
-                <span v-if="step.key === 4" class="step-name">{{ projectStore.step4DisplayInfo.name }}</span>
+            <template v-if="step.key === 4">
+              <span class="step-name">{{ projectStore.step4DisplayInfo.name }}</span>
+              <el-dropdown
+                trigger="hover"
+                placement="bottom"
+                :hide-on-click="true"
+                @command="handleStoryboardViewChange"
+              >
                 <span class="dropdown-trigger" @click.stop>
                   <svg-icon class="dropdown-icon step-icon" icon-class="downward" style="width: 9px; height: 9px" />
                 </span>
-              </div>
 
-              <template #dropdown>
-                <el-dropdown-menu>
-                  <el-dropdown-item command="storyboard" :disabled="projectStore.step4ViewMode === 'storyboard'">
-                    <svg-icon icon-class="step-fenjing" class="step-icon" />
-                    <span>分镜头</span>
-                  </el-dropdown-item>
-                  <el-dropdown-item command="grid" :disabled="projectStore.step4ViewMode === 'grid'">
-                    <svg-icon icon-class="step-story" class="step-icon" />
-                    <span>故事板</span>
-                  </el-dropdown-item>
-                  <el-dropdown-item command="waterfall" :disabled="projectStore.step4ViewMode === 'waterfall'">
-                    <svg-icon icon-class="step-pubu" class="step-icon" />
-                    <span>瀑布流</span>
-                  </el-dropdown-item>
-                </el-dropdown-menu>
-              </template>
-            </el-dropdown>
+                <template #dropdown>
+                  <el-dropdown-menu>
+                    <el-dropdown-item v-if="projectStore.step4ViewMode !== 'storyboard'" command="storyboard">
+                      <svg-icon icon-class="step-fenjing" class="step-icon" />
+                      <span>分镜头</span>
+                    </el-dropdown-item>
+                    <el-dropdown-item v-if="projectStore.step4ViewMode !== 'grid'" command="grid">
+                      <svg-icon icon-class="step-story" class="step-icon" />
+                      <span>故事板</span>
+                    </el-dropdown-item>
+                    <el-dropdown-item v-if="projectStore.step4ViewMode !== 'waterfall'" command="waterfall">
+                      <svg-icon icon-class="step-pubu" class="step-icon" />
+                      <span>瀑布流</span>
+                    </el-dropdown-item>
+                  </el-dropdown-menu>
+                </template>
+              </el-dropdown>
+            </template>
           </div>
         </div>
       </div>
@@ -354,7 +353,7 @@
         display: flex;
         align-items: center;
         gap: 14px;
-        padding: 8px 12px;
+        padding: 0px 12px;
         border-radius: 8px;
         cursor: pointer;
         transition: all 0.3s;
@@ -636,16 +635,16 @@
 
         &:hover {
           background: rgb(255 255 255 / 20%);
+
+          .dropdown-icon {
+            transform: rotate(180deg);
+          }
         }
 
         .dropdown-icon {
           font-size: 14px;
           transition: transform 0.3s;
         }
-      }
-
-      &:hover .dropdown-trigger .dropdown-icon {
-        transform: rotate(180deg);
       }
     }
   }

@@ -380,7 +380,7 @@ export interface Shot {
   sceneHint?: string; // 场景描述
   sceneLocationImage?: string; // 场景图片
   dialogue: string; // 台词
-  characters: string[]; // 人物列表
+  characters: any[]; // 人物列表（CharacterClothingInfo[]）
   sceneLocation: string; // 场景
   isFavorite?: boolean; // 是否收藏
   imageLoading?: boolean; // 图片加载状态

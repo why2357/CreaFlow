@@ -39,10 +39,10 @@
             </el-icon>
             <template #dropdown>
               <el-dropdown-menu>
-                <el-dropdown-item command="rename">
+                <!-- <el-dropdown-item command="rename">
                   <el-icon><Edit /></el-icon>
                   重命名
-                </el-dropdown-item>
+                </el-dropdown-item> -->
                 <el-dropdown-item command="delete">
                   <el-icon><Delete /></el-icon>
                   删除
@@ -58,7 +58,7 @@
 
 <script setup lang="ts">
   import type { Episode } from '@/api/workbench/project/types';
-  import { Delete, Edit, Film, MoreFilled } from '@element-plus/icons-vue';
+  import { Delete, Film, MoreFilled } from '@element-plus/icons-vue';
   import { ref } from 'vue';
 
   interface Props {
