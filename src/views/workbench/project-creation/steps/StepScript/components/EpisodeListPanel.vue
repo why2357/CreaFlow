@@ -39,10 +39,10 @@
             </el-icon>
             <template #dropdown>
               <el-dropdown-menu>
-                <!-- <el-dropdown-item command="rename">
+                <el-dropdown-item command="rename">
                   <el-icon><Edit /></el-icon>
                   重命名
-                </el-dropdown-item> -->
+                </el-dropdown-item>
                 <el-dropdown-item command="delete">
                   <el-icon><Delete /></el-icon>
                   删除

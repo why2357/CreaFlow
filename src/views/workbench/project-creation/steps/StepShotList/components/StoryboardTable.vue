@@ -122,18 +122,29 @@
             <div class="scene-location-cell">
               <div class="scene-image-wrapper">
                 <el-image
-                  v-if="row.sceneLocationImage"
-                  :src="row.sceneLocationImage"
+                  v-if="row.envMaterialInfoVo"
+                  :src="row.envMaterialInfoVo.previewOssUrl || row.envMaterialInfoVo.originOssUrl"
                   fit="cover"
                   class="scene-location-image"
-                  :preview-src-list="[row.sceneLocationImage]"
+                  :preview-src-list="[row.envMaterialInfoVo.previewOssUrl || row.envMaterialInfoVo.originOssUrl]"
                 />
                 <div v-else class="scene-placeholder">
-                  <img
-                    src="../../../../../../assets/images/no-image-light.png"
-                    alt="暂无图片"
-                    class="placeholder-image"
-                  />
+                  <img src="../../../../../../assets/images/no-sence.png" alt="暂无图片" class="placeholder-image" />
+                </div>
+                <!-- Hover操作按钮 -->
+                <div class="scene-actions">
+                  <div class="scence-box">
+                    <el-tooltip content="场景库" placement="top">
+                      <el-button class="sence-btn" @click="handleSelectSceneLibrary(row)">
+                        <svg-icon icon-class="fy-sence-tupian" class="el-icon" />
+                      </el-button>
+                    </el-tooltip>
+                    <el-tooltip content="上传" placement="top">
+                      <el-button class="sence-btn" @click="handleUploadScene(row)">
+                        <svg-icon icon-class="fy-sence-upload" class="el-icon" />
+                      </el-button>
+                    </el-tooltip>
+                  </div>
                 </div>
               </div>
             </div>
@@ -152,26 +163,41 @@
 
     <!-- 历史记录弹窗 -->
     <ImageHistoryDialog v-model="historyDialogVisible" :shot-id="currentShotId" @select="handleHistorySelect" />
+
+    <!-- 场景库选择弹窗 -->
+    <SceneLibraryDialog
+      v-model="sceneLibraryDialogVisible"
+      :project-id="projectId"
+      :episodes="episodes"
+      @confirm="handleSceneLibraryConfirm"
+    />
+
+    <!-- 场景上传输入框（隐藏） -->
+    <input ref="sceneUploadInput" type="file" accept="image/*" style="display: none" @change="handleSceneFileChange" />
   </div>
 </template>
 
 <script setup lang="ts">
-  import { editSceneBasic } from '@/api/workbench/episode';
-  import type { Shot } from '@/api/workbench/project/types';
+  import { editSceneBasic, setSceneEnv } from '@/api/workbench/episode';
+  import type { EpisodeInfo, LibrarySubInfo, Shot } from '@/api/workbench/project/types';
+  import { uploadFile } from '@/utils/uploadFile';
   import { Edit, Loading } from '@element-plus/icons-vue';
   import { ElMessage } from 'element-plus';
   import { ref } from 'vue';
   import ImageCropDialog from './ImageCropDialog.vue';
   import ImageHistoryDialog from './ImageHistoryDialog.vue';
   import SceneImageCell from './SceneImageCell.vue';
+  import SceneLibraryDialog from './SceneLibraryDialog.vue';
 
   interface Props {
     shots: Shot[];
     aspectRatio: string;
     loading?: boolean;
+    projectId: number;
+    episodes: EpisodeInfo[];
   }
 
-  withDefaults(defineProps<Props>(), {
+  const props = withDefaults(defineProps<Props>(), {
     loading: false
   });
 
@@ -180,6 +206,7 @@
     (e: 'imageRegenerate', shot: Shot): void;
     (e: 'toggleFavorite', shot: Shot): void;
     (e: 'updateShot', shot: Shot): void;
+    (e: 'refresh'): void;
   }>();
 
   // 裁剪相关
@@ -196,6 +223,14 @@
   const editingCell = ref<{ shotId: string | number; field: 'sceneDesc' | 'sceneHint' | 'dialogue' } | null>(null);
   const editingValue = ref('');
   const originalValue = ref('');
+
+  // 场景库相关
+  const sceneLibraryDialogVisible = ref(false);
+  const currentSceneShot = ref<Shot | null>(null);
+
+  // 场景上传相关
+  const sceneUploadInput = ref<HTMLInputElement>();
+  const currentUploadShot = ref<Shot | null>(null);
 
   // 图片上传
   const handleImageUpload = (shot: Shot, file: File) => {
@@ -262,6 +297,112 @@
   // 重新生成图片
   const handleImageRegenerate = (shot: Shot) => {
     emit('imageRegenerate', shot);
+  };
+
+  // ==================== 场景相关操作 ====================
+
+  // 打开场景库选择
+  const handleSelectSceneLibrary = (shot: Shot) => {
+    currentSceneShot.value = shot;
+    sceneLibraryDialogVisible.value = true;
+  };
+
+  // 场景库选择确认
+  const handleSceneLibraryConfirm = async (scene: LibrarySubInfo) => {
+    if (!currentSceneShot.value) return;
+
+    const shot = currentSceneShot.value;
+    if (!shot.basicId) {
+      ElMessage.error('缺少场景基础信息ID');
+      return;
+    }
+
+    try {
+      // 调用设置场景环境接口
+      await setSceneEnv({
+        basicId: shot.basicId,
+        envType: 1, // 场景库
+        envMaterialId: scene.libraryDetailId
+      });
+
+      ElMessage.success('场景设置成功');
+      // 刷新数据
+      emit('refresh');
+    } catch (error) {
+      console.error('设置场景失败:', error);
+      ElMessage.error('设置场景失败');
+    }
+  };
+
+  // 打开场景上传
+  const handleUploadScene = (shot: Shot) => {
+    currentUploadShot.value = shot;
+    sceneUploadInput.value?.click();
+  };
+
+  // 处理场景文件选择
+  const handleSceneFileChange = async (event: Event) => {
+    const target = event.target as HTMLInputElement;
+    const file = target.files?.[0];
+
+    if (!file || !currentUploadShot.value) {
+      return;
+    }
+
+    const shot = currentUploadShot.value;
+    if (!shot.basicId) {
+      ElMessage.error('缺少场景基础信息ID');
+      return;
+    }
+
+    // 验证文件类型
+    if (!file.type.startsWith('image/')) {
+      ElMessage.error('请选择图片文件');
+      return;
+    }
+
+    // 验证文件大小（限制为10MB）
+    const maxSize = 10 * 1024 * 1024;
+    if (file.size > maxSize) {
+      ElMessage.error('图片大小不能超过10MB');
+      return;
+    }
+
+    try {
+      ElMessage.info('正在上传场景图片...');
+
+      // 获取文件后缀
+      const fileSuffix = file.name.substring(file.name.lastIndexOf('.'));
+
+      // 上传文件到OSS
+      const uploadRes = await uploadFile({
+        file,
+        fileSuffix,
+        originalFileName: file.name,
+        fileType: 'image',
+        resourceType: 2,
+        needSync: 0
+      });
+
+      // 调用设置场景环境接口
+      await setSceneEnv({
+        basicId: shot.basicId,
+        envType: 2, // 本地上传
+        ossId: Number(uploadRes.ossId)
+      });
+
+      ElMessage.success('场景上传成功');
+      // 刷新数据
+      emit('refresh');
+    } catch (error) {
+      console.error('上传场景失败:', error);
+      ElMessage.error('上传场景失败');
+    } finally {
+      // 清空文件输入框
+      if (sceneUploadInput.value) {
+        sceneUploadInput.value.value = '';
+      }
+    }
   };
 
   // 开始编辑
@@ -364,9 +505,7 @@
     }
 
     // 提取所有角色名称
-    const characterNames = characters
-      .map((char) => char.characterName)
-      .filter((name) => name && name.trim());
+    const characterNames = characters.map((char) => char.characterName).filter((name) => name && name.trim());
 
     if (characterNames.length === 0) {
       return text;
@@ -513,6 +652,18 @@
         }
       }
 
+      // 场景列单元格hover效果
+      :deep(.el-table__body .el-table__row .el-table__cell:has(.scene-location-cell)) {
+        padding: 0 !important;
+        cursor: pointer;
+        &:hover {
+          background: linear-gradient(0deg, rgba(0, 0, 0, 0.4) 0%, rgba(0, 0, 0, 0.4) 100%);
+          .scene-actions {
+            opacity: 1;
+          }
+        }
+      }
+
       .scene-location-cell {
         display: flex;
         flex-direction: column;
@@ -521,11 +672,10 @@
         padding: 8px 0;
 
         .scene-image-wrapper {
+          position: relative;
           width: 100%;
-          height: 80px;
-          border-radius: 4px;
+          height: 100%;
           overflow: hidden;
-          background: #f5f7fa;
 
           .scene-location-image {
             width: 100%;
@@ -541,9 +691,46 @@
             height: 100%;
 
             .placeholder-image {
-              width: 60px;
-              height: 60px;
-              opacity: 0.5;
+              width: 80px;
+              height: 80px;
+              // opacity: 0.5;
+            }
+          }
+
+          // Hover操作按钮
+          .scene-actions {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+
+            // background: linear-gradient(to bottom, rgba(255, 255, 255, 0.95), rgba(255, 255, 255, 0.98));
+            backdrop-filter: blur(2px);
+            opacity: 0;
+            transition: opacity 0.25s ease;
+            padding: 12px;
+            .scence-box {
+              display: flex;
+              align-items: center;
+              .sence-btn {
+                display: flex;
+                width: 40px;
+                height: 40px;
+                justify-content: center;
+                align-items: center;
+                border-radius: 8px;
+                background: #f7f8fa;
+                color: #4e5969;
+                &:hover {
+                  border: none;
+                }
+              }
             }
           }
         }

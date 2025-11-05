@@ -26,25 +26,20 @@
       <!-- 步骤导航 -->
       <div class="step-tabs" :class="{ 'tabs-initializing': projectStore.isInitializing }">
         <div
-          v-for="step in projectStore.steps"
+          v-for="step in projectStore.mainSteps"
           :key="step.key"
           class="step-tab"
           :class="{
-            active: step.key === projectStore.currentStep,
+            active: projectStore.isInStoryboardStep && step.key === 4 ? true : step.key === projectStore.currentStep,
             'tab-disabled': projectStore.isInitializing
           }"
           @click="!projectStore.isInitializing && handleStepChange(step.key)"
         >
           <div class="step-item" style="display: flex; align-items: center">
-            <!-- 第4步根据视图模式动态显示图标和名称 -->
-            <svg-icon v-if="step.key === 4" class="step-icon" :icon-class="projectStore.step4DisplayInfo.icon" />
-            <svg-icon v-else class="step-icon" :icon-class="getStepIconComponent(step.icon)" />
-
-            <span v-if="step.key !== 4" class="step-name">{{ step.name }}</span>
-
-            <!-- 分镜表步骤显示下拉菜单 -->
+            <!-- 第4步根据当前步骤动态显示图标和名称 -->
             <template v-if="step.key === 4">
-              <span class="step-name">{{ projectStore.step4DisplayInfo.name }}</span>
+              <svg-icon class="step-icon" :icon-class="getCurrentStoryboardIcon()" />
+              <span class="step-name">{{ getCurrentStoryboardName() }}</span>
               <el-dropdown
                 trigger="hover"
                 placement="bottom"
@@ -57,21 +52,27 @@
 
                 <template #dropdown>
                   <el-dropdown-menu>
-                    <el-dropdown-item v-if="projectStore.step4ViewMode !== 'storyboard'" command="storyboard">
+                    <el-dropdown-item v-if="projectStore.currentStep !== 4" command="4">
                       <svg-icon icon-class="step-fenjing" class="step-icon" />
                       <span>分镜头</span>
                     </el-dropdown-item>
-                    <el-dropdown-item v-if="projectStore.step4ViewMode !== 'grid'" command="grid">
+                    <el-dropdown-item v-if="projectStore.currentStep !== 5" command="5">
                       <svg-icon icon-class="step-story" class="step-icon" />
                       <span>故事板</span>
                     </el-dropdown-item>
-                    <el-dropdown-item v-if="projectStore.step4ViewMode !== 'waterfall'" command="waterfall">
+                    <el-dropdown-item v-if="projectStore.currentStep !== 6" command="6">
                       <svg-icon icon-class="step-pubu" class="step-icon" />
                       <span>瀑布流</span>
                     </el-dropdown-item>
                   </el-dropdown-menu>
                 </template>
               </el-dropdown>
+            </template>
+
+            <!-- 其他步骤 -->
+            <template v-else>
+              <svg-icon class="step-icon" :icon-class="getStepIconComponent(step.icon)" />
+              <span class="step-name">{{ step.name }}</span>
             </template>
           </div>
         </div>
@@ -158,19 +159,14 @@
 
   // 当前步骤组件
   const currentStepComponent = computed(() => {
-    // 第4步根据视图模式动态加载不同组件
-    if (projectStore.currentStep === 4) {
-      const viewMode = projectStore.step4ViewMode;
-      if (viewMode === 'grid') return StepGridView;
-      if (viewMode === 'waterfall') return StepWaterfallView;
-      return StepShotList; // 默认使用分镜表
-    }
-
     const componentMap: Record<number, any> = {
-      1: StepScript,
-      2: StepCharacter,
-      3: StepScene,
-      5: StepVideo
+      1: StepScript, // 剧本
+      2: StepCharacter, // 角色
+      3: StepScene, // 场景
+      4: StepShotList, // 分镜头
+      5: StepGridView, // 故事板
+      6: StepWaterfallView, // 瀑布流
+      7: StepVideo // 视频
     };
     return componentMap[projectStore.currentStep] || StepScript;
   });
@@ -181,10 +177,32 @@
       document: 'step-juben', // 剧本
       user: 'step-juese', // 角色
       picture: 'step-changjing', // 场景
-      list: 'step-fenjing', // 分镜头
+      'step-fenjing': 'step-fenjing', // 分镜头
+      'step-story': 'step-story', // 故事板
+      'step-pubu': 'step-pubu', // 瀑布流
       'video-camera': 'step-shipin' // 视频
     };
-    return iconMap[iconName];
+    return iconMap[iconName] || iconName;
+  };
+
+  // 获取当前分镜头步骤的图标
+  const getCurrentStoryboardIcon = () => {
+    const iconMap: Record<number, string> = {
+      4: 'step-fenjing', // 分镜头
+      5: 'step-story', // 故事板
+      6: 'step-pubu' // 瀑布流
+    };
+    return iconMap[projectStore.currentStep] || 'step-fenjing';
+  };
+
+  // 获取当前分镜头步骤的名称
+  const getCurrentStoryboardName = () => {
+    const nameMap: Record<number, string> = {
+      4: '分镜头',
+      5: '故事板',
+      6: '瀑布流'
+    };
+    return nameMap[projectStore.currentStep] || '分镜头';
   };
 
   // 页面初始化
@@ -217,8 +235,10 @@
       1: StepScript,
       2: StepCharacter,
       3: StepScene,
-      4: StepShotList, // 第4步默认预加载分镜表
-      5: StepVideo
+      4: StepShotList, // 分镜头
+      5: StepGridView, // 故事板
+      6: StepWaterfallView, // 瀑布流
+      7: StepVideo
     };
     const component = componentMap[step];
     if (component) {
@@ -263,11 +283,16 @@
 
   // 分镜表视图切换
   const handleStoryboardViewChange = async (viewType: string) => {
-    // 更新视图模式到 store
-    await projectStore.updateStep4ViewMode(viewType as 'storyboard' | 'grid' | 'waterfall');
-
-    // 自动跳转到第4步（组件会根据 viewMode 自动切换）
-    await projectStore.goToStep(4);
+    // 直接切换到对应的步骤（4-分镜头 / 5-故事板 / 6-瀑布流）
+    const stepMap: Record<string, number> = {
+      '4': 4, // 分镜头
+      '5': 5, // 故事板
+      '6': 6 // 瀑布流
+    };
+    const targetStep = stepMap[viewType];
+    if (targetStep) {
+      await projectStore.goToStep(targetStep);
+    }
   };
 
   // 下一步

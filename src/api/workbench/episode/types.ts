@@ -1,6 +1,17 @@
 export * from '../project/types';
 
 /**
+ * 剧集重命名请求 (EpisodeRenameRequestDto)
+ */
+export interface EpisodeRenameRequest {
+  /** 剧集id */
+  episodeId: number;
+  /** 剧集名称 */
+  episodeName: string;
+  [property: string]: any;
+}
+
+/**
  * 场景基础编辑请求 (SceneBasicEditRequestDto)
  */
 export interface SceneBasicEditRequest {
@@ -135,4 +146,26 @@ export interface EpisodeInfoResponseDto {
   /** 文生文任务状态 0-待执行 1-执行中 2-执行成功 3-执行失败 */
   taskStatus?: number;
   [property: string]: any;
+}
+
+/**
+ * 角色匹配响应
+ */
+export interface CharacterMatchResponse {
+  /** 超过角色数量的镜头编号列表 */
+  errorSceneNums?: number[];
+}
+
+/**
+ * 场景环境设置请求
+ */
+export interface SceneEnvSetRequest {
+  /** 场景基础信息ID */
+  basicId: number;
+  /** 环境类型 1-场景库 2-本地上传 */
+  envType: 1 | 2;
+  /** 场景库素材ID（envType=1时使用） */
+  envMaterialId?: number;
+  /** OSS文件ID（envType=2时使用） */
+  ossId?: number;
 }

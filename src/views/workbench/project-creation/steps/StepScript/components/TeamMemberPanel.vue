@@ -29,7 +29,11 @@
             <div class="member-avatar" :style="{ backgroundColor: member.color }">
               <span class="avatar-text">{{ member.icon }}</span>
               <!-- 删除按钮 -->
-              <div v-show="hoveredMemberId === member.memberId" class="delete-btn" @click.stop="confirmRemoveMember(member)">
+              <div
+                v-show="hoveredMemberId === member.memberId"
+                class="delete-btn"
+                @click.stop="confirmRemoveMember(member)"
+              >
                 <el-icon><Close /></el-icon>
               </div>
             </div>

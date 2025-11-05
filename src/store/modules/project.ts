@@ -1,4 +1,3 @@
-import { delEpisode } from '@/api/workbench/episode';
 import { createProcessRecord, getProjectInfo, getReferPage } from '@/api/workbench/project';
 import type {
   AiModelInfoDto,
@@ -20,6 +19,7 @@ interface StepInfo {
   key: number;
   name: string;
   icon: string;
+  isSubView?: boolean; // 标记是否为子视图（不在主步骤栏显示）
 }
 
 interface ProjectState {
@@ -35,9 +35,9 @@ interface ProjectState {
   episodeInfoList: EpisodeInfo[];
   currentEpisode: Episode | null;
 
-  // 步骤定义
+  // 步骤定义（直接使用后端的1-7编号，与WorkflowPage枚举对应）
   steps: StepInfo[];
-  currentStep: number;
+  currentStep: number; // 当前步骤：1-剧本 2-角色 3-场景 4-分镜头 5-故事板 6-瀑布流 7-视频
 
   // 角色和场景数据
   characters: Character[];
@@ -74,12 +74,15 @@ export const useProjectStore = defineStore('project', {
     episodes: [],
     episodeInfoList: [],
     currentEpisode: null,
+    // 直接使用后端WorkflowPage枚举值（1-7）
     steps: [
       { key: 1, name: '剧本', icon: 'document' },
       { key: 2, name: '角色', icon: 'user' },
       { key: 3, name: '场景', icon: 'picture' },
-      { key: 4, name: '分镜头', icon: 'list' },
-      { key: 5, name: '视频', icon: 'video-camera' }
+      { key: 4, name: '分镜头', icon: 'step-fenjing' },
+      { key: 5, name: '故事板', icon: 'step-story', isSubView: true },
+      { key: 6, name: '瀑布流', icon: 'step-pubu', isSubView: true },
+      { key: 7, name: '视频', icon: 'video-camera' }
     ],
     currentStep: 1,
     characters: [],
@@ -97,46 +100,17 @@ export const useProjectStore = defineStore('project', {
 
   getters: {
     /**
-     * 获取当前剧集的完成进度
+     * 获取主步骤列表（排除子视图）
      */
-    currentEpisodeProgress: (state) => {
-      if (!state.currentEpisode) return 0;
-      return state.currentEpisode.progress || 0;
+    mainSteps: (state) => {
+      return state.steps.filter((step) => !step.isSubView);
     },
 
     /**
-     * 获取剧集总数
+     * 判断当前是否在分镜头相关步骤（4/5/6）
      */
-    episodeCount: (state) => state.episodes.length,
-
-    /**
-     * 获取角色总数
-     */
-    characterCount: (state) => state.characters.length,
-
-    /**
-     * 获取场景总数
-     */
-    sceneCount: (state) => state.scenes.length,
-
-    /**
-     * 获取第4步的视图模式
-     */
-    step4ViewMode: (state) => {
-      return state.currentEpisode?.step4ViewMode || 'storyboard';
-    },
-
-    /**
-     * 获取第4步的显示信息（名称和图标）
-     */
-    step4DisplayInfo: (state) => {
-      const viewMode = state.currentEpisode?.step4ViewMode || 'storyboard';
-      const displayMap = {
-        storyboard: { name: '分镜头', icon: 'step-fenjing' },
-        grid: { name: '故事板', icon: 'step-story' },
-        waterfall: { name: '瀑布流', icon: 'step-pubu' }
-      };
-      return displayMap[viewMode];
+    isInStoryboardStep: (state) => {
+      return state.currentStep >= 4 && state.currentStep <= 6;
     }
   },
 
@@ -155,7 +129,7 @@ export const useProjectStore = defineStore('project', {
 
       try {
         // 如果有强制步骤参数，先预设步骤（避免闪烁）
-        if (forceStep && forceStep >= 1 && forceStep <= 5) {
+        if (forceStep && forceStep >= 1 && forceStep <= 7) {
           this.currentStep = forceStep;
         }
 
@@ -169,36 +143,26 @@ export const useProjectStore = defineStore('project', {
         const record =
           processRecord.status === 'fulfilled' ? (processRecord.value as ProjectProcessRecordVo | null) : null;
 
-        console.log('[initProject] 工作流记录:', record);
-        console.log('[initProject] forceStep参数:', forceStep);
-
         // 确定要使用的步骤：优先使用工作流记录，如果没有则使用forceStep，最后兜底使用步骤1
         let targetStep = 1;
         if (record?.currentPage) {
-          // 有工作流记录，使用记录中的步骤（忽略forceStep）
-          targetStep = this.mapWorkflowPageToStep(record.currentPage);
-          console.log(`[initProject] 使用工作流记录步骤: currentPage=${record.currentPage} -> step=${targetStep}`);
-        } else if (forceStep && forceStep >= 1 && forceStep <= 5) {
+          // 有工作流记录，直接使用记录中的步骤（无需映射）
+          targetStep = record.currentPage;
+        } else if (forceStep && forceStep >= 1 && forceStep <= 7) {
           // 没有工作流记录但有forceStep（新建项目场景），使用forceStep
           targetStep = forceStep;
-          console.log(`[initProject] 工作流记录为空，使用forceStep: step=${targetStep}`);
 
           // 创建工作流记录，保存当前步骤
           try {
-            const currentPage = this.mapStepToWorkflowPage(targetStep);
             await createProcessRecord({
               projectId: Number(projectId),
               episodeId: undefined, // 首次进入可能还没有剧集
-              currentPage
+              currentPage: targetStep
             });
-            console.log('[initProject] 创建工作流记录成功:', { projectId, step: targetStep, currentPage });
           } catch (error) {
             console.error('[initProject] 创建工作流记录失败:', error);
             // 继续执行，不阻塞初始化
           }
-        } else {
-          // 没有工作流记录也没有forceStep，使用默认步骤1
-          console.log('[initProject] 工作流记录为空且无forceStep，使用默认步骤1');
         }
 
         // 设置当前步骤
@@ -218,15 +182,6 @@ export const useProjectStore = defineStore('project', {
           // 没有工作流记录，加载第一个剧集
           await this.switchEpisodeFromInfo(this.episodeInfoList[0]);
         }
-
-        // 剧集加载完成后，再次调用映射方法以正确设置视图模式
-        if (record?.currentPage && this.currentEpisode) {
-          const step = this.mapWorkflowPageToStep(record.currentPage);
-          console.log(`[initProject] 剧集加载后再次映射: currentPage=${record.currentPage} -> step=${step}`);
-          console.log('[initProject] currentEpisode.step4ViewMode:', this.currentEpisode.step4ViewMode);
-          this.currentStep = step;
-        }
-        console.log('[initProject] 最终 currentStep:', this.currentStep);
       } catch (error) {
         console.error('初始化项目失败:', error);
         ElMessage.error('加载项目数据失败');
@@ -310,9 +265,8 @@ export const useProjectStore = defineStore('project', {
      */
     async switchEpisodeFromInfo(episodeInfo: EpisodeInfo) {
       try {
-        // 保存当前步骤和视图模式（在切换剧集时保留）
+        // 保存当前步骤（在切换剧集时保留）
         const previousStep = this.currentStep;
-        const previousStep4ViewMode = this.currentEpisode?.step4ViewMode;
 
         // 转换为旧格式
         this.currentEpisode = {
@@ -320,7 +274,6 @@ export const useProjectStore = defineStore('project', {
           projectId: this.currentProjectId!,
           name: episodeInfo.episodeName!,
           currentStep: previousStep, // 保留当前步骤，不要重置为1
-          step4ViewMode: previousStep4ViewMode || 'storyboard', // 保留之前的视图模式，如果没有则默认使用分镜表
           progress: parseFloat(episodeInfo.episodePercent || '0') || 0,
           scriptContent: episodeInfo.storyText
         };
@@ -363,75 +316,11 @@ export const useProjectStore = defineStore('project', {
       this.currentStep = this.currentEpisode?.currentStep || 1;
     },
 
-    /**
-     * 删除剧集
-     * @param episodeId 剧集ID
-     */
-    async deleteEpisode(episodeId: string | number) {
-      if (!this.currentProjectId) return;
-
-      try {
-        await delEpisode(this.currentProjectId, episodeId);
-        this.episodes = this.episodes.filter((ep) => ep.id !== episodeId);
-
-        // 如果删除的是当前剧集，切换到第一个剧集
-        if (this.currentEpisodeId === episodeId && this.episodes.length > 0) {
-          await this.switchEpisode(this.episodes[0].id);
-        }
-
-        ElMessage.success('剧集删除成功');
-      } catch (error) {
-        console.error('删除剧集失败:', error);
-        ElMessage.error('删除剧集失败');
-      }
-    },
-
     // ==================== 步骤管理 ====================
 
     /**
-     * 将前端步骤号映射到后端工作流节点
-     * @param step 前端步骤号 (1-5)
-     * @param viewMode 第4步的视图模式
-     * @returns 后端工作流节点 (1-7)
-     */
-    mapStepToWorkflowPage(step: number, viewMode?: string): number {
-      // 1-剧本 2-角色 3-场景 4-分镜头 5-故事板 6-瀑布流 7-视频
-      if (step === 4) {
-        // 第4步根据视图模式映射到不同的工作流节点
-        const mode = viewMode || this.step4ViewMode;
-        if (mode === 'storyboard') return 4; // 分镜头
-        if (mode === 'grid') return 5; // 故事板
-        if (mode === 'waterfall') return 6; // 瀑布流
-        return 4; // 默认分镜表
-      }
-      if (step === 5) return 7; // 视频
-      return step; // 1-剧本 2-角色 3-场景
-    },
-
-    /**
-     * 将后端工作流节点映射回前端步骤号
-     * @param workflowPage 后端工作流节点 (1-7)
-     * @returns 前端步骤号 (1-5)
-     */
-    mapWorkflowPageToStep(workflowPage: number): number {
-      // 1-剧本 2-角色 3-场景 4-分镜头 5-故事板 6-瀑布流 7-视频
-      if (workflowPage >= 4 && workflowPage <= 6) {
-        // 分镜头/故事板/瀑布流都映射到第4步
-        // 同时更新视图模式
-        if (this.currentEpisode) {
-          if (workflowPage === 4) this.currentEpisode.step4ViewMode = 'storyboard';
-          else if (workflowPage === 5) this.currentEpisode.step4ViewMode = 'grid';
-          else if (workflowPage === 6) this.currentEpisode.step4ViewMode = 'waterfall';
-        }
-        return 4;
-      }
-      if (workflowPage === 7) return 5; // 视频
-      return workflowPage; // 1-剧本 2-角色 3-场景
-    },
-
-    /**
      * 跳转到指定步骤
-     * @param step 步骤编号 (1-5)
+     * @param step 步骤编号 (1-7)，对应后端WorkflowPage枚举
      */
     async goToStep(step: number) {
       if (!this.currentProjectId) {
@@ -439,13 +328,12 @@ export const useProjectStore = defineStore('project', {
         return false;
       }
 
-      // 创建工作流记录
+      // 创建工作流记录（直接使用步骤号，无需映射）
       try {
-        const currentPage = this.mapStepToWorkflowPage(step);
         await createProcessRecord({
           projectId: Number(this.currentProjectId),
           episodeId: this.currentEpisodeId ? Number(this.currentEpisodeId) : undefined,
-          currentPage
+          currentPage: step
         });
       } catch (error) {
         console.error('创建工作流记录失败:', error);
@@ -467,84 +355,21 @@ export const useProjectStore = defineStore('project', {
      */
     async nextStep() {
       const nextStep = this.currentStep + 1;
-      if (nextStep <= 5) {
+      if (nextStep <= 7) {
         return await this.goToStep(nextStep);
       }
       return false;
     },
 
     /**
-     * 更新第4步的视图模式
-     * @param viewMode 视图模式：storyboard(分镜头) / grid(故事板) / waterfall(瀑布流)
+     * 切换分镜头视图模式
+     * @param viewMode 视图模式：4-分镜头 / 5-故事板 / 6-瀑布流
      */
-    async updateStep4ViewMode(viewMode: 'storyboard' | 'grid' | 'waterfall') {
-      if (!this.currentEpisode || !this.currentProjectId) return;
-
-      // 更新当前剧集的视图模式
-      this.currentEpisode.step4ViewMode = viewMode;
-
-      // 创建工作流记录（保存视图模式）
-      try {
-        const currentPage = this.mapStepToWorkflowPage(4, viewMode);
-        await createProcessRecord({
-          projectId: Number(this.currentProjectId),
-          episodeId: this.currentEpisodeId ? Number(this.currentEpisodeId) : undefined,
-          currentPage
-        });
-      } catch (error) {
-        console.error('保存视图模式到工作流记录失败:', error);
-      }
-    },
-
-    // ==================== 剧本管理 ====================
-
-    // ==================== 角色管理 ====================
-
-    // ==================== 场景管理 ====================
-
-    // ==================== 统计数据 ====================
-
-    /**
-     * 加载项目进度 - 已废弃
-     * 统计数据应该从 getProjectInfo 接口的 materialStaticsInfo 中获取
-     */
-    async loadProgress() {
-      console.warn('loadProgress 已废弃，统计数据已包含在 getProjectInfo 接口中');
+    async switchStoryboardView(viewMode: 4 | 5 | 6) {
       if (!this.currentProjectId) return;
-      // 重新加载项目信息以获取最新统计
-      await this.loadProjectInfo(Number(this.currentProjectId));
-    },
 
-    /**
-     * 加载生产统计 - 已废弃
-     * 统计数据应该从 getProjectInfo 接口的 materialStaticsInfo 和 teamUserInfoList 中获取
-     */
-    async loadStats() {
-      console.warn('loadStats 已废弃，统计数据已包含在 getProjectInfo 接口中');
-      if (!this.currentProjectId) return;
-      // 重新加载项目信息以获取最新统计
-      await this.loadProjectInfo(Number(this.currentProjectId));
-    },
-
-    // ==================== 辅助方法 ====================
-
-    /**
-     * 保存当前剧集状态
-     */
-    async saveCurrentEpisodeState() {
-      if (!this.currentProjectId || !this.currentEpisode) return;
-
-      try {
-        // 创建工作流记录，保存当前步骤和视图模式
-        const currentPage = this.mapStepToWorkflowPage(this.currentStep);
-        await createProcessRecord({
-          projectId: Number(this.currentProjectId),
-          episodeId: this.currentEpisodeId ? Number(this.currentEpisodeId) : undefined,
-          currentPage
-        });
-      } catch (error) {
-        console.error('保存剧集状态失败:', error);
-      }
+      // 直接跳转到对应步骤（4/5/6）
+      return await this.goToStep(viewMode);
     }
   }
 });

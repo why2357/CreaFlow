@@ -51,7 +51,7 @@
   import type { UserProcessInfo } from '@/api/workbench/project/types';
   import { useProjectStore } from '@/store/modules/project';
   import { getRoleColor, getRoleShortName } from '@/utils/roleUtils';
-  import { computed, onMounted, watch } from 'vue';
+  import { computed } from 'vue';
 
   const projectStore = useProjectStore();
 
@@ -107,24 +107,6 @@
     }
     return '当前剧集暂无成员生产数据';
   });
-
-  // 初始化
-  onMounted(() => {
-    loadStats();
-  });
-
-  // 监听项目变化
-  watch(
-    () => [projectStore.currentProjectId, projectStore.currentEpisodeId],
-    () => {
-      loadStats();
-    }
-  );
-
-  // 加载统计数据
-  const loadStats = () => {
-    // 数据来自 computed 属性
-  };
 </script>
 
 <style scoped lang="scss">

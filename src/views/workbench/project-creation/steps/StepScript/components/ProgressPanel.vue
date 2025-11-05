@@ -70,7 +70,7 @@
 
 <script setup lang="ts" name="ProgressPanel">
   import { useProjectStore } from '@/store/modules/project';
-  import { computed, onMounted, watch } from 'vue';
+  import { computed } from 'vue';
 
   const projectStore = useProjectStore();
 
@@ -148,24 +148,6 @@
     if (p < 90) return '#409eff';
     return '#67c23a';
   });
-
-  // 初始化
-  onMounted(() => {
-    loadProgress();
-  });
-
-  // 监听项目变化和剧集变化
-  watch(
-    () => [projectStore.currentProjectId, projectStore.currentEpisodeId],
-    () => {
-      loadProgress();
-    }
-  );
-
-  // 加载进度
-  const loadProgress = async () => {
-    // 数据来自 computed 属性，无需额外加载
-  };
 </script>
 
 <style scoped lang="scss">

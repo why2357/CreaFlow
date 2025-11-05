@@ -241,8 +241,7 @@ export interface Episode {
   id: string | number;
   projectId: string | number;
   name: string; // EP01, EP02, etc.
-  currentStep: number; // 当前停留的步骤 (1-5)
-  step4ViewMode?: 'storyboard' | 'grid' | 'waterfall'; // 第4步的视图模式：分镜头/故事板/瀑布流
+  currentStep: number; // 当前停留的步骤 (1-7)，对应WorkflowPage枚举
   progress: number; // 完成进度百分比 (0-100)
   scriptContent?: string; // 剧本内容
   createTime?: string;
@@ -367,6 +366,20 @@ export interface ProductionStats {
 }
 
 /**
+ * 媒体资源视图对象 (与 HivisionProjectMaterialVo 对应)
+ */
+export interface MaterialInfoVo {
+  id?: number;
+  originOssId?: number;
+  originOssUrl?: string;
+  previewOssId?: number;
+  previewOssUrl?: string;
+  projectId?: number;
+  status?: number;
+  userId?: number;
+}
+
+/**
  * 分镜信息
  */
 export interface Shot {
@@ -379,6 +392,7 @@ export interface Shot {
   sceneDesc?: string; // 特写镜头描述
   sceneHint?: string; // 场景描述
   sceneLocationImage?: string; // 场景图片
+  envMaterialInfoVo?: MaterialInfoVo; // 环境素材信息
   dialogue: string; // 台词
   characters: any[]; // 人物列表（CharacterClothingInfo[]）
   sceneLocation: string; // 场景

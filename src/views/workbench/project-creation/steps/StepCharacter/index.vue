@@ -284,7 +284,6 @@
 
     nextTick(() => {
       const scrollWrappers = document.querySelectorAll('.costumes-scroll-wrapper');
-      console.log('找到滚动容器数量:', scrollWrappers.length);
 
       scrollWrappers.forEach((wrapper, index) => {
         const handleWheel = (e: Event) => {
@@ -295,7 +294,6 @@
             // 将垂直滚动转换为横向滚动
             const element = wrapper as HTMLElement;
             element.scrollLeft += wheelEvent.deltaY;
-            console.log('触发滚动，deltaY:', wheelEvent.deltaY, 'scrollLeft:', element.scrollLeft);
           }
         };
 

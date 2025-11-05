@@ -53,10 +53,13 @@
           :shots="shots"
           :aspect-ratio="aspectRatio"
           :loading="loading"
+          :project-id="Number(projectStore.currentProjectId) || 0"
+          :episodes="projectStore.episodeInfoList"
           @image-upload="handleImageUpload"
           @image-regenerate="handleImageRegenerate"
           @toggle-favorite="handleToggleFavorite"
           @update-shot="handleUpdateShot"
+          @refresh="loadShots"
         />
       </div>
     </div>
@@ -89,7 +92,7 @@
 
   // 导入组件
   import AddEpisodeDialog from '../../components/AddEpisodeDialog.vue';
-  import EpisodeListPanel from '../../components/EpisodeListPanel.vue';
+  import EpisodeListPanel from '../StepScript/components/EpisodeListPanel.vue';
   import StoryboardTable from './components/StoryboardTable.vue';
 
   const projectStore = useProjectStore();
@@ -171,8 +174,21 @@
       sceneDesc: scene.sceneDesc || '',
       // 场景描述（显示用）
       sceneHint: scene.sceneHint || '',
-      // 场景图片（环境素材）
+      // 场景图片（环境素材）- 保留向后兼容
       sceneLocationImage: scene.envMaterialInfoVo?.previewOssUrl || scene.envMaterialInfoVo?.originOssUrl || '',
+      // 环境素材信息对象（新增，用于场景选择功能）
+      envMaterialInfoVo: scene.envMaterialInfoVo
+        ? {
+            id: scene.envMaterialInfoVo.id,
+            originOssId: scene.envMaterialInfoVo.originOssId,
+            originOssUrl: scene.envMaterialInfoVo.originOssUrl,
+            previewOssId: scene.envMaterialInfoVo.previewOssId,
+            previewOssUrl: scene.envMaterialInfoVo.previewOssUrl,
+            projectId: scene.envMaterialInfoVo.projectId,
+            status: scene.envMaterialInfoVo.status,
+            userId: scene.envMaterialInfoVo.userId
+          }
+        : undefined,
       // 台词
       dialogue: scene.dialogues || '',
       // 人物列表（直接使用服装信息列表）
@@ -259,13 +275,26 @@
 
     try {
       loading.value = true;
-      await rematchCharacters(Number(selectedEpisodeId.value));
-      ElMessage.success('角色匹配成功');
+      const res = await rematchCharacters(Number(selectedEpisodeId.value));
+      const errorSceneNums = res.data?.errorSceneNums;
+
+      // 如果有超过角色数量的镜头，显示警告对话框
+      if (errorSceneNums && errorSceneNums.length > 0) {
+        const sceneNumsText = errorSceneNums.join('、');
+        await ElMessageBox.alert(`单镜头最多支持三位角色\n\n镜号【${sceneNumsText}】超出角色数量`, '提示', {
+          confirmButtonText: '确认',
+          type: 'warning',
+          center: false,
+          customClass: 'character-match-warning-dialog'
+        });
+      } else {
+        ElMessage.success('角色匹配成功');
+      }
+
       // 重新加载分镜列表以显示更新后的数据
       await loadShots();
     } catch (error) {
-      console.error('重新匹配角色失败:', error);
-      ElMessage.error('角色匹配失败');
+      console.log('重新匹配角色失败:', error);
     } finally {
       loading.value = false;
     }
@@ -284,7 +313,7 @@
 
       if (newName && newName.trim()) {
         // 调用重命名接口
-        await renameEpisode(Number(episode.id), newName.trim(), Number(projectStore.currentProjectId));
+        await renameEpisode(Number(episode.id), newName.trim());
 
         // 重新加载项目信息以获取最新的剧集列表
         await projectStore.loadProjectInfo(Number(projectStore.currentProjectId));
@@ -294,8 +323,6 @@
     } catch (error: any) {
       if (error !== 'cancel') {
         console.error('重命名剧集失败:', error);
-        const errorMsg = error?.response?.data?.msg || error?.message || '重命名失败';
-        ElMessage.error(errorMsg);
       }
     }
   };
@@ -329,8 +356,6 @@
     } catch (error: any) {
       if (error !== 'cancel') {
         console.error('删除剧集失败:', error);
-        const errorMsg = error?.response?.data?.msg || error?.message || '删除失败';
-        ElMessage.error(errorMsg);
       }
     }
   };
@@ -383,7 +408,6 @@
       ElMessage.success('更新成功');
     } catch (error) {
       console.error('更新分镜失败:', error);
-      ElMessage.error('更新失败');
       await loadShots();
     }
   };

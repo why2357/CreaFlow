@@ -144,7 +144,7 @@
 
   // 导入共享组件
   import AddEpisodeDialog from '../../components/AddEpisodeDialog.vue';
-  import EpisodeListPanel from '../../components/EpisodeListPanel.vue';
+  import EpisodeListPanel from './components/EpisodeListPanel.vue';
 
   // 导入右侧面板组件
   import ProductionStatsPanel from './components/ProductionStatsPanel.vue';
@@ -326,7 +326,7 @@
 
       if (newName && newName.trim()) {
         // 调用重命名接口
-        await renameEpisode(Number(episode.id), newName.trim(), Number(projectStore.currentProjectId));
+        await renameEpisode(Number(episode.id), newName.trim());
 
         // 重新加载项目信息以获取最新的剧集列表
         await projectStore.loadProjectInfo(Number(projectStore.currentProjectId));
