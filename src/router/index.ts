@@ -121,6 +121,19 @@ export const constantRoutes: RouteOption[] = [
       }
     ]
   },
+  // {
+  //   path: '',
+  //   component: Layout,
+  //   redirect: 'pointRecord',
+  //   children: [
+  //     {
+  //       path: '/pointRecord',
+  //       component: () => import('@/views/point-record/index.vue'),
+  //       name: 'PointRecord',
+  //       meta: { title: '点数使用记录', icon: 'logo-point' }
+  //     }
+  //   ]
+  // },
   {
     path: '/user',
     component: Layout,

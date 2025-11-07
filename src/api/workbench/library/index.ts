@@ -162,3 +162,15 @@ export const bindEpisode = (data: LibraryBindEpisodeRequest): AxiosPromise<void>
     data
   });
 };
+
+/**
+ * 获取资源库详情数量
+ * @param libraryId 资源库ID
+ */
+export const getLibraryDetailCount = (libraryId: number): AxiosPromise<number> => {
+  return request({
+    url: '/hivision/story/library/detail-count',
+    method: 'get',
+    params: { libraryId }
+  });
+};

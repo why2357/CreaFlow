@@ -103,7 +103,7 @@
               :max-files="imageAttr.allMaxLen"
               :max-size="imageAttr.singleMaxSize"
               :accept="imageAttr.suffix"
-              :current-count="library.totalImageCount ?? library.librarySubInfoList?.length ?? 0"
+              :library-id="library.libraryId"
               :total-limit="imageAttr.totalLimit"
               :validate-dimensions="false"
               @upload="(files:any) => handleUploadFiles(files, library)"
@@ -197,6 +197,7 @@
     createLibraryDetail,
     deleteLibrary,
     deleteLibraryDetail,
+    getLibraryDetailCount,
     getSceneDetail,
     renameLibrary
   } from '@/api/workbench/library';

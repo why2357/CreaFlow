@@ -35,6 +35,7 @@
 </template>
 
 <script setup lang="ts">
+  import { getLibraryDetailCount } from '@/api/workbench/library';
   import { Upload } from '@element-plus/icons-vue';
   import { ElMessage } from 'element-plus';
   import { ref } from 'vue';
@@ -44,7 +45,7 @@
     maxSize?: number; // 单个文件最大大小（字节）
     accept?: string[]; // 允许的文件后缀
     disabled?: boolean;
-    currentCount?: number; // 当前已上传的图片数量
+    libraryId?: number; // 资源库ID，用于获取最新上传数量
     totalLimit?: number; // 总数限制
     validateDimensions?: boolean; // 是否校验图片尺寸
   }
@@ -54,7 +55,6 @@
     maxSize: 10 * 1024 * 1024, // 默认10MB
     accept: () => ['.jpg', '.jpeg', '.png', '.gif', '.webp'],
     disabled: false,
-    currentCount: 0,
     totalLimit: 10, // 总数最多10张
     validateDimensions: true // 默认校验尺寸
   });
@@ -119,8 +119,25 @@
     const valid: File[] = [];
     const errors: string[] = [];
 
+    // 如果没有 libraryId，无法获取最新数量，直接返回错误
+    if (!props.libraryId) {
+      errors.push('无法获取资源库信息，请刷新页面后重试');
+      return { valid, errors };
+    }
+
+    // 调用接口获取最新的已上传数量
+    let currentCount = 0;
+    try {
+      const res = await getLibraryDetailCount(props.libraryId);
+      currentCount = res.data ?? 0;
+    } catch (error) {
+      console.error('获取资源库详情数量失败:', error);
+      errors.push('获取资源库信息失败，请稍后重试');
+      return { valid, errors };
+    }
+
     // 检查总数限制
-    const remainingSlots = props.totalLimit - props.currentCount;
+    const remainingSlots = props.totalLimit - currentCount;
     if (remainingSlots <= 0) {
       errors.push(`已达到总数限制（${props.totalLimit}张），请先删除一些图片后再上传`);
       return { valid, errors };
