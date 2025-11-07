@@ -11,15 +11,21 @@
         <el-button size="small" type="primary" @click="handleConfirm" :loading="loading"> 确认 </el-button>
       </div>
       <div class="episode-tags-list">
-        <div
+        <el-tooltip
           v-for="episode in episodeList"
           :key="episode.episodeId"
-          class="episode-tag-item"
-          :class="{ active: episode.episodeId && localSelectedIds.includes(episode.episodeId!) }"
-          @click="episode.episodeId && toggleEpisode(episode.episodeId)"
+          :content="episode.episodeName"
+          placement="top"
+          :disabled="!isTextOverflow(episode.episodeName)"
         >
-          {{ episode.episodeName }}
-        </div>
+          <div
+            class="episode-tag-item"
+            :class="{ active: episode.episodeId && localSelectedIds.includes(episode.episodeId!) }"
+            @click="episode.episodeId && toggleEpisode(episode.episodeId)"
+          >
+            <span class="episode-name">{{ episode.episodeName }}</span>
+          </div>
+        </el-tooltip>
       </div>
     </div>
   </el-popover>
@@ -80,8 +86,15 @@
     }
   };
 
+  // 确认选择
   const handleConfirm = () => {
     emit('confirm', localSelectedIds.value);
+  };
+
+  // 判断文本是否溢出（简单判断：超过6个字符认为可能溢出）
+  const isTextOverflow = (text: string | undefined): boolean => {
+    if (!text) return false;
+    return text.length > 6;
   };
 </script>
 
@@ -124,10 +137,12 @@
         cursor: pointer;
         transition: all 0.3s;
         user-select: none;
+        min-width: 0;
 
         &:hover {
           border-color: #ffa940;
           color: #ffa940;
+          background: #fffbf5;
         }
 
         &.active {
@@ -136,13 +151,22 @@
           color: #fa8c16;
           font-weight: 500;
         }
+
+        .episode-name {
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+          width: 100%;
+          text-align: center;
+        }
       }
     }
   }
 </style>
 
 <style lang="scss">
-  // 全局 Popover 样式
+  // 全局样式
+  // Popover 样式
   .episode-popover.el-popover {
     padding: 0 !important;
     border-radius: 8px;

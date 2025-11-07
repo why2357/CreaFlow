@@ -111,7 +111,8 @@
                 :key="index"
                 :src="character.materialInfoVo?.previewOssUrl || character.materialInfoVo?.originOssUrl"
                 fit="cover"
-                class="character-avatar"
+                class="character-avatar character-clickable"
+                @click="handleCharacterClick(row, character)"
               />
             </div>
           </template>
@@ -172,6 +173,15 @@
       @confirm="handleSceneLibraryConfirm"
     />
 
+    <!-- 单个角色服装编辑弹窗 -->
+    <SingleCharacterEditDialog
+      v-model="singleCharacterDialogVisible"
+      :basic-id="currentCharacterData?.basicId"
+      :episode-id="currentCharacterData?.episodeId"
+      :role-id="currentCharacterData?.roleId"
+      @success="handleCharacterEditSuccess"
+    />
+
     <!-- 场景上传输入框（隐藏） -->
     <input ref="sceneUploadInput" type="file" accept="image/*" style="display: none" @change="handleSceneFileChange" />
   </div>
@@ -179,6 +189,7 @@
 
 <script setup lang="ts">
   import { editSceneBasic, setSceneEnv } from '@/api/workbench/episode';
+  import type { CharacterClothingInfo } from '@/api/workbench/episode/types';
   import type { EpisodeInfo, LibrarySubInfo, Shot } from '@/api/workbench/project/types';
   import { uploadFile } from '@/utils/uploadFile';
   import { Edit, Loading } from '@element-plus/icons-vue';
@@ -188,6 +199,7 @@
   import ImageHistoryDialog from './ImageHistoryDialog.vue';
   import SceneImageCell from './SceneImageCell.vue';
   import SceneLibraryDialog from './SceneLibraryDialog.vue';
+  import SingleCharacterEditDialog from './SingleCharacterEditDialog.vue';
 
   interface Props {
     shots: Shot[];
@@ -231,6 +243,14 @@
   // 场景上传相关
   const sceneUploadInput = ref<HTMLInputElement>();
   const currentUploadShot = ref<Shot | null>(null);
+
+  // 单个角色编辑相关
+  const singleCharacterDialogVisible = ref(false);
+  const currentCharacterData = ref<{
+    basicId: number;
+    episodeId: number;
+    roleId: number;
+  } | null>(null);
 
   // 图片上传
   const handleImageUpload = (shot: Shot, file: File) => {
@@ -322,7 +342,7 @@
       await setSceneEnv({
         basicId: shot.basicId,
         envType: 1, // 场景库
-        envMaterialId: scene.libraryDetailId
+        envMaterialId: scene.materialVo.id
       });
 
       ElMessage.success('场景设置成功');
@@ -464,8 +484,6 @@
         shot.sceneDescription = `${sceneDesc}${sceneDesc && sceneHint ? '\n' : ''}${sceneHint}`;
       }
 
-      ElMessage.success('保存成功');
-
       // 清除编辑状态
       editingCell.value = null;
       editingValue.value = '';
@@ -530,6 +548,32 @@
     });
 
     return escapedText;
+  };
+
+  // 点击角色图片
+  const handleCharacterClick = (shot: Shot, character: CharacterClothingInfo) => {
+    if (!shot.episodeId || !shot.basicId) {
+      ElMessage.warning('缺少必要参数');
+      return;
+    }
+
+    if (!character.characterId && !character.roleId) {
+      ElMessage.warning('角色信息不完整');
+      return;
+    }
+
+    currentCharacterData.value = {
+      basicId: shot.basicId,
+      episodeId: Number(shot.episodeId),
+      roleId: character.roleId || character.characterId || 0
+    };
+    singleCharacterDialogVisible.value = true;
+  };
+
+  // 角色编辑成功
+  const handleCharacterEditSuccess = () => {
+    ElMessage.success('角色服装编辑成功');
+    emit('refresh');
   };
 
   // 暴露方法给父组件
@@ -649,6 +693,10 @@
           height: 40px;
           border-radius: 100%;
           cursor: pointer;
+
+          &.character-clickable {
+            transition: all 0.3s;
+          }
         }
       }
 

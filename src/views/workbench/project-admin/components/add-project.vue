@@ -42,18 +42,17 @@
 
             <!-- 已选成员标签列表 -->
             <div v-for="m in form.members" :key="m.userId" class="member-tag">
-              <div class="member-avatar" :style="{ backgroundColor: getRoleColor(m.roleKey) }">
-                {{ m.nickName?.charAt(0) || 'U' }}
-              </div>
-              <span class="member-name">{{ m.nickName }}</span>
-              <span
-                class="member-role"
+              <div
+                class="member-avatar"
                 :style="{
-                  borderColor: getRoleColor(m.roleKey) + '40',
-                  backgroundColor: getRoleColor(m.roleKey) + '15',
-                  color: getRoleColor(m.roleKey)
+                  background: getRoleBgColor(m.roleKey),
+                  color: getRoleTextColor(m.roleKey)
                 }"
               >
+                {{ getRoleShortName(m.roleKey) }}
+              </div>
+              <span class="member-name">{{ m.nickName }}</span>
+              <span class="member-role" :class="'role-' + (m.roleKey || '').toLowerCase()">
                 {{ getRoleName(m.roleKey) }}
               </span>
               <span class="member-close" @click="handleRemoveMember(m.userId)">
@@ -103,7 +102,7 @@
 <script setup lang="ts" name="AddProject">
   import type { ProjectCreateRequest, ProjectMember, TeamUserInfo } from '@/api/workbench/project/types';
   import { sizeToRatio } from '@/utils/projectUtils';
-  import { getRoleColor, getRoleName } from '@/utils/roleUtils';
+  import { getRoleBgColor, getRoleName, getRoleShortName, getRoleTextColor } from '@/utils/roleUtils';
   import { Close } from '@element-plus/icons-vue';
   import { type FormInstance, type FormRules } from 'element-plus';
   import { reactive, ref } from 'vue';
@@ -291,8 +290,8 @@
           align-items: center;
           width: 24px;
           height: 24px;
+          border: 1px solid var(--Borderl-border-2, #eee);
           border-radius: 50%;
-          color: white;
           font-size: 13px;
           font-weight: 600;
         }
@@ -316,6 +315,20 @@
           font-size: 12px;
           font-weight: 500;
           line-height: 20px;
+
+          // 导演角色样式
+          &.role-director {
+            border: 1px solid var(--primary-primary-2, #bfbafb);
+            background: var(--primary-primary-1, #f3f3ff);
+            color: var(--primary-primary-4, #5252ff);
+          }
+
+          // 专员角色样式
+          &.role-commissioner {
+            border: 1px solid #82baff;
+            background: #e7f2ff;
+            color: #4086ff;
+          }
         }
 
         .member-close {

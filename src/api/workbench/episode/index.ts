@@ -1,7 +1,7 @@
 import request from '@/utils/request';
 import { AxiosPromise } from 'axios';
 import { EpisodeCreateRequest, EpisodeTemplateUploadRequest, ShotForm } from '../project/types';
-import type { HivisionProjectEpisodeVo, CharacterMatchResponse, SceneEnvSetRequest } from './types';
+import type { CharacterMatchResponse, HivisionProjectEpisodeVo, SceneEnvSetRequest } from './types';
 
 /**
  * 查询剧集列表
@@ -137,6 +137,33 @@ export const editSceneBasic = (data: any): AxiosPromise<void> => {
 export const setSceneEnv = (data: SceneEnvSetRequest): AxiosPromise<void> => {
   return request({
     url: '/hivision/story/scene/env',
+    method: 'put',
+    data
+  });
+};
+
+/**
+ * 查询剧集角色列表
+ * @param params 查询参数
+ */
+export const queryEpisodeRole = (params: { episodeId?: number; projectId?: number }): AxiosPromise<any> => {
+  return request({
+    url: '/hivision/story/scene/query-episode-role',
+    method: 'get',
+    params
+  });
+};
+
+/**
+ * 编辑剧集角色
+ * @param data 编辑请求数据
+ */
+export const editEpisodeRole = (data: {
+  episodeId: number;
+  sceneRoles: Array<{ detailId: number; roleId: number }>;
+}): AxiosPromise<void> => {
+  return request({
+    url: '/hivision/story/scene/edit-episode-role',
     method: 'put',
     data
   });

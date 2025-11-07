@@ -12,10 +12,10 @@
 </template>
 
 <script setup name="AppMain" lang="ts">
-  import useTagsViewStore from '@/store/modules/tagsView';
   import useSettingsStore from '@/store/modules/settings';
-  import IframeToggle from './IframeToggle/index.vue';
+  import useTagsViewStore from '@/store/modules/tagsView';
   import { ComponentInternalInstance } from 'vue';
+  import IframeToggle from './IframeToggle/index.vue';
   const { proxy } = getCurrentInstance() as ComponentInternalInstance;
   const tagsViewStore = useTagsViewStore();
 
@@ -42,6 +42,7 @@
   .app-main {
     position: relative;
     width: 100%;
+    padding: 20px 20px 20px 0;
 
     /* 60 = navbar */
     min-height: calc(100vh - 60px);

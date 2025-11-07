@@ -11,7 +11,7 @@
       <div class="form-section">
         <div class="form-label">剧集名称</div>
         <el-form-item prop="episodeName">
-          <el-input v-model="form.episodeName" placeholder="请输入剧集名称" maxlength="50" show-word-limit />
+          <el-input v-model="form.episodeName" placeholder="请输入剧集名称" maxlength="10" show-word-limit />
         </el-form-item>
       </div>
 
@@ -46,35 +46,38 @@
               style="width: 100%"
               v-model="form.storyText"
               type="textarea"
-              placeholder="请输入剧情内容"
-              :rows="8"
+              placeholder="请输入剧情内容(不少于50字)"
+              :rows="15"
               maxlength="5000"
               resize="none"
               class="story-textarea"
+              @paste="handlePaste"
             />
             <div class="textarea-footer">
-              <!-- 左下角：模型选择 -->
-              <el-dropdown trigger="click" @command="handleModelChange">
-                <span class="model-selector">
-                  {{ currentModelName }}
-                </span>
-                <template #dropdown>
-                  <el-dropdown-menu>
-                    <el-dropdown-item
-                      v-for="model in modelOptions"
-                      :key="model.value"
-                      :command="model.value"
-                      :class="{ 'is-active': form.modelCode === model.value }"
-                    >
-                      <el-icon v-if="form.modelCode === model.value" class="check-icon"><Check /></el-icon>
-                      {{ model.label }}
-                    </el-dropdown-item>
-                  </el-dropdown-menu>
-                </template>
-              </el-dropdown>
+              <div class="footer-box">
+                <!-- 左下角：模型选择 -->
+                <el-dropdown trigger="click" @command="handleModelChange">
+                  <span class="model-selector">
+                    {{ currentModelName }}
+                  </span>
+                  <template #dropdown>
+                    <el-dropdown-menu>
+                      <el-dropdown-item
+                        v-for="model in modelOptions"
+                        :key="model.value"
+                        :command="model.value"
+                        :class="{ 'is-active': form.modelCode === model.value }"
+                      >
+                        <el-icon v-if="form.modelCode === model.value" class="check-icon"><Check /></el-icon>
+                        {{ model.label }}
+                      </el-dropdown-item>
+                    </el-dropdown-menu>
+                  </template>
+                </el-dropdown>
 
-              <!-- 右下角：字数统计 -->
-              <div class="char-count">{{ form.storyText.length }}/5000</div>
+                <!-- 右下角：字数统计 -->
+                <div class="char-count">{{ form.storyText.length }}/5000</div>
+              </div>
             </div>
           </div>
 
@@ -84,7 +87,7 @@
             ref="uploadRef"
             :auto-upload="false"
             :limit="1"
-            accept=".doc,.docx,.xls,.xlsx"
+            accept=".xls,.xlsx"
             :on-change="handleFileChange"
             :on-remove="handleFileRemove"
             :file-list="fileList"
@@ -92,9 +95,9 @@
             class="upload-area"
           >
             <div class="upload-content">
-              <el-icon class="upload-icon"><UploadFilled /></el-icon>
+              <svg-icon icon-class="fy-el-upload" style="width: 48px; height: 44px" />
               <div class="upload-text">将文件拖到此处，或<span class="upload-link">点击上传</span></div>
-              <div class="upload-tip">您可以上传剧本的，支持：excel格式</div>
+              <div class="upload-tip">您可以上传制作好的剧本，支持：excel格式</div>
             </div>
           </el-upload>
         </el-form-item>
@@ -103,8 +106,7 @@
 
     <template #footer>
       <div class="dialog-footer">
-        <el-button @click="handleCancel">取消</el-button>
-        <el-button type="primary" :loading="loading" @click="handleSubmit">
+        <el-button class="gen-btn" :loading="loading" @click="handleSubmit">
           <el-icon v-if="!loading"><MagicStick /></el-icon>
           {{ loading ? '生成中...' : '立即生成' }}
         </el-button>
@@ -118,9 +120,9 @@
   import type { EpisodeCreateRequest } from '@/api/workbench/project/types';
   import { useProjectStore } from '@/store/modules/project';
   import { convertModelsToOptions, getDefaultModel, getModelName } from '@/utils/projectUtils';
-  import { ArrowDown, Check, MagicStick, UploadFilled } from '@element-plus/icons-vue';
+  import { ArrowDown, Check, MagicStick } from '@element-plus/icons-vue';
   import type { FormInstance, FormRules, UploadFile } from 'element-plus';
-  import { ElMessage } from 'element-plus';
+  import { ElMessage, ElMessageBox } from 'element-plus';
   import { computed, ref, watch } from 'vue';
 
   interface Props {
@@ -182,8 +184,15 @@
       {
         required: true,
         validator: (_rule, _value, callback) => {
-          if (inputMode.value === 'text' && !form.value.storyText.trim()) {
-            callback(new Error('请输入剧情内容'));
+          if (inputMode.value === 'text') {
+            const text = form.value.storyText.trim();
+            if (!text) {
+              callback(new Error('请输入剧情内容'));
+            } else if (text.length < 50) {
+              callback(new Error('剧情内容不少于50字'));
+            } else {
+              callback();
+            }
           } else if (inputMode.value === 'upload' && !uploadedFile.value) {
             callback(new Error('请上传剧本文件'));
           } else {
@@ -260,6 +269,24 @@
     uploadedFile.value = undefined;
   };
 
+  // 处理粘贴事件
+  const handlePaste = (event: ClipboardEvent) => {
+    // 获取粘贴的文本
+    const pastedText = event.clipboardData?.getData('text') || '';
+
+    // 计算粘贴后的总长度
+    const currentLength = form.value.storyText.length;
+    const totalLength = currentLength + pastedText.length;
+
+    // 如果超过5000字，提示用户
+    if (totalLength > 5000) {
+      ElMessageBox.alert('剧本字数超出最大限制', '提示', {
+        confirmButtonText: '确认',
+        type: 'info'
+      });
+    }
+  };
+
   // 提交表单
   const handleSubmit = async () => {
     if (!formRef.value) return;
@@ -268,11 +295,20 @@
       if (!valid) return;
 
       // 验证剧情内容
-      if (inputMode.value === 'text' && !form.value.storyText.trim()) {
-        return;
+      if (inputMode.value === 'text') {
+        const text = form.value.storyText.trim();
+        if (!text) {
+          ElMessage.warning('请输入剧情内容');
+          return;
+        }
+        if (text.length < 50) {
+          ElMessage.warning('剧情内容不少于50字');
+          return;
+        }
       }
 
       if (inputMode.value === 'upload' && !uploadedFile.value) {
+        ElMessage.warning('请上传剧本文件');
         return;
       }
 
@@ -287,7 +323,6 @@
             storyText: form.value.storyText,
             modelCode: form.value.modelCode
           });
-          ElMessage.success('剧集创建成功');
         } else {
           // 上传拆分剧本模式：调用 /hivision/story/episode/template/upload
           if (!uploadedFile.value) {
@@ -336,10 +371,11 @@
   }
 
   .form-label {
-    margin-bottom: 12px;
     color: #1d2129;
     font-size: 14px;
     font-weight: 500;
+    height: 32px;
+    line-height: 32px;
   }
 
   .form-label-row {
@@ -351,25 +387,35 @@
 
   // 模式选择器
   .mode-selector {
-    display: inline-flex;
+    display: flex;
+    height: 32px;
+    width: 146px;
+    padding: 0 12px;
+    justify-content: space-between;
     align-items: center;
-    gap: 4px;
-    padding: 4px 8px;
-    border-radius: 4px;
-    color: #5252ff;
-    font-size: 14px;
+    border-radius: 8px;
+    border: 1px solid rgba(0, 0, 0, 0);
+    background: #f7f8fa;
+    color: #1d2129;
+
+    font-size: 12px;
     cursor: pointer;
     transition: all 0.3s;
+    border: 1px solid transparent;
 
     &:hover {
       background: #f5f5ff;
+      color: #5252ff;
+      border-color: #d6d7ff;
     }
 
     .el-icon {
       font-size: 12px;
     }
   }
-
+  :deep(.el-input .el-input__count .el-input__count-inner) {
+    background: #f7f8fa;
+  }
   // 文本输入区域
   .text-input-wrapper {
     position: relative;
@@ -377,41 +423,68 @@
 
     .story-textarea {
       :deep(.el-textarea__inner) {
-        padding-bottom: 40px;
+        padding-bottom: 48px;
+        background: #f7f8fa;
+        border: 1px solid #e5e6eb;
+        border-radius: 8px;
+        line-height: 1.6;
       }
     }
 
     .textarea-footer {
       position: absolute;
-      bottom: 8px;
+      bottom: 1.5px;
       left: 0;
       right: 0;
       z-index: 1;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 0 12px;
+
+      padding: 0 2px;
+      pointer-events: none;
+      // height: 100px !important;
+      border-radius: 8px;
+      // background: pink;
+
+      .footer-box {
+        border-radius: 8px;
+        background: #f7f8fa;
+        width: 99%;
+        height: 60px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+
+      > * {
+        pointer-events: auto;
+      }
     }
 
     .model-selector {
       display: inline-flex;
       align-items: center;
-      padding: 4px 8px;
-      border-radius: 4px;
-      color: #86909c;
+      height: 32px;
+      padding: 2px 12px;
+      border-radius: 8px;
+      background: #fff;
+      color: #1d2129;
       font-size: 12px;
       cursor: pointer;
       transition: all 0.3s;
+      // border: 1px solid #e5e6eb;
 
       &:hover {
-        background: #f7f8fa;
+        background: #fff;
         color: #5252ff;
+        border-color: #5252ff;
       }
     }
 
     .char-count {
       color: #86909c;
       font-size: 12px;
+      background: #f7f8fa;
+      padding: 4px 8px;
+      border-radius: 4px;
     }
   }
 
@@ -446,9 +519,9 @@
     }
 
     .upload-text {
-      margin-bottom: 8px;
-      color: #4e5969;
+      color: #1d2129;
       font-size: 14px;
+      font-weight: 500;
 
       .upload-link {
         color: #5252ff;
@@ -465,18 +538,46 @@
   // 对话框底部
   .dialog-footer {
     display: flex;
-    justify-content: flex-end;
-    gap: 12px;
+    justify-content: center;
+    .gen-btn {
+      display: flex;
+      width: 400px;
+      height: 42px;
+      padding: 9px 0;
+      justify-content: center;
+      align-items: center;
+      border-radius: 8px;
+      background: linear-gradient(0deg, #6157ff 0%, #be75fe 100%);
+      color: #fff;
+      font-size: 13px;
+      margin-bottom: 20px;
+    }
   }
 
   // 下拉菜单样式
+  :deep(.el-dropdown-menu) {
+    width: 146px;
+    height: 32px;
+    border-radius: 8px;
+    border: 1px solid rgba(0, 0, 0, 0);
+    background: #f7f8fa;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+  }
+
   :deep(.el-dropdown-menu__item) {
     position: relative;
     padding-left: 32px;
+    border-radius: 4px;
+    margin: 4px 8px;
 
     &.is-active {
       color: #5252ff;
       background-color: #f5f5ff;
+      font-weight: 500;
+    }
+
+    &:hover {
+      background-color: #f7f8fa;
     }
 
     .check-icon {
@@ -498,13 +599,8 @@
     }
   }
 
-  // 输入框样式
-  :deep(.el-input__inner) {
-    border-radius: 4px;
-  }
-
   :deep(.el-textarea__inner) {
-    border-radius: 4px;
+    border-radius: 8px;
     font-family: inherit;
   }
 

@@ -197,7 +197,6 @@
       }
     } catch (error) {
       console.error('创建项目失败:', error);
-      ElMessage.error('创建项目失败，请稍后重试');
     }
   };
 
@@ -248,16 +247,12 @@
   // ------- 删除项目 --------
   const handleDelete = async (project: Project) => {
     try {
-      await ElMessageBox.confirm(
-        `确定要删除项目 "${project.projectName}" 吗？此操作不可恢复。`,
-        '删除项目',
-        {
-          confirmButtonText: '确定',
-          cancelButtonText: '取消',
-          type: 'warning',
-          confirmButtonClass: 'el-button--danger'
-        }
-      );
+      await ElMessageBox.confirm(`确定要删除项目 "${project.projectName}" 吗？此操作不可恢复。`, '删除项目', {
+        confirmButtonText: '确定',
+        cancelButtonText: '取消',
+        type: 'warning',
+        confirmButtonClass: 'el-button--danger'
+      });
 
       await delProject(project.projectId);
 
@@ -287,7 +282,7 @@
     box-sizing: border-box;
     width: 100%;
     height: calc(100vh - 60px); // 减去navbar高度
-    padding: 24px;
+    // padding: 24px;
     overflow: hidden; // 防止整体滚动
     background: transparent; // 背景透明
   }

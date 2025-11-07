@@ -3,7 +3,7 @@
     <div class="content-header">
       <el-input
         v-model="searchKeyword"
-        placeholder="搜索成员昵称..."
+        placeholder="搜索成员名称或部门"
         clearable
         prefix-icon="Search"
         size="default"
@@ -15,8 +15,14 @@
     <div v-loading="loading" class="user-list" @scroll="handleScroll">
       <div v-for="u in userList" :key="u.userId" class="user-item">
         <div class="user-info">
-          <div class="user-avatar" :style="{ backgroundColor: getAvatarColor(u.nickName) }">
-            {{ u.nickName?.charAt(0) || 'U' }}
+          <div
+            class="user-avatar"
+            :style="{
+              background: getUserAvatarBg(u),
+              color: getUserAvatarColor(u)
+            }"
+          >
+            {{ getUserAvatarText(u) }}
           </div>
           <div class="user-details">
             <span class="user-name">{{ u.nickName }}</span>
@@ -28,8 +34,8 @@
             v-for="roleInfo in roles"
             :key="roleInfo.roleId"
             size="small"
-            :class="u.userId && getMemberRoleId(u.userId) === roleInfo.roleId ? getRoleClass(roleInfo.roleKey) : ''"
-            :plain="!u.userId || getMemberRoleId(u.userId) !== roleInfo.roleId"
+            :class="getUserRoleId(u) === roleInfo.roleId ? getRoleClass(roleInfo.roleKey) : ''"
+            :plain="getUserRoleId(u) !== roleInfo.roleId"
             @click="handleRoleSelect(u, roleInfo)"
           >
             {{ roleInfo.roleName }}
@@ -58,6 +64,7 @@
   import { listProjectUsers } from '@/api/workbench/project';
   import type { ProjectMember, ProjectUserPageInfo } from '@/api/workbench/project/types';
   import { useProjectStore } from '@/store/modules/project';
+  import { getRoleBgColor, getRoleShortName, getRoleTextColor } from '@/utils/roleUtils';
   import { Loading, User as UserIcon } from '@element-plus/icons-vue';
   import { ElMessage } from 'element-plus';
   import { onMounted, ref } from 'vue';
@@ -157,30 +164,60 @@
     }
   };
 
-  // 生成头像颜色
-  const avatarColors = ['#f56a00', '#7265e6', '#ffbf00', '#00a2ae', '#1890ff', '#52c41a', '#eb2f96', '#fa8c16'];
-
-  const getAvatarColor = (name?: string): string => {
-    if (!name) return avatarColors[0];
-    const index = name.charCodeAt(0) % avatarColors.length;
-    return avatarColors[index];
-  };
-
   // 获取成员的角色和memberId（用于高亮显示和API调用）
   const getMemberInfo = (userId: number) => {
     // 编辑模式：从项目详情中获取团队成员信息
     if (props.projectId) {
-      const teamMember = projectStore.teamUserInfoList?.find((m: any) => m.userId === userId);
+      // 优先使用 memberUserId（新字段）
+      const teamMember = projectStore.teamUserInfoList?.find((m: any) => m.memberUserId === userId);
       return teamMember;
     }
+
     // 新建模式：从 selectedMembers 中获取
     return props.selectedMembers?.find((m) => m.userId === userId);
   };
 
-  // 获取成员的 roleId（用于高亮显示）
+  // 获取成员的 roleId（用于高亮显示按钮）
   const getMemberRoleId = (userId: number): number | string | null => {
     const memberInfo = getMemberInfo(userId);
     return memberInfo?.roleId || null;
+  };
+
+  // 获取用户的实际 roleId（包含接口返回的角色）
+  const getUserRoleId = (user: ProjectUserPageInfo): number | string | null => {
+    if (!user.userId) return null;
+    // 优先使用 getMemberRoleId（项目成员列表），其次使用 user.roleId（用户列表返回的角色）
+    return getMemberRoleId(user.userId) || user.roleId || null;
+  };
+
+  // 获取成员的 roleKey（用于头像显示）
+  const getMemberRoleKey = (userId: number): string | null => {
+    const memberInfo = getMemberInfo(userId);
+    return memberInfo?.roleKey || null;
+  };
+
+  // 获取用户头像背景颜色
+  const getUserAvatarBg = (user: ProjectUserPageInfo): string => {
+    if (!user.userId) return '#F7F8FA';
+    // 优先使用 getMemberRoleKey（项目成员列表），其次使用 user.roleKey（用户列表返回的角色）
+    const roleKey = getMemberRoleKey(user.userId) || user.roleKey;
+    return roleKey ? getRoleBgColor(roleKey) : '#F7F8FA';
+  };
+
+  // 获取用户头像文字颜色
+  const getUserAvatarColor = (user: ProjectUserPageInfo): string => {
+    if (!user.userId) return '#4E5969';
+    // 优先使用 getMemberRoleKey（项目成员列表），其次使用 user.roleKey（用户列表返回的角色）
+    const roleKey = getMemberRoleKey(user.userId) || user.roleKey;
+    return roleKey ? getRoleTextColor(roleKey) : '#4E5969';
+  };
+
+  // 获取用户头像文字内容
+  const getUserAvatarText = (user: ProjectUserPageInfo): string => {
+    if (!user.userId) return user.nickName?.charAt(0) || 'U';
+    // 优先使用 getMemberRoleKey（项目成员列表），其次使用 user.roleKey（用户列表返回的角色）
+    const roleKey = getMemberRoleKey(user.userId) || user.roleKey;
+    return roleKey ? getRoleShortName(roleKey) : user.nickName?.charAt(0) || 'U';
   };
 
   // 选择角色
@@ -190,37 +227,45 @@
       return;
     }
 
-    // 判断是否为新建项目模式（没有 projectId）
-    if (!props.projectId) {
-      // 新建模式：通过 emit 事件通知父组件，不调用 API
+    const memberInfo = getMemberInfo(user.userId);
+
+    // 判断是否是真正的编辑模式（有 projectId）
+    const isRealEditMode = props.projectId !== undefined;
+
+    if (!isRealEditMode) {
+      // 新建模式或项目创建流程中：通过 emit 事件通知父组件，不调用 API
       handleRoleSelectLocal(user, roleInfo);
       return;
     }
 
-    // 编辑模式：调用 API 进行实际操作
+    // 真正的编辑模式：调用 API 进行实际操作
     try {
-      const memberInfo = getMemberInfo(user.userId);
+      // 情况1：用户不存在于团队中 - 调用新增接口
+      if (!memberInfo || !(memberInfo as any).memberId) {
+        console.log('memberInfo', memberInfo);
 
-      if (memberInfo) {
-        // 已存在：判断是删除还是修改
-        if (memberInfo.roleId === roleInfo.roleId) {
-          // 点击相同角色，执行删除操作
-          // 编辑模式下，memberInfo 是 TeamUserDetail 类型，有 memberId 属性
-          const memberId = (memberInfo as any).memberId;
-          if (memberId) {
-            await handleDeleteMember(memberId);
-          }
-        } else {
-          // 点击不同角色，执行修改操作
-          const memberId = (memberInfo as any).memberId;
-          if (memberId && roleInfo.roleId) {
-            await handleEditMember(memberId, roleInfo.roleId);
-          }
+        await handleAddMember(user.userId, roleInfo.roleId);
+        return;
+      }
+
+      // 情况2：用户已存在
+      const memberId = (memberInfo as any).memberId;
+      const isSameRole = memberInfo.roleId === roleInfo.roleId;
+
+      if (isSameRole) {
+        // 点击相同角色
+        // 如果是导演角色（DIRECTOR），不做任何操作
+        if (roleInfo.roleKey === 'DIRECTOR') {
+          return;
+        }
+        // 如果是专员或其他角色，执行删除操作
+        if (memberId) {
+          await handleDeleteMember(memberId);
         }
       } else {
-        // 不存在：执行新增操作
-        if (roleInfo.roleId) {
-          await handleAddMember(user.userId, roleInfo.roleId);
+        // 点击不同角色，执行修改操作
+        if (memberId && roleInfo.roleId) {
+          await handleEditMember(memberId, roleInfo.roleId);
         }
       }
     } catch (error) {

@@ -15,16 +15,12 @@
 </template>
 
 <script setup lang="ts" name="StepGridView">
-  import { getEpisodeImgSceneList, listEpisodes } from '@/api/workbench/episode';
-  import type {
-    EpisodeInfoResponseDto,
-    EpisodeSceneItemInfo,
-    HivisionProjectEpisodeVo
-  } from '@/api/workbench/episode/types';
+  import { getEpisodeImgSceneList } from '@/api/workbench/episode';
+  import type { EpisodeInfoResponseDto, EpisodeSceneItemInfo } from '@/api/workbench/episode/types';
   import type { Shot } from '@/api/workbench/project/types';
   import { useProjectStore } from '@/store/modules/project';
   import { ElMessage, ElMessageBox } from 'element-plus';
-  import { onMounted, ref, watch } from 'vue';
+  import { ref, watch } from 'vue';
 
   // 导入组件
   import GridView from './components/GridView.vue';
@@ -40,12 +36,6 @@
   // 加载状态
   const loading = ref(false);
 
-  // 初始化
-  onMounted(async () => {
-    // 加载剧集列表
-    await loadEpisodeList();
-  });
-
   // 监听剧集变化
   watch(
     () => projectStore.currentEpisodeId,
@@ -57,21 +47,15 @@
     }
   );
 
-  // 加载剧集列表
+  // 初始化剧集数据（直接使用 store 中的数据）
   const loadEpisodeList = async () => {
-    if (!projectStore.currentProjectId) return;
-
-    try {
-      const res = await listEpisodes(Number(projectStore.currentProjectId));
-      const episodeList: HivisionProjectEpisodeVo[] = res.data || [];
-
-      if (episodeList.length > 0) {
-        const targetEpisodeId = projectStore.currentEpisodeId || episodeList[0].id;
-        selectedEpisodeId.value = targetEpisodeId || '';
-        await loadShots();
-      }
-    } catch (error) {
-      console.error('加载剧集列表失败:', error);
+    // 直接使用 projectStore 中已加载的数据
+    if (projectStore.currentEpisodeId) {
+      selectedEpisodeId.value = projectStore.currentEpisodeId;
+      await loadShots();
+    } else if (projectStore.episodes.length > 0) {
+      selectedEpisodeId.value = projectStore.episodes[0].id;
+      await loadShots();
     }
   };
 

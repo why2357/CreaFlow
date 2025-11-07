@@ -23,7 +23,7 @@
     }
   });
 
-  const title = ref('FCLOUDVISION');
+  const title = ref('CREAFLOW');
 </script>
 
 <style lang="scss" scoped>

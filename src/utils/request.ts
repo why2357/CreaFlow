@@ -1,15 +1,15 @@
-import axios, { AxiosResponse, InternalAxiosRequestConfig } from 'axios';
+import { HttpStatus } from '@/enums/RespEnum';
+import { getLanguage } from '@/lang';
+import cache from '@/plugins/cache';
 import { useUserStore } from '@/store/modules/user';
 import { getToken } from '@/utils/auth';
-import { tansParams, blobValidate } from '@/utils/sskj';
-import cache from '@/plugins/cache';
-import { HttpStatus } from '@/enums/RespEnum';
+import { decryptBase64, decryptWithAes, encryptBase64, encryptWithAes, generateAesKey } from '@/utils/crypto';
 import { errorCode } from '@/utils/errorCode';
+import { decrypt, encrypt } from '@/utils/jsencrypt';
+import { blobValidate, tansParams } from '@/utils/sskj';
+import axios, { AxiosResponse, InternalAxiosRequestConfig } from 'axios';
 import { LoadingInstance } from 'element-plus/es/components/loading/src/loading';
 import FileSaver from 'file-saver';
-import { getLanguage } from '@/lang';
-import { encryptBase64, encryptWithAes, generateAesKey, decryptWithAes, decryptBase64 } from '@/utils/crypto';
-import { encrypt, decrypt } from '@/utils/jsencrypt';
 
 const encryptHeader = 'encrypt-key';
 let downloadLoadingInstance: LoadingInstance;
@@ -137,6 +137,11 @@ service.interceptors.response.use(
             });
         }).catch(() => {
           isRelogin.show = false;
+          // 用户点击取消时，也需要退出登录并跳转到登录页
+          // 因为会话已过期，继续停留在页面上无法进行任何操作
+          useUserStore().logout().then(() => {
+              location.href = import.meta.env.VITE_APP_CONTEXT_PATH + 'index';
+            });
         });
       }
       return Promise.reject('无效的会话，或者会话已过期，请重新登录。');

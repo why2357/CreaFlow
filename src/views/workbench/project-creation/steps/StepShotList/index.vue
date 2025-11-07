@@ -71,6 +71,14 @@
       :next-episode-number="projectStore.episodes.length + 1"
       @success="handleAddEpisodeSuccess"
     />
+
+    <!-- 角色编辑对话框 -->
+    <CharacterEditDialog
+      v-model="characterEditDialogVisible"
+      :episode-id="Number(selectedEpisodeId)"
+      :project-id="Number(projectStore.currentProjectId)"
+      @success="handleCharacterEditSuccess"
+    />
   </div>
 </template>
 
@@ -93,6 +101,7 @@
   // 导入组件
   import AddEpisodeDialog from '../../components/AddEpisodeDialog.vue';
   import EpisodeListPanel from '../StepScript/components/EpisodeListPanel.vue';
+  import CharacterEditDialog from './components/CharacterEditDialog.vue';
   import StoryboardTable from './components/StoryboardTable.vue';
 
   const projectStore = useProjectStore();
@@ -128,6 +137,9 @@
 
   // 新增剧集对话框
   const addEpisodeDialogVisible = ref(false);
+
+  // 角色编辑对话框
+  const characterEditDialogVisible = ref(false);
 
   // 初始化
   onMounted(async () => {
@@ -263,7 +275,18 @@
 
   // 角色编辑
   const handleEditCharacters = () => {
-    ElMessage.info('角色编辑功能开发中...');
+    if (!selectedEpisodeId.value) {
+      ElMessage.warning('请先选择剧集');
+      return;
+    }
+    characterEditDialogVisible.value = true;
+  };
+
+  // 角色编辑成功回调
+  const handleCharacterEditSuccess = async () => {
+    ElMessage.success('角色编辑成功');
+    // 重新加载分镜列表以显示更新后的数据
+    await loadShots();
   };
 
   // 重新匹配角色

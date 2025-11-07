@@ -36,6 +36,10 @@ export interface ProjectUserPageInfo {
   nickName?: string;
   /** 团队角色id */
   teamRoleId?: number;
+  /** 角色id */
+  roleId?: number;
+  /** 角色码 */
+  roleKey?: string;
   /** 用户id */
   userId?: number;
 }
@@ -200,6 +204,7 @@ export interface EpisodeInfo {
   episodePercent?: string; // 单剧集进度百分比
   episodeName?: string; // 剧集名称
   storyText?: string; // 剧集文本
+  modelCode?: string; // 模型码
   userProcessInfoList?: UserProcessInfo[]; // 剧集成员进度信息
   projectProcessInfo?: ProjectProcessInfo; // 剧集项目进度
 }
@@ -212,7 +217,6 @@ export interface AiModelInfoDto {
   modelCode?: string;
   /** 模型名称 */
   modelName?: string;
-  [property: string]: any;
 }
 
 /**
@@ -480,6 +484,9 @@ export interface LibrarySubInfo {
   ossId?: number; // 图片 ossid
   ossUrl?: string; // 图片 url
   episodeList?: EpisodeInfo[]; // 剧集标签
+  materialVo: {
+    id: number;
+  };
 }
 
 /**
@@ -490,6 +497,7 @@ export interface LibraryItemInfo {
   name?: string; // 角色或场景名称
   librarySubInfoList?: LibrarySubInfo[]; // 角色或场景子项列表
   episodeList?: EpisodeInfo[]; // 剧集关联信息
+  totalImageCount?: number; // 该角色/场景在所有剧集中的总图片数
 }
 
 /**

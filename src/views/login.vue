@@ -5,7 +5,7 @@
         <div class="logo-icon">
           <img class="icon" src="../assets/images/logo.png" alt="Logo" />
         </div>
-        <div class="logo-text">FCLOUDVISION</div>
+        <div class="logo-text">CREAFLOW</div>
       </div>
       <div class="subtitle-container"></div>
     </div>
@@ -30,7 +30,7 @@
             class="login-form"
             label-position="top"
           >
-            <el-form-item prop="phoneNumber" label="手机">
+            <el-form-item style="margin-bottom: 20px" prop="phoneNumber" label="手机">
               <el-input
                 v-model="loginForm.phoneNumber"
                 type="text"
@@ -46,7 +46,7 @@
               </el-input>
             </el-form-item>
 
-            <el-form-item prop="smsCode" label="验证码">
+            <el-form-item style="margin-bottom: 32px" prop="smsCode" label="验证码">
               <el-input
                 v-model="loginForm.smsCode"
                 size="large"
@@ -103,14 +103,21 @@
               <span>微信扫码登录</span>
             </div>
           </div>
-
-          <div v-if="loginType === 'sms'" style="width: 86%; font-size: 13px; margin-top: 20px">
+          <div class="switch-login-tip">
+            <span style="color: #333">您可以切换使用 </span>
+            <span @click="handleTabChange(loginType === 'sms' ? 'qrcode' : 'sms')" class="link-text">
+              {{ loginType === 'sms' ? '扫码登录' : '验证码登录' }}
+            </span>
+          </div>
+          <div v-if="loginType === 'sms'" style="width: 86%; font-size: 13px; color: #333">
             <el-checkbox v-model="privacyChecked" style="margin-right: 5px; transform: translate(0, 3px)" />
-            <span style="color: #666">我已阅读并同意网站的</span>
+            <span style="color: #333">我已阅读并同意网站的</span>
             <span @click="openPrivacyDoc('service')" class="link-text"> 服务协议 </span>
-            <span style="color: #666">和</span>
+            <span style="color: #333">和</span>
             <span @click="openPrivacyDoc('privacy')" class="link-text"> 隐私政策 </span>
           </div>
+
+          <!-- 切换登录方式提示 -->
         </div>
       </div>
     </div>
@@ -276,7 +283,6 @@
       const [err, res] = await to(generateQrcodeKey());
 
       if (err || !res || res.code !== 200) {
-        ElMessage.error('生成二维码失败');
         qrcodeLoading.value = false;
         return;
       }
@@ -309,7 +315,6 @@
       }, expireTime);
     } catch (error) {
       console.error('生成二维码失败:', error);
-      ElMessage.error('生成二维码失败');
     } finally {
       qrcodeLoading.value = false;
     }
@@ -384,7 +389,6 @@
       await router.push({ path: '/' });
     } catch (error) {
       console.error('登录失败:', error);
-      ElMessage.error('登录失败');
     }
   };
 
@@ -409,7 +413,6 @@
       );
 
       if (err || !res) {
-        ElMessage.error('发送验证码失败');
         return;
       }
 
@@ -421,7 +424,6 @@
       }
     } catch (error) {
       console.error('发送验证码失败:', error);
-      ElMessage.error('发送验证码失败');
     }
   };
 
@@ -446,7 +448,6 @@
       );
 
       if (err || !res) {
-        ElMessage.error('发送验证码失败');
         return;
       }
 
@@ -458,7 +459,6 @@
       }
     } catch (error) {
       console.error('发送验证码失败:', error);
-      ElMessage.error('发送验证码失败');
     }
   };
 
@@ -557,7 +557,6 @@
       const [err] = await to(userStore.login(loginParams));
 
       if (err) {
-        ElMessage.error('登录失败，请检查您的账号信息');
         loading.value = false;
         return;
       }
@@ -570,7 +569,6 @@
       await router.push({ path: '/' });
     } catch (error) {
       console.error('登录失败:', error);
-      ElMessage.error('登录失败');
     } finally {
       loading.value = false;
     }
@@ -597,7 +595,6 @@
       );
 
       if (err || !res || res.code !== 200) {
-        ElMessage.error('绑定手机号失败');
         bindLoading.value = false;
         return;
       }
@@ -618,7 +615,6 @@
       };
     } catch (error) {
       console.error('绑定手机号失败:', error);
-      ElMessage.error('绑定手机号失败');
     } finally {
       bindLoading.value = false;
     }
@@ -683,6 +679,9 @@
 </script>
 
 <style scoped lang="scss">
+  :deep(.el-form-item--default) {
+    margin-bottom: 12px;
+  }
   .login-container {
     display: flex;
     width: 100%;
@@ -737,7 +736,7 @@
       justify-content: center;
       align-items: center;
       /* 在1280px屏幕上为400px，使用calc实现比例自适应 */
-      width: calc(100vw * 400 / 1280);
+      width: 37.5%;
       min-width: 400px;
       max-width: 600px;
       background: white;
@@ -745,18 +744,16 @@
 
       .single-acct-login-box {
         width: 90%;
-        max-width: 400px;
         padding: 20px;
-        position: relative;
-        top: -100px;
 
         .tab-box {
           display: flex;
           align-items: center;
+          justify-content: center;
           margin-bottom: 50px;
+          width: 100%;
 
           .tab-box-item {
-            flex: 1;
             padding: 12px 24px;
             color: #4e5969;
             font-size: 20px;
@@ -791,6 +788,10 @@
         }
 
         .loginContent {
+          min-height: 420px;
+          display: flex;
+          flex-direction: column;
+
           .login-form {
             :deep(.el-form-item__label) {
               color: #333;
@@ -832,10 +833,6 @@
                 border-radius: 4px;
                 border: 1px solid #eee;
                 background: #fff;
-
-                // &:hover {
-                //   background: #e0e4ff;
-                // }
               }
 
               .code-send {
@@ -908,24 +905,143 @@
             color: #5252ff;
             cursor: pointer;
           }
+
+          .switch-login-tip {
+            font-size: 13px;
+
+            .link-text {
+              color: #5252ff;
+              font-weight: 500;
+              transition: all 0.3s;
+            }
+          }
         }
       }
     }
   }
 
-  // // 响应式设计
-  // @media (max-width: 768px) {
-  //   .login-container {
-  //     .left-box {
-  //       display: none;
-  //     }
+  @media (max-width: 1024px) {
+    .login-container {
+      .right-box {
+        .single-acct-login-box {
+          .tab-box {
+            margin-bottom: 40px;
 
-  //     .right-box {
-  //       width: 100%;
-  //       max-width: 100%;
-  //     }
-  //   }
-  // }
+            .tab-box-item {
+              font-size: 18px;
+
+              &.active {
+                font-size: 22px;
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+
+  @media (max-width: 768px) {
+    .login-container {
+      .left-box {
+        display: none;
+      }
+
+      .right-box {
+        width: 100%;
+        max-width: 100%;
+
+        .single-acct-login-box {
+          width: 85%;
+          top: -50px;
+
+          .tab-box {
+            margin-bottom: 30px;
+          }
+
+          .loginContent {
+            min-height: 380px;
+
+            .qrcode-login {
+              padding: 30px 20px;
+
+              .qrcode-container {
+                width: 200px;
+                height: 200px;
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+
+  @media (max-width: 480px) {
+    .login-container {
+      .right-box {
+        .single-acct-login-box {
+          width: 90%;
+          padding: 15px;
+          top: -30px;
+
+          .tab-box {
+            margin-bottom: 25px;
+
+            .tab-box-item {
+              font-size: 16px;
+
+              &.active {
+                font-size: 20px;
+
+                &::after {
+                  width: 60px;
+                  height: 3px;
+                }
+              }
+            }
+          }
+
+          .loginContent {
+            min-height: 350px;
+
+            .login-form {
+              :deep(.el-form-item__label) {
+                font-size: 14px;
+              }
+
+              :deep(.el-button--large) {
+                font-size: 15px;
+              }
+
+              .phone-code {
+                width: 85px;
+
+                .code-get,
+                .code-send {
+                  height: 38px;
+                  line-height: 38px;
+                  font-size: 13px;
+                }
+              }
+            }
+
+            .qrcode-login {
+              padding: 20px 15px;
+
+              .qrcode-container {
+                width: 180px;
+                height: 180px;
+                margin-bottom: 15px;
+              }
+
+              .qrcode-tip {
+                font-size: 13px;
+              }
+            }
+          }
+        }
+      }
+    }
+  }
 
   // 绑定手机号弹窗样式
   :deep(.el-dialog) {

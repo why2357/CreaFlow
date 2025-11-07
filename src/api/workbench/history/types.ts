@@ -22,7 +22,6 @@ export interface AssetListRequest {
    * 镜头类型 1-图片 2-视频
    */
   sceneType: number;
-  [property: string]: any;
 }
 
 /**
@@ -78,5 +77,4 @@ export interface ProjectHistoryDetailVo {
    * 用户id
    */
   userId?: number;
-  [property: string]: any;
 }

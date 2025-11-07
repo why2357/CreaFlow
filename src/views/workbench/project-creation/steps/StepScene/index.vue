@@ -3,27 +3,16 @@
     <!-- 顶部操作栏 -->
     <div class="scene-header">
       <!-- 左侧剧集筛选 -->
-      <div class="episode-filter">
-        <el-scrollbar>
-          <div class="filter-tabs">
-            <div class="filter-tab" :class="{ active: selectedEpisodeId === null }" @click="handleEpisodeFilter(null)">
-              全部
-            </div>
-            <div
-              v-for="episode in episodeList"
-              :key="episode.episodeId"
-              class="filter-tab"
-              :class="{ active: selectedEpisodeId === episode.episodeId }"
-              @click="handleEpisodeFilter(episode.episodeId!)"
-            >
-              {{ episode.episodeName }}
-            </div>
-          </div>
-        </el-scrollbar>
-      </div>
+      <HorizontalScrollTabs
+        v-model="selectedEpisodeId"
+        :items="episodeList"
+        item-key="episodeId"
+        item-label="episodeName"
+        @change="handleEpisodeFilter"
+      />
 
       <!-- 右侧新增按钮 -->
-      <el-button class="add-rigtop" type="primary" @click="handleAddSceneGroup" v-if="libraryList.length !== 0">
+      <el-button class="add-rigtop" type="primary" @click="handleAddSceneGroup" v-show="libraryList.length !== 0">
         <el-icon style="margin-right: 6px"><Plus /></el-icon>
         新增场景
       </el-button>
@@ -47,7 +36,9 @@
           <!-- 场景组标题 -->
           <div class="group-header">
             <div class="group-title">
-              <span class="group-name">{{ library.name }}</span>
+              <el-tooltip :content="library.name" placement="top" :disabled="!isGroupNameOverflow(library.name)">
+                <span class="group-name">{{ library.name }}</span>
+              </el-tooltip>
               <!-- 编辑集数按钮 -->
               <div v-if="episodeList.length > 0" class="episode-section">
                 <EpisodeSelector
@@ -67,14 +58,17 @@
 
                 <!-- 集数标签显示 -->
                 <div v-if="library.episodeList && library.episodeList.length > 0" class="episode-tags">
-                  <el-tag
+                  <el-tooltip
                     v-for="(ep, idx) in getDisplayEpisodes(library.episodeList)"
                     :key="idx"
-                    size="small"
-                    type="warning"
+                    :content="typeof ep === 'string' ? ep : ep.episodeName"
+                    placement="top"
+                    :disabled="!isEpisodeNameOverflow(typeof ep === 'string' ? ep : ep.episodeName)"
                   >
-                    {{ typeof ep === 'string' ? ep : ep.episodeName }}
-                  </el-tag>
+                    <el-tag size="small" type="warning" class="episode-tag-ellipsis">
+                      <span class="episode-tag-text">{{ typeof ep === 'string' ? ep : ep.episodeName }}</span>
+                    </el-tag>
+                  </el-tooltip>
                   <el-tag v-if="getExtraEpisodeCount(library.episodeList) > 0" size="small" type="warning">
                     +{{ getExtraEpisodeCount(library.episodeList) }}
                   </el-tag>
@@ -109,6 +103,9 @@
               :max-files="imageAttr.allMaxLen"
               :max-size="imageAttr.singleMaxSize"
               :accept="imageAttr.suffix"
+              :current-count="library.totalImageCount ?? library.librarySubInfoList?.length ?? 0"
+              :total-limit="imageAttr.totalLimit"
+              :validate-dimensions="false"
               @upload="(files:any) => handleUploadFiles(files, library)"
             />
 
@@ -128,14 +125,17 @@
 
                   <!-- 右上角剧集标签 -->
                   <div v-if="scene.episodeList && scene.episodeList.length > 0" class="episode-tags">
-                    <el-tag
+                    <el-tooltip
                       v-for="(ep, idx) in getDisplayEpisodes(scene.episodeList)"
                       :key="idx"
-                      size="small"
-                      type="warning"
+                      :content="typeof ep === 'string' ? ep : ep.episodeName"
+                      placement="top"
+                      :disabled="!isEpisodeNameOverflow(typeof ep === 'string' ? ep : ep.episodeName)"
                     >
-                      {{ typeof ep === 'string' ? ep : ep.episodeName }}
-                    </el-tag>
+                      <el-tag size="small" type="warning" class="episode-tag-ellipsis">
+                        <span class="episode-tag-text">{{ typeof ep === 'string' ? ep : ep.episodeName }}</span>
+                      </el-tag>
+                    </el-tooltip>
                     <el-tag v-if="getExtraEpisodeCount(scene.episodeList) > 0" size="small" type="warning">
                       +{{ getExtraEpisodeCount(scene.episodeList) }}
                     </el-tag>
@@ -214,6 +214,7 @@
   import { nextTick, onMounted, onUnmounted, ref } from 'vue';
   import AddItemDialog from '../StepCharacter/components/AddItemDialog.vue';
   import EpisodeSelector from '../components/EpisodeSelector.vue';
+  import HorizontalScrollTabs from '../components/HorizontalScrollTabs.vue';
   import SceneUploadCard from './components/SceneUploadCard.vue';
 
   const projectStore = useProjectStore();
@@ -228,7 +229,8 @@
 
   // 上传图片配置
   const imageAttr = {
-    allMaxLen: 20,
+    allMaxLen: 10, // 单次最多上传10张
+    totalLimit: 10, // 总数限制10张
     suffix: ['.jpg', '.jpeg', '.png', '.gif', '.webp'],
     singleMaxSize: 10 * 1024 * 1024 // 10MB
   };
@@ -256,6 +258,18 @@
   // 获取超出数量
   const getExtraEpisodeCount = (episodes: EpisodeInfo[]) => {
     return Math.max(0, episodes.length - 3);
+  };
+
+  // 判断剧集名称是否溢出（简单判断：超过4个字符认为可能溢出）
+  const isEpisodeNameOverflow = (name: string | undefined): boolean => {
+    if (!name) return false;
+    return name.length > 4;
+  };
+
+  // 判断组名是否溢出（简单判断：超过10个字符认为可能溢出）
+  const isGroupNameOverflow = (name: string | undefined): boolean => {
+    if (!name) return false;
+    return name.length > 10;
   };
 
   // 初始化
@@ -289,7 +303,7 @@
     nextTick(() => {
       const scrollWrappers = document.querySelectorAll('.scenes-scroll-wrapper');
 
-      scrollWrappers.forEach((wrapper, index) => {
+      scrollWrappers.forEach((wrapper) => {
         const handleWheel = (e: Event) => {
           const wheelEvent = e as WheelEvent;
           // 只处理垂直滚动
@@ -355,7 +369,6 @@
       });
     } catch (error) {
       console.error('加载场景数据失败:', error);
-      ElMessage.error('加载场景数据失败');
     } finally {
       loading.value = false;
     }
@@ -363,7 +376,6 @@
 
   // 剧集筛选
   const handleEpisodeFilter = (episodeId: number | null) => {
-    selectedEpisodeId.value = episodeId;
     // 调用接口重新加载数据
     loadSceneData(episodeId);
   };
@@ -387,7 +399,6 @@
       await loadSceneData();
     } catch (error) {
       console.error('创建场景失败:', error);
-      ElMessage.error('创建场景失败');
     } finally {
       submitting.value = false;
     }
@@ -413,7 +424,6 @@
             await loadSceneData();
           } catch (error) {
             console.error('删除失败:', error);
-            ElMessage.error('删除失败');
           }
         })
         .catch(() => {});
@@ -435,7 +445,6 @@
             await loadSceneData();
           } catch (error) {
             console.error('删除失败:', error);
-            ElMessage.error('删除失败');
           }
         })
         .catch(() => {});
@@ -466,7 +475,6 @@
       await loadSceneData();
     } catch (error) {
       console.error('重命名失败:', error);
-      ElMessage.error('重命名失败');
     } finally {
       submitting.value = false;
     }
@@ -520,13 +528,19 @@
         }
 
         ElMessage.success(`成功上传 ${uploadedImages.length} 张图片`);
+
+        // 如果当前不在"全部"剧集页面，切换到"全部"页面方便用户查看上传的图片
+        if (selectedEpisodeId.value !== null) {
+          selectedEpisodeId.value = null;
+        }
+
         await loadSceneData();
       } else {
         console.warn('没有可上传的图片');
       }
     } catch (error) {
       console.error('上传失败:', error);
-      ElMessage.error(typeof error === 'string' ? error : '上传失败');
+      // ElMessage.error(typeof error === 'string' ? error : '上传失败');
     } finally {
       uploading.value = false;
     }
@@ -564,7 +578,6 @@
       await loadSceneData();
     } catch (error) {
       console.error('剧集关联失败:', error);
-      ElMessage.error('剧集关联失败');
     } finally {
       submitting.value = false;
     }
@@ -594,41 +607,6 @@
       background: #5252ff;
       color: #fff;
       font-size: 14px;
-    }
-  }
-
-  .episode-filter {
-    flex: 1;
-    margin-right: 16px;
-    overflow: hidden;
-
-    .filter-tabs {
-      display: flex;
-      gap: 8px;
-      white-space: nowrap;
-    }
-
-    .filter-tab {
-      flex-shrink: 0;
-      padding: 4px 16px;
-      border: 1px solid #d9d9d9;
-      border-radius: 6px;
-      background: white;
-      color: #595959;
-      font-size: 14px;
-      cursor: pointer;
-      transition: all 0.3s;
-
-      &:hover {
-        border-color: #5252ff;
-        color: #5252ff;
-      }
-
-      &.active {
-        border-color: #5252ff;
-        background: #5252ff;
-        color: white;
-      }
     }
   }
 
@@ -683,11 +661,19 @@
         display: flex;
         align-items: center;
         gap: 12px;
+        flex: 1;
+        min-width: 0;
 
         .group-name {
+          display: inline-block;
+          max-width: 200px;
           color: #262626;
           font-size: 18px;
           font-weight: 600;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+          vertical-align: bottom;
         }
 
         .episode-section {
@@ -700,6 +686,40 @@
             align-items: center;
             gap: 4px;
             flex-wrap: wrap;
+
+            .el-tag {
+              flex-shrink: 0;
+              height: 20px;
+              line-height: 20px;
+              border-radius: 62px;
+              border: 0.556px solid #ffcf8b;
+              background: #fff7e8;
+              display: flex;
+              align-items: center;
+            }
+
+            .episode-tag-ellipsis {
+              display: inline-block;
+              max-width: 60px;
+              height: 20px;
+              line-height: 20px;
+              display: flex;
+              align-items: center;
+
+              :deep(.el-tag__content) {
+                display: block;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                white-space: nowrap;
+              }
+
+              .episode-tag-text {
+                display: block;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                white-space: nowrap;
+              }
+            }
           }
         }
       }
@@ -724,7 +744,8 @@
       // 固定上传卡片
       > :first-child {
         flex-shrink: 0;
-        width: 200px;
+        min-width: 120px;
+        max-width: 200px;
         position: sticky;
         left: 0;
         z-index: 2;
@@ -837,10 +858,40 @@
       display: flex;
       flex-wrap: wrap;
       gap: 4px;
-      max-width: 150px;
+      max-width: 190px;
 
       .el-tag {
         flex-shrink: 0;
+        height: 20px;
+        line-height: 20px;
+        border-radius: 62px;
+        border: 0.556px solid #ffcf8b;
+        background: #fff7e8;
+        display: flex;
+        align-items: center;
+      }
+
+      .episode-tag-ellipsis {
+        display: inline-block;
+        max-width: 60px;
+        height: 20px;
+        line-height: 20px;
+        display: flex;
+        align-items: center;
+
+        :deep(.el-tag__content) {
+          display: block;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+        }
+
+        .episode-tag-text {
+          display: block;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+        }
       }
     }
 

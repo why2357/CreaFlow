@@ -1,10 +1,10 @@
 <template>
-  <div class="p-2">
+  <div>
     <transition
       :enter-active-class="proxy?.animate.searchAnimate.enter"
       :leave-active-class="proxy?.animate.searchAnimate.leave"
     >
-      <div class="mb-[10px]" v-show="showSearch">
+      <div class="card-sty-box" v-show="showSearch">
         <el-card shadow="hover">
           <el-form ref="queryFormRef" :model="queryParams" :inline="true">
             <el-form-item label="用户ID" prop="userId">
@@ -46,8 +46,8 @@
               />
             </el-form-item>
             <el-form-item>
-              <el-button type="primary" @click="handleQuery" icon="Search">搜索</el-button>
               <el-button @click="resetQuery" icon="Refresh">重置</el-button>
+              <el-button type="primary" @click="handleQuery" icon="Search">搜索</el-button>
             </el-form-item>
           </el-form>
         </el-card>
@@ -58,24 +58,23 @@
       <template #header>
         <el-row :gutter="10">
           <el-col :span="1.5">
-            <el-button type="primary" plain @click="handleAdd" icon="Plus">新增用户</el-button>
+            <el-button class="new-add-btn" @click="handleAdd">新增用户</el-button>
           </el-col>
-          <right-toolbar v-model:showSearch="showSearch" @queryTable="getList" />
         </el-row>
       </template>
 
       <el-table v-loading="loading" :data="memberList" @selection-change="handleSelectionChange">
         <el-table-column type="selection" width="55" align="center" />
-        <el-table-column label="用户id" align="center" prop="userId" width="100" />
+        <el-table-column label="用户id" align="center" prop="userId" width="300" fixed="left" />
         <el-table-column label="用户名称" align="center" prop="userName" show-overflow-tooltip />
         <el-table-column label="手机号码" align="center" prop="phonenumber" width="120" />
-        <el-table-column label="累计消耗点数" align="center" prop="consumePoint" width="140" sortable />
-        <el-table-column label="注册时间" align="center" prop="createTime" width="180">
+        <el-table-column label="累计消耗点数" align="center" prop="consumePoint" sortable />
+        <el-table-column label="注册时间" align="center" prop="createTime">
           <template #default="scope">
             <span>{{ parseTime(scope.row.createTime) }}</span>
           </template>
         </el-table-column>
-        <el-table-column label="操作" align="center" width="250" class-name="small-padding fixed-width">
+        <el-table-column label="操作" align="center" width="250" class-name="small-padding fixed-width" fixed="right">
           <template #default="scope">
             <!-- <el-tooltip content="用量统计" placement="top">
               <el-button link type="success" @click="handleUsageStats(scope.row)"> 用量统计 </el-button>
@@ -84,7 +83,7 @@
               <el-button link type="primary" @click="handleModelStats(scope.row)"> 模型统计 </el-button>
             </el-tooltip> -->
             <el-tooltip content="删除账号" placement="top">
-              <el-button link type="danger" @click="handleDelete(scope.row)"> 删除账号 </el-button>
+              <el-button class="btn-op" @click="handleDelete(scope.row)"> 删除账号 </el-button>
             </el-tooltip>
           </template>
         </el-table-column>
@@ -229,4 +228,30 @@
   });
 </script>
 
-<style scoped lang="scss"></style>
+<style scoped lang="scss">
+  .card-sty-box {
+    margin-bottom: 20px;
+    border-radius: 8px !important;
+  }
+  .new-add-btn {
+    height: 28px;
+    line-height: 28px;
+    padding: 10px;
+    gap: 10px;
+    border-radius: 4px;
+    border: 1px solid #5252ff;
+    background: #f3f3ff;
+    color: #5252ff;
+    font-size: 13px;
+  }
+  .btn-op {
+    height: 28px;
+    line-height: 28px;
+    padding: 7px 12px;
+    gap: 10px;
+    border-radius: 100px;
+    border: 1px solid #dcdfe6;
+    color: #5252ff;
+    font-size: 13px;
+  }
+</style>

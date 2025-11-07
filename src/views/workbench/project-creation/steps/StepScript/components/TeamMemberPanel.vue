@@ -26,7 +26,13 @@
             @mouseenter="hoveredMemberId = member.memberId || null"
             @mouseleave="hoveredMemberId = null"
           >
-            <div class="member-avatar" :style="{ backgroundColor: member.color }">
+            <div
+              class="member-avatar"
+              :style="{
+                background: member.bgColor,
+                color: member.textColor
+              }"
+            >
               <span class="avatar-text">{{ member.icon }}</span>
               <!-- 删除按钮 -->
               <div
@@ -74,7 +80,7 @@
   import { deleteProjectUser } from '@/api/workbench/member';
   import type { ProjectMember } from '@/api/workbench/project/types';
   import { useProjectStore } from '@/store/modules/project';
-  import { getRoleColor, getRoleName, getRoleShortName } from '@/utils/roleUtils';
+  import { getRoleBgColor, getRoleName, getRoleShortName, getRoleTextColor } from '@/utils/roleUtils';
   import InviteMember from '@/views/workbench/project-admin/components/invite-member.vue';
   import { Close, Plus } from '@element-plus/icons-vue';
   import { ElMessage, ElMessageBox } from 'element-plus';
@@ -89,6 +95,8 @@
     memberId?: number;
     icon?: string;
     color?: string;
+    bgColor?: string;
+    textColor?: string;
     role?: string;
   }
 
@@ -120,9 +128,11 @@
           roleKey: user.roleKey,
           userId: user.userId,
           roleId: user.roleId,
-          // 用于头像显示
+          // 用于头像显示 - 使用 roleKey
           icon: getRoleShortName(user.roleKey),
-          color: getRoleColor(user.roleKey)
+          color: '#5252FF', // 不再使用这个字段，保留兼容
+          bgColor: getRoleBgColor(user.roleKey),
+          textColor: getRoleTextColor(user.roleKey)
         }));
     } else {
       // 新项目无成员时显示空状态
@@ -148,14 +158,26 @@
   const handleSelectMember = (member: ProjectMember) => {
     const existingIndex = members.value.findIndex((m) => m.userId === member.userId);
     if (existingIndex !== -1) {
-      // 更新角色
+      // 更新角色时，重新计算头像相关属性 - 使用 roleKey
       members.value[existingIndex] = {
         ...members.value[existingIndex],
-        ...member
+        ...member,
+        role: getRoleName(member.roleKey),
+        icon: getRoleShortName(member.roleKey),
+        color: '#5252FF', // 不再使用这个字段，保留兼容
+        bgColor: getRoleBgColor(member.roleKey),
+        textColor: getRoleTextColor(member.roleKey)
       };
     } else {
-      // 添加新成员
-      members.value.push(member);
+      // 添加新成员时，也要设置头像相关属性 - 使用 roleKey
+      members.value.push({
+        ...member,
+        role: getRoleName(member.roleKey),
+        icon: getRoleShortName(member.roleKey),
+        color: '#5252FF', // 不再使用这个字段，保留兼容
+        bgColor: getRoleBgColor(member.roleKey),
+        textColor: getRoleTextColor(member.roleKey)
+      });
     }
   };
 
@@ -198,7 +220,6 @@
       }
     } catch (error) {
       console.error('删除协作者失败:', error);
-      ElMessage.error('删除协作者失败');
       throw error;
     }
   };
@@ -332,10 +353,9 @@
           align-items: center;
           width: 48px;
           height: 48px;
-          border: 2px solid white;
+          border: 1px solid var(--Borderl-border-2, #eee);
           border-radius: 50%;
           box-shadow: 0 3px 8px rgb(108 92 231 / 20%);
-          color: white;
           font-size: 16px;
           font-weight: 700;
           transition: all 0.3s;

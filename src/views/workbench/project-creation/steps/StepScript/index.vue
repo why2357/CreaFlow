@@ -77,6 +77,12 @@
           <div style="color: #4e5969; font-size: 14px">暂无剧集</div>
         </div>
 
+        <!-- 空状态 - 内容由条单上传（没有 storyText 且没有 modelCode） -->
+        <div v-else-if="showUploadEmptyState && !loading" class="empty-state-large">
+          <img style="width: 200px; height: 200px" src="../../../../../assets/images/no-text.png" alt="" />
+          <div style="color: #4e5969; font-size: 14px">内容由表单上传</div>
+        </div>
+
         <!-- 空状态 - 无剧本内容 -->
         <div v-else-if="paragraphs.length === 0 && !loading" class="empty-state-large">
           <el-icon :size="80" color="#d9d9d9"><Document /></el-icon>
@@ -104,7 +110,7 @@
 
           <!-- 无更多内容提示 -->
           <div v-else-if="!hasMore && paragraphs.length > 0" class="no-more">
-            <el-icon><CircleCheck /></el-icon>
+            <!-- <el-icon><CircleCheck /></el-icon> -->
             <span>全部内容已加载完毕</span>
           </div>
         </div>
@@ -137,7 +143,7 @@
   import { deleteEpisodes, renameEpisode } from '@/api/workbench/episode';
   import type { Episode } from '@/api/workbench/project/types';
   import { useProjectStore } from '@/store/modules/project';
-  import { CircleCheck, Document, Loading } from '@element-plus/icons-vue';
+  import { Document, Loading } from '@element-plus/icons-vue';
   import { ElMessage, ElMessageBox } from 'element-plus';
   import { debounce } from 'lodash-es';
   import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
@@ -200,6 +206,15 @@
     const total = videoTotalCount.value;
     if (total === 0) return 0;
     return Math.round((videoFinishCount.value / total) * 100);
+  });
+
+  // 判断是否显示"内容由条单上传"空状态
+  const showUploadEmptyState = computed(() => {
+    const currentEpisodeInfo = projectStore.episodeInfoList.find(
+      (ep) => ep.episodeId === projectStore.currentEpisodeId
+    );
+    // 当前剧集存在，且没有 storyText 也没有 modelCode 时显示
+    return currentEpisodeInfo && !currentEpisodeInfo.storyText && !currentEpisodeInfo.modelCode;
   });
 
   // 初始化剧本内容
@@ -336,8 +351,7 @@
     } catch (error: any) {
       if (error !== 'cancel') {
         console.error('重命名剧集失败:', error);
-        const errorMsg = error?.response?.data?.msg || error?.message || '重命名失败';
-        ElMessage.error(errorMsg);
+        // const errorMsg = error?.response?.data?.msg || error?.message || '重命名失败';
       }
     }
   };
@@ -367,8 +381,6 @@
     } catch (error: any) {
       if (error !== 'cancel') {
         console.error('删除剧集失败:', error);
-        const errorMsg = error?.response?.data?.msg || error?.message || '删除失败';
-        ElMessage.error(errorMsg);
       }
     }
   };
@@ -667,13 +679,6 @@
           &:last-of-type {
             margin-bottom: 0;
           }
-
-          // 段落首字母效果
-          &:first-child::first-letter {
-            color: #6c5ce7;
-            font-size: 1.5em;
-            font-weight: 600;
-          }
         }
 
         .loading-more,
@@ -701,7 +706,7 @@
           padding: 32px;
           border-radius: 8px;
           background: linear-gradient(135deg, #f9f8ff 0%, #fff 100%);
-          color: #67c23a;
+          color: #909399;
           font-style: italic;
 
           .el-icon {

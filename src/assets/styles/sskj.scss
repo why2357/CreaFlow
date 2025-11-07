@@ -186,9 +186,14 @@ h6 {
   float: right !important;
 }
 
+.el-card {
+  border-radius: 8px !important;
+}
+
 .el-card__header {
-  padding: 14px 15px 7px !important;
+  padding: 7px 18px 7px !important;
   min-height: 40px;
+  background: #f1f3f7 !important;
 }
 
 .el-card__body {
@@ -315,4 +320,13 @@ h6 {
   height: 32px;
   padding: 8px 16px;
   border-radius: 8px !important;
+}
+// Tooltip 样式调整
+.el-tooltip__popper {
+  max-width: 200px !important;
+  word-break: break-all;
+}
+.el-input__wrapper {
+  border-radius: 8px;
+  background: #f7f8fa !important;
 }

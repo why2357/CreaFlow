@@ -8,7 +8,6 @@ export interface EpisodeRenameRequest {
   episodeId: number;
   /** 剧集名称 */
   episodeName: string;
-  [property: string]: any;
 }
 
 /**
@@ -23,7 +22,6 @@ export interface SceneBasicEditRequest {
   sceneDesc?: string;
   /** 镜头提示 */
   sceneHint?: string;
-  [property: string]: any;
 }
 
 /**
@@ -63,7 +61,6 @@ export interface HivisionProjectEpisodeVo {
    * 用户id
    */
   userId?: number;
-  [property: string]: any;
 }
 
 /**
@@ -86,13 +83,14 @@ export interface HivisionProjectMaterialVo {
   status?: number;
   /** 用户id */
   userId?: number;
-  [property: string]: any;
 }
 
 /**
  * 人物服装信息 CharacterClothingInfo
  */
 export interface CharacterClothingInfo {
+  /** 角色ID（对应 basicId）*/
+  characterId?: number;
   /** 角色名称 */
   characterName?: string;
   /** 服装id */
@@ -101,7 +99,8 @@ export interface CharacterClothingInfo {
   clothingName?: string;
   /** 素材信息 */
   materialInfoVo?: HivisionProjectMaterialVo;
-  [property: string]: any;
+  /** 角色ID（用于编辑接口）*/
+  roleId?: number;
 }
 
 /**
@@ -126,7 +125,6 @@ export interface EpisodeSceneItemInfo {
   sceneStatus?: number;
   /** 文生图任务状态 0-待执行 1-执行中 2-执行成功 3-执行失败 */
   taskStatus?: number;
-  [property: string]: any;
 }
 
 /**
@@ -145,7 +143,6 @@ export interface EpisodeInfoResponseDto {
   modeCode?: string;
   /** 文生文任务状态 0-待执行 1-执行中 2-执行成功 3-执行失败 */
   taskStatus?: number;
-  [property: string]: any;
 }
 
 /**
@@ -168,4 +165,62 @@ export interface SceneEnvSetRequest {
   envMaterialId?: number;
   /** OSS文件ID（envType=2时使用） */
   ossId?: number;
+}
+
+/**
+ * 角色服装详情
+ */
+export interface RoleDetail {
+  /** 服装详情ID */
+  detailId: number;
+  /** 素材ID */
+  materialId: number;
+  /** 服装名称 */
+  name: string;
+  /** 原始图片URL */
+  originUrl: string;
+  /** 预览图片URL */
+  previewUrl: string;
+  /** 是否选中 */
+  selected: boolean;
+}
+
+/**
+ * 角色数据
+ */
+export interface RoleData {
+  /** 服装详情列表 */
+  details: RoleDetail[];
+  /** 角色ID */
+  roleId: number;
+  /** 角色名称 */
+  roleName: string;
+}
+
+/**
+ * 查询剧集角色列表响应
+ */
+export interface QueryEpisodeRoleResponse {
+  /** 角色列表 */
+  data?: RoleData[];
+}
+
+/**
+ * 编辑剧集角色请求
+ */
+export interface EditEpisodeRoleRequest {
+  /** 剧集ID */
+  episodeId: number;
+  /** 场景角色列表 */
+  sceneRoles: SceneRole[];
+}
+
+/**
+ * 场景角色
+ */
+export interface SceneRole {
+  /** 服装详情ID */
+  detailId: number;
+  /** 角色ID */
+  roleId: number;
 }

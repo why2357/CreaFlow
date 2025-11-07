@@ -26,7 +26,9 @@
           @click="handleSelect(episode.id)"
         >
           <div class="episode-info">
-            <span class="episode-name">{{ episode.name }}</span>
+            <el-tooltip :content="episode.name" placement="top" :disabled="!isNameOverflow(episode.name)">
+              <span class="episode-name">{{ episode.name }}</span>
+            </el-tooltip>
             <div v-if="showProgress" class="progress-badge">{{ episode.progress || 0 }}%</div>
           </div>
           <el-dropdown
@@ -58,7 +60,7 @@
 
 <script setup lang="ts">
   import type { Episode } from '@/api/workbench/project/types';
-  import { Delete, Film, MoreFilled } from '@element-plus/icons-vue';
+  import { Delete, Edit, Film, MoreFilled } from '@element-plus/icons-vue';
   import { ref } from 'vue';
 
   interface Props {
@@ -82,6 +84,12 @@
   const emits = defineEmits<Emits>();
 
   const currentEpisode = ref<Episode | null>(null);
+
+  // 判断名称是否溢出（简单判断：超过8个字符认为可能溢出）
+  const isNameOverflow = (name: string | undefined): boolean => {
+    if (!name) return false;
+    return name.length > 8;
+  };
 
   // 选择剧集
   const handleSelect = (id: string | number) => {
@@ -235,6 +243,10 @@
             flex: 1;
             font-size: 14px;
             font-weight: 500;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            width: 100px;
           }
 
           .episode-progress {

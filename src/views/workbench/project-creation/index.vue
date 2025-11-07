@@ -98,7 +98,8 @@
         <!-- 动态步骤内容 -->
         <div class="step-content">
           <Transition name="step-fade" mode="out-in">
-            <component :is="currentStepComponent" :key="projectStore.currentStep" />
+            <!-- 只在初始化完成后才渲染步骤组件 -->
+            <component v-if="!projectStore.isInitializing" :is="currentStepComponent" :key="projectStore.currentStep" />
           </Transition>
         </div>
 

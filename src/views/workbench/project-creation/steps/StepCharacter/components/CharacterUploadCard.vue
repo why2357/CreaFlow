@@ -23,7 +23,7 @@
       </el-icon>
       <div class="upload-text">上传</div>
       <div class="upload-subtext">点击或拖拽图片</div>
-      <div class="upload-limit">最多{{ maxFiles }}张/每张{{ formatFileSize(maxSize) }}</div>
+      <div class="upload-limit">最多{{ maxFiles }}张/{{ formatFileSize(maxSize) }}</div>
     </div>
 
     <!-- 上传进度遮罩 -->
@@ -44,13 +44,19 @@
     maxSize?: number; // 单个文件最大大小（字节）
     accept?: string[]; // 允许的文件后缀
     disabled?: boolean;
+    currentCount?: number; // 当前已上传的图片数量
+    totalLimit?: number; // 总数限制
+    validateDimensions?: boolean; // 是否校验图片尺寸
   }
 
   const props = withDefaults(defineProps<Props>(), {
-    maxFiles: 5,
+    maxFiles: 10, // 单次最多上传10张
     maxSize: 10 * 1024 * 1024, // 默认10MB
     accept: () => ['.jpg', '.jpeg', '.png', '.gif', '.webp'],
-    disabled: false
+    disabled: false,
+    currentCount: 0,
+    totalLimit: 10, // 总数最多10张
+    validateDimensions: true // 默认校验尺寸
   });
 
   interface Emits {
@@ -71,47 +77,106 @@
     return (bytes / (1024 * 1024)).toFixed(0) + 'MB';
   };
 
+  // 验证图片尺寸
+  const validateImageDimensions = (file: File): Promise<{ valid: boolean; error?: string }> => {
+    return new Promise((resolve) => {
+      if (!props.validateDimensions) {
+        resolve({ valid: true });
+        return;
+      }
+
+      const img = new Image();
+      const objectUrl = URL.createObjectURL(file);
+
+      img.onload = () => {
+        URL.revokeObjectURL(objectUrl);
+        const minSide = Math.min(img.width, img.height);
+
+        if (minSide < 320) {
+          resolve({
+            valid: false,
+            error: `${file.name} 图片尺寸过小，最短边不能低于320像素（当前最短边：${minSide}px）`
+          });
+        } else {
+          resolve({ valid: true });
+        }
+      };
+
+      img.onerror = () => {
+        URL.revokeObjectURL(objectUrl);
+        resolve({
+          valid: false,
+          error: `${file.name} 图片加载失败，请检查文件是否损坏`
+        });
+      };
+
+      img.src = objectUrl;
+    });
+  };
+
   // 验证文件
-  const validateFiles = (files: File[]): { valid: File[]; errors: string[] } => {
+  const validateFiles = async (files: File[]): Promise<{ valid: File[]; errors: string[] }> => {
     const valid: File[] = [];
     const errors: string[] = [];
 
-    // 检查文件数量
-    if (files.length > props.maxFiles) {
-      errors.push(`最多只能上传${props.maxFiles}张图片`);
+    // 检查总数限制
+    const remainingSlots = props.totalLimit - props.currentCount;
+    if (remainingSlots <= 0) {
+      errors.push(`已达到总数限制（${props.totalLimit}张），请先删除一些图片后再上传`);
       return { valid, errors };
     }
 
-    files.forEach((file) => {
+    // 检查单次上传数量
+    if (files.length > props.maxFiles) {
+      errors.push(`单次最多只能上传${props.maxFiles}张图片`);
+      return { valid, errors };
+    }
+
+    // 检查上传后是否会超过总数限制
+    if (files.length > remainingSlots) {
+      errors.push(`还可以上传${remainingSlots}张图片，当前选择了${files.length}张，请重新选择`);
+      return { valid, errors };
+    }
+
+    for (const file of files) {
       // 检查文件类型
       const suffix = file.name.includes('.') ? `.${file.name.split('.').pop()?.toLowerCase()}` : '';
       if (!props.accept.includes(suffix)) {
         errors.push(`${file.name} 格式不支持，只允许上传 ${props.accept.join(' ')} 格式的文件`);
-        return;
+        continue;
       }
 
       // 检查文件大小
       if (file.size > props.maxSize) {
         errors.push(`${file.name} 文件过大，单个文件最大 ${formatFileSize(props.maxSize)}`);
-        return;
+        continue;
+      }
+
+      // 检查图片尺寸
+      const dimensionCheck = await validateImageDimensions(file);
+      if (!dimensionCheck.valid) {
+        if (dimensionCheck.error) {
+          errors.push(dimensionCheck.error);
+        }
+        continue;
       }
 
       valid.push(file);
-    });
+    }
 
     return { valid, errors };
   };
 
   // 处理文件上传
-  const handleFiles = (files: FileList | null) => {
+  const handleFiles = async (files: FileList | null) => {
     if (!files || files.length === 0 || props.disabled) return;
 
     const fileArray = Array.from(files);
-    const { valid, errors } = validateFiles(fileArray);
+    const { valid, errors } = await validateFiles(fileArray);
 
     // 显示错误信息
     if (errors.length > 0) {
-      errors.forEach((error) => ElMessage.error(error));
+      errors.forEach((error: string) => ElMessage.error(error));
     }
 
     // 触发上传事件
@@ -177,7 +242,8 @@
     display: flex;
     justify-content: center;
     align-items: center;
-    // min-height: 280px;
+    min-height: 240px;
+    max-height: 289px;
     overflow: hidden;
     border: 2px dashed #d9d9d9;
     border-radius: 8px;
