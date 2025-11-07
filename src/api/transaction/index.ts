@@ -8,7 +8,7 @@ import { TransactionQuery, TransactionVO } from './types';
  */
 export const listTransaction = (query: TransactionQuery): AxiosPromise<{ rows: TransactionVO[]; total: number }> => {
   return request({
-    url: '/hivision/transaction/page-list',
+    url: '/hivision/wallet/transaction/page-list',
     method: 'get',
     params: query
   });

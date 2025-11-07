@@ -217,6 +217,8 @@ export interface AiModelInfoDto {
   modelCode?: string;
   /** 模型名称 */
   modelName?: string;
+  /** 模型消耗积分 */
+  points?: number;
 }
 
 /**
@@ -391,7 +393,8 @@ export interface Shot {
   episodeId: string | number;
   shotNumber: number; // 镜号
   basicId?: number; // 场景基础信息ID（用于编辑接口）
-  sceneImage?: string; // 画面图片
+  sceneImage?: string; // 画面图片（当前显示的图片）
+  materialInfoVoList?: MaterialInfoVo[]; // 所有生成的图片列表
   sceneDescription: string; // 画面描述（完整描述，用于编辑）
   sceneDesc?: string; // 特写镜头描述
   sceneHint?: string; // 场景描述
@@ -402,6 +405,7 @@ export interface Shot {
   sceneLocation: string; // 场景
   isFavorite?: boolean; // 是否收藏
   imageLoading?: boolean; // 图片加载状态
+  taskStatus?: number; // 文生图任务状态 0-待执行 1-执行中 2-执行成功 3-执行失败
   createTime?: string;
   updateTime?: string;
 }

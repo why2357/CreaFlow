@@ -168,3 +168,213 @@ export const editEpisodeRole = (data: {
     data
   });
 };
+
+/**
+ * 生成图片接口
+ * @param data 图片生成请求数据
+ */
+export interface EpisodeGenerateImgRequest {
+  /** 镜头id 给值为单个生成，不给值为批量生成 */
+  basicId?: number;
+  /** 剧集id */
+  episodeId: number;
+  /** 模型码 */
+  modelCode: string;
+}
+
+export const generateEpisodeImg = (data: EpisodeGenerateImgRequest): AxiosPromise<void> => {
+  return request({
+    url: '/hivision/story/episode/generate-img',
+    method: 'post',
+    data
+  });
+};
+
+// ==================== 历史记录管理 ====================
+
+/**
+ * 选择历史明细接口
+ * @param data 历史明细选择请求数据
+ */
+export interface HistoryDetailChoseRequest {
+  /** 历史明细id */
+  historyDetailId: number;
+}
+
+export const chooseHistoryDetail = (data: HistoryDetailChoseRequest): AxiosPromise<void> => {
+  return request({
+    url: '/hivision/story/history-detail/chose',
+    method: 'post',
+    data
+  });
+};
+
+/**
+ * 收藏历史明细接口
+ * @param data 历史明细收藏请求数据
+ */
+export interface HistoryDetailCollectRequest {
+  /** 历史明细id */
+  historyDetailId: number;
+}
+
+export const collectHistoryDetail = (data: HistoryDetailCollectRequest): AxiosPromise<void> => {
+  return request({
+    url: '/hivision/story/history-detail/collect',
+    method: 'post',
+    data
+  });
+};
+
+/**
+ * 取消收藏历史明细接口
+ * @param data 历史明细取消收藏请求数据
+ */
+export interface HistoryDetailCancelCollectRequest {
+  /** 历史明细id */
+  historyDetailId: number;
+}
+
+export const cancelCollectHistoryDetail = (data: HistoryDetailCancelCollectRequest): AxiosPromise<void> => {
+  return request({
+    url: '/hivision/story/history-detail/cancel-collect',
+    method: 'post',
+    data
+  });
+};
+
+/**
+ * 删除历史主数据
+ * @param ids 主键数组
+ */
+export const deleteHistory = (ids: number[]): AxiosPromise<void> => {
+  return request({
+    url: `/hivision/story/history/${ids.join(',')}`,
+    method: 'delete'
+  });
+};
+
+/**
+ * 删除历史明细
+ * @param ids 历史明细ID数组
+ */
+export const deleteHistoryDetail = (ids: number[]): AxiosPromise<void> => {
+  return request({
+    url: `/hivision/story/history-detail/${ids.join(',')}`,
+    method: 'delete'
+  });
+};
+
+/**
+ * 获取镜头历史列表
+ * @param params 查询参数
+ */
+export interface SceneHistoryListRequest {
+  /** 镜头id */
+  basicId: number;
+  /** 镜头类型 1-图片 2-视频 */
+  sceneType: number;
+}
+
+export interface SceneHistoryListResponse {
+  /** 历史信息列表 */
+  historyInfoList?: SceneMainHistoryInfo[];
+  /** 选中的历史 */
+  selectHistory?: SceneMainHistoryInfo;
+}
+
+export interface SceneMainHistoryInfo {
+  /** 基础镜头id */
+  basicId?: number;
+  /** 创建时间 */
+  createTime?: Date;
+  /** 剧集id */
+  episodeId?: number;
+  /** 历史id */
+  historyId?: number;
+  /** 模型码 */
+  modelCode?: string;
+  /** 操作类型 1-模型生成 2-编辑生成 */
+  operationType?: number;
+  /** 尺寸比例 1-16:9;2-4:3;3-1:1;4-3:4;5-9:16 */
+  pictureRatio?: number;
+  /** 项目id */
+  projectId?: number;
+  /** 镜头描述 */
+  sceneDesc?: string;
+  /** 镜头提示 */
+  sceneHint?: string;
+  /** 镜头历史明细 */
+  sceneItemHistoryInfoList?: SceneItemHistoryInfo[];
+  /** 镜头类型 1-图片 2-视频 */
+  sceneType?: number;
+}
+
+export interface SceneItemHistoryInfo {
+  /** 基础镜头id */
+  basicId?: number;
+  /** 剧集id */
+  episodeId?: number;
+  /** 历史明细id */
+  historyDetailId?: number;
+  /** 历史id */
+  historyId?: number;
+  /** 是否收藏 */
+  isCollect?: boolean;
+  /** 媒体资源id */
+  materialId?: number;
+  /** 媒体资源信息 */
+  materialVo?: HivisionProjectMaterialVo;
+  /** 项目id */
+  projectId?: number;
+  /** 镜头类型 1-图片 2-视频 */
+  sceneType?: number;
+  /** 选中状态 0-未选中 1-选中 */
+  selectStatus?: number;
+}
+
+export interface HivisionProjectMaterialVo {
+  /** 主键 */
+  id?: number;
+  /** 原始素材oss id */
+  originOssId?: number;
+  /** 原始素材oss url */
+  originOssUrl?: string;
+  /** 预览oss id */
+  previewOssId?: number;
+  /** 预览oss url */
+  previewOssUrl?: string;
+  /** 项目id */
+  projectId?: number;
+  /** 启用状态 0-启用 1-禁用 */
+  status?: number;
+  /** 用户id */
+  userId?: number;
+}
+
+export const getSceneHistoryList = (params: SceneHistoryListRequest): AxiosPromise<SceneHistoryListResponse> => {
+  return request({
+    url: '/hivision/story/history/scene-history-list',
+    method: 'get',
+    params
+  });
+};
+
+/**
+ * 替换场景图片（本地上传）
+ * @param data 图片替换请求数据
+ */
+export interface ImageReplaceRequestDto {
+  /** 镜头id */
+  basicId: number;
+  /** oss文件id */
+  ossId: number;
+}
+
+export const replaceSceneImage = (data: ImageReplaceRequestDto): AxiosPromise<void> => {
+  return request({
+    url: '/hivision/story/scene/replace-img',
+    method: 'post',
+    data
+  });
+};

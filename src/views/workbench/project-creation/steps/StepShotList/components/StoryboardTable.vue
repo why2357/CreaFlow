@@ -21,21 +21,27 @@
       <el-table :data="shots" border stripe height="100%">
         <el-table-column prop="shotNumber" label="镜号" width="80" align="center" />
 
-        <el-table-column label="画面" width="180" align="center">
+        <el-table-column label="画面" min-width="200" align="center">
           <template #default="{ row }">
-            <SceneImageCell
-              :image-url="row.sceneImage"
-              :aspect-ratio="aspectRatio"
-              :shot-id="row.id"
-              :is-favorite="row.isFavorite"
-              :loading="row.imageLoading"
-              @upload="(file:any) => handleImageUpload(row, file)"
-              @show-history="handleShowHistory(row)"
-              @download="handleImageDownload(row)"
-              @crop="handleImageCrop(row)"
-              @toggle-favorite="handleToggleFavorite(row)"
-              @regenerate="handleImageRegenerate(row)"
-            />
+            <div class="scene-image-cell">
+              <SceneImageCell
+                :image-url="row.sceneImage"
+                :material-info-vo-list="row.materialInfoVoList"
+                :aspect-ratio="aspectRatio"
+                :shot-id="row.id"
+                :basic-id="row.basicId"
+                :is-favorite="row.isFavorite"
+                :loading="row.imageLoading"
+                :task-status="row.taskStatus"
+                @upload="(file:any) => handleImageUpload(row, file)"
+                @show-history="handleShowHistory(row)"
+                @download="handleImageDownload(row)"
+                @crop="handleImageCrop(row)"
+                @toggle-favorite="handleToggleFavorite(row)"
+                @regenerate="handleImageRegenerate(row)"
+                @refresh="emit('refresh')"
+              />
+            </div>
           </template>
         </el-table-column>
 
@@ -159,7 +165,9 @@
       v-model="cropDialogVisible"
       :image-url="currentCropImage"
       :aspect-ratio="aspectRatio"
+      :basic-id="currentCropShot?.basicId"
       @confirm="handleCropConfirm"
+      @success="handleCropSuccess"
     />
 
     <!-- 历史记录弹窗 -->
@@ -287,7 +295,7 @@
     cropDialogVisible.value = true;
   };
 
-  // 裁剪确认
+  // 裁剪确认（兼容旧逻辑，当没有 basicId 时使用）
   const handleCropConfirm = (blob: Blob) => {
     if (!currentCropShot.value) return;
 
@@ -298,6 +306,12 @@
 
     emit('imageUpload', currentCropShot.value, file);
     ElMessage.success('裁剪成功');
+  };
+
+  // 裁剪上传成功（新逻辑，有 basicId 时使用）
+  const handleCropSuccess = () => {
+    ElMessage.success('裁剪并上传成功');
+    emit('refresh');
   };
 
   // 历史记录选择
@@ -698,6 +712,30 @@
             transition: all 0.3s;
           }
         }
+      }
+
+      // 画面列单元格样式 - 移除padding让内容铺满，添加hover效果
+      :deep(.el-table__body .el-table__row .el-table__cell:has(.scene-image-cell)) {
+        padding: 0 !important;
+        cursor: pointer;
+        .hover-overlay {
+          opacity: 0;
+        }
+        &:hover {
+          background: linear-gradient(0deg, rgba(0, 0, 0, 0.4) 0%, rgba(0, 0, 0, 0.4) 100%);
+          .hover-overlay {
+            opacity: 1;
+          }
+        }
+      }
+
+      // 画面列布局样式
+      .scene-image-cell {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        width: 100%;
+        // height: 120px; // 固定高度与场景列保持一致
       }
 
       // 场景列单元格hover效果

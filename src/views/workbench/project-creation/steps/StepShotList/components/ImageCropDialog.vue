@@ -18,13 +18,17 @@
     </div>
 
     <template #footer>
-      <el-button @click="handleClose">取消</el-button>
-      <el-button type="primary" @click="handleConfirm">确认裁剪</el-button>
+      <el-button :disabled="uploading" @click="handleClose">取消</el-button>
+      <el-button type="primary" :loading="uploading" @click="handleConfirm">
+        {{ uploading ? '上传中...' : '确认裁剪' }}
+      </el-button>
     </template>
   </el-dialog>
 </template>
 
 <script setup lang="ts">
+  import { replaceSceneImage } from '@/api/workbench/episode';
+  import { uploadFile } from '@/utils/uploadFile';
   import { InfoFilled } from '@element-plus/icons-vue';
   import Cropper from 'cropperjs';
   import 'cropperjs/dist/cropper.css';
@@ -35,16 +39,19 @@
     modelValue: boolean;
     imageUrl: string;
     aspectRatio: string; // '1:1' | '16:9' | '9:16' | '4:3' | '3:4'
+    basicId?: number; // 镜头id，用于调用替换接口
   }
 
   const props = defineProps<Props>();
   const emit = defineEmits<{
     (e: 'update:modelValue', value: boolean): void;
     (e: 'confirm', file: Blob): void;
+    (e: 'success'): void; // 上传成功后触发
   }>();
 
   const visible = ref(false);
   const imageRef = ref<HTMLImageElement>();
+  const uploading = ref(false);
   let cropper: Cropper | null = null;
 
   // 监听 modelValue 变化
@@ -114,18 +121,64 @@
   };
 
   // 确认裁剪
-  const handleConfirm = () => {
+  const handleConfirm = async () => {
     if (!cropper) {
       ElMessage.error('裁剪器未初始化');
       return;
     }
 
-    cropper.getCroppedCanvas().toBlob((blob) => {
-      if (blob) {
+    if (uploading.value) {
+      return;
+    }
+
+    cropper.getCroppedCanvas().toBlob(async (blob) => {
+      if (!blob) {
+        ElMessage.error('裁剪失败');
+        return;
+      }
+
+      // 如果有 basicId，则上传并调用替换接口
+      if (props.basicId) {
+        try {
+          uploading.value = true;
+          ElMessage.info('正在上传裁剪后的图片...');
+
+          // 将 blob 转换为 File 对象
+          const file = new File([blob], `cropped-${Date.now()}.jpg`, {
+            type: 'image/jpeg'
+          });
+
+          // 获取文件后缀
+          const fileSuffix = '.jpg';
+
+          // 上传文件到 OSS
+          const uploadRes = await uploadFile({
+            file,
+            fileSuffix,
+            originalFileName: file.name,
+            fileType: 'image',
+            resourceType: 2, // 用户资源
+            needSync: 0
+          });
+
+          // 调用替换场景图片接口
+          await replaceSceneImage({
+            basicId: props.basicId,
+            ossId: Number(uploadRes.ossId)
+          });
+
+          emit('success');
+          handleClose();
+        } catch (error) {
+          console.error('上传裁剪图片失败:', error);
+          ElMessage.error('上传裁剪图片失败');
+        } finally {
+          uploading.value = false;
+        }
+      } else {
+        // 没有 basicId，使用原来的逻辑
         emit('confirm', blob);
         handleClose();
-      } else {
-        ElMessage.error('裁剪失败');
       }
     });
   };

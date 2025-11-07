@@ -79,12 +79,21 @@
       :project-id="Number(projectStore.currentProjectId)"
       @success="handleCharacterEditSuccess"
     />
+
+    <!-- 扣点确认对话框 -->
+    <PointsConfirmDialog
+      v-model="pointsConfirmDialogVisible"
+      :shot-count="1"
+      :points-per-shot="getCurrentModelPoints"
+      @confirm="handleConfirmGenerate"
+    />
   </div>
 </template>
 
 <script setup lang="ts" name="StepShotList">
   import {
     deleteEpisodes,
+    generateEpisodeImg,
     getEpisodeImgSceneList,
     rematchCharacters,
     renameEpisode,
@@ -102,6 +111,7 @@
   import AddEpisodeDialog from '../../components/AddEpisodeDialog.vue';
   import EpisodeListPanel from '../StepScript/components/EpisodeListPanel.vue';
   import CharacterEditDialog from './components/CharacterEditDialog.vue';
+  import PointsConfirmDialog from './components/PointsConfirmDialog.vue';
   import StoryboardTable from './components/StoryboardTable.vue';
 
   const projectStore = useProjectStore();
@@ -141,6 +151,10 @@
   // 角色编辑对话框
   const characterEditDialogVisible = ref(false);
 
+  // 扣点确认对话框
+  const pointsConfirmDialogVisible = ref(false);
+  const currentRegenerateShot = ref<Shot | null>(null);
+
   // 初始化
   onMounted(async () => {
     // 初始化默认模型
@@ -178,6 +192,8 @@
       basicId: scene.basicId,
       // 画面图片（优先使用预览图，没有则使用原图）
       sceneImage: scene.materialInfoVoList?.[0]?.previewOssUrl || scene.materialInfoVoList?.[0]?.originOssUrl || '',
+      // 所有生成的图片列表
+      materialInfoVoList: scene.materialInfoVoList || [],
       // 画面描述（用于编辑时使用，保存完整描述）
       sceneDescription: `${scene.sceneDesc || ''}${scene.sceneDesc && scene.sceneHint ? '\n' : ''}${
         scene.sceneHint || ''
@@ -210,7 +226,9 @@
       // 收藏状态（默认未收藏）
       isFavorite: false,
       // 图片加载状态（1-执行中）
-      imageLoading: scene.taskStatus === 1
+      imageLoading: scene.taskStatus === 1,
+      // 文生图任务状态 0-待执行 1-执行中 2-执行成功 3-执行失败
+      taskStatus: scene.taskStatus
     }));
   };
 
@@ -393,16 +411,48 @@
     }, 1000);
   };
 
+  // 获取当前模型的积分
+  const getCurrentModelPoints = computed(() => {
+    const model = projectStore.t2iModelInfoList?.find((m) => m.modelCode === currentModelCode.value);
+    return model?.points || 0;
+  });
+
   // 重新生成图片
   const handleImageRegenerate = async (shot: Shot) => {
-    ElMessage.info(`重新生成图片: 镜号${shot.shotNumber}`);
-    // TODO: 调用生成接口
-    shot.imageLoading = true;
-    setTimeout(() => {
+    // 保存当前要生成的镜头
+    currentRegenerateShot.value = shot;
+    // 打开扣点确认弹窗
+    pointsConfirmDialogVisible.value = true;
+  };
+
+  // 确认生成图片
+  const handleConfirmGenerate = async () => {
+    if (!currentRegenerateShot.value || !selectedEpisodeId.value) return;
+
+    const shot = currentRegenerateShot.value;
+
+    try {
+      // 设置加载状态
+      shot.imageLoading = true;
+
+      // 调用生成图片接口
+      await generateEpisodeImg({
+        basicId: shot.basicId,
+        episodeId: Number(selectedEpisodeId.value),
+        modelCode: currentModelCode.value
+      });
+
+      ElMessage.success('图片生成中，请稍候...');
+
+      // 重新加载分镜列表以获取最新状态
+      await loadShots();
+    } catch (error) {
+      console.error('生成图片失败:', error);
+      ElMessage.error('生成图片失败，请重试');
       shot.imageLoading = false;
-      shot.sceneImage = 'https://via.placeholder.com/300x200';
-      ElMessage.success('生成成功');
-    }, 2000);
+    } finally {
+      currentRegenerateShot.value = null;
+    }
   };
 
   // 切换收藏
