@@ -5,7 +5,7 @@
         <svg-icon icon-class="fy-jindu" class="header-icon" />
         <span class="title">项目进度</span>
       </div>
-      <div class="progress-badge">{{ progress }}%</div>
+      <el-tag class="tag-sty" type="info">{{ progress }}%</el-tag>
     </div>
 
     <div class="panel-content">
@@ -170,11 +170,11 @@
     .header-left {
       display: flex;
       align-items: center;
-      gap: 8px;
+      gap: 6px;
 
       .header-icon {
         color: #5b5fef;
-        font-size: 20px;
+        font-size: 16px;
       }
 
       .title {
@@ -183,14 +183,20 @@
         font-weight: 600;
       }
     }
-
-    .progress-badge {
-      padding: 4px 12px;
-      border-radius: 6px;
-      background: #e8eaff;
-      color: #5b5fef;
-      font-size: 14px;
-      font-weight: 600;
+    .tag-sty {
+      display: flex;
+      width: 32px;
+      height: 18px;
+      padding: 2px 5px;
+      justify-content: center;
+      align-items: center;
+      gap: 4px;
+      flex-shrink: 0;
+      border-radius: 4px;
+      border: 0.625px solid #d6d7ff;
+      background: #f3f3ff;
+      color: #5252ff;
+      font-size: 10px;
     }
   }
 
@@ -219,7 +225,7 @@
       text-align: center;
 
       .empty-title {
-        color: #909399;
+        color: #4e5969;
         font-size: 14px;
         font-weight: 500;
       }

@@ -1,8 +1,8 @@
 <template>
   <el-dialog
     v-model="dialogVisible"
-    title="角色服装编辑"
-    width="800px"
+    title="选择服装"
+    width="988px"
     :close-on-click-modal="false"
     class="single-character-edit-dialog"
     @close="handleClose"
@@ -13,32 +13,32 @@
         <p>暂无角色数据</p>
       </div>
       <div v-else class="role-container">
-        <!-- 角色标题 -->
-        <div class="role-header">
-          <h3 class="role-name">{{ roleData.roleName }}</h3>
-        </div>
+        <!-- 角色标题和服装列表 -->
+        <div class="role-group">
+          <!-- 角色标题 -->
+          <div class="role-header">
+            <div class="role-name-tag">{{ roleData.roleName }}</div>
+          </div>
 
-        <!-- 服装列表 -->
-        <div class="costume-list">
-          <div
-            v-for="detail in roleData.details"
-            :key="detail.detailId"
-            class="costume-item"
-            :class="{ selected: detail.selected }"
-            @click="toggleSelection(detail.detailId)"
-          >
-            <el-image :src="detail.previewUrl || detail.originUrl" fit="cover" class="costume-image">
-              <template #error>
-                <div class="image-error">
-                  <el-icon><Picture /></el-icon>
-                </div>
-              </template>
-            </el-image>
-            <div class="costume-name">{{ detail.name }}</div>
-
-            <!-- 选中标记 -->
-            <div v-if="detail.selected" class="selected-mark">
-              <el-icon><Check /></el-icon>
+          <!-- 服装列表 -->
+          <div class="costume-list">
+            <div
+              v-for="detail in roleData.details"
+              :key="detail.detailId"
+              class="costume-item"
+              :class="{ selected: detail.selected }"
+              @click="toggleSelection(detail.detailId)"
+            >
+              <div class="costume-image-wrapper">
+                <el-image :src="detail.previewUrl || detail.originUrl" fit="cover" class="costume-image">
+                  <template #error>
+                    <div class="image-error">
+                      <el-icon><Picture /></el-icon>
+                    </div>
+                  </template>
+                </el-image>
+              </div>
+              <div class="costume-name">{{ detail.name }}</div>
             </div>
           </div>
         </div>
@@ -47,8 +47,10 @@
 
     <!-- 底部操作按钮 -->
     <template #footer>
-      <el-button @click="handleClose">取消</el-button>
-      <el-button type="primary" :loading="submitting" @click="handleConfirm">确认</el-button>
+      <div class="dialog-footer">
+        <el-button class="cancel-btn" @click="handleClose">取消</el-button>
+        <el-button class="confirm-btn" type="primary" :loading="submitting" @click="handleConfirm">确认</el-button>
+      </div>
     </template>
   </el-dialog>
 </template>
@@ -56,9 +58,9 @@
 <script setup lang="ts">
   import { editSceneRole, querySceneRole } from '@/api/workbench/storyboard';
   import type { QuerySceneRoleResponse } from '@/api/workbench/storyboard/types';
-  import { Check, Picture } from '@element-plus/icons-vue';
+  import { Picture } from '@element-plus/icons-vue';
   import { ElMessage } from 'element-plus';
-  import { computed, ref, watch } from 'vue';
+  import { computed, nextTick, onUnmounted, ref, watch } from 'vue';
 
   // Props
   interface Props {
@@ -101,6 +103,52 @@
     }
   });
 
+  // 设置横向滚动
+  const setupHorizontalScroll = () => {
+    nextTick(() => {
+      const scrollWrappers = document.querySelectorAll('.single-character-edit-dialog .costume-list');
+
+      scrollWrappers.forEach((wrapper) => {
+        const handleWheel = (e: Event) => {
+          const wheelEvent = e as WheelEvent;
+          // 只处理垂直滚动
+          if (wheelEvent.deltaY !== 0) {
+            wheelEvent.preventDefault();
+            // 将垂直滚动转换为横向滚动
+            const element = wrapper as HTMLElement;
+            element.scrollLeft += wheelEvent.deltaY;
+          }
+        };
+
+        // 移除旧的监听器
+        if ((wrapper as any).__wheelHandler) {
+          wrapper.removeEventListener('wheel', (wrapper as any).__wheelHandler);
+        }
+
+        // 添加新的监听器
+        wrapper.addEventListener('wheel', handleWheel, { passive: false } as any);
+
+        // 保存事件处理器和清理函数
+        (wrapper as any).__wheelHandler = handleWheel;
+        (wrapper as any).__cleanupScroll = () => {
+          wrapper.removeEventListener('wheel', handleWheel);
+          delete (wrapper as any).__wheelHandler;
+          delete (wrapper as any).__cleanupScroll;
+        };
+      });
+    });
+  };
+
+  // 组件卸载时清理
+  onUnmounted(() => {
+    const scrollWrappers = document.querySelectorAll('.single-character-edit-dialog .costume-list');
+    scrollWrappers.forEach((wrapper) => {
+      if ((wrapper as any).__cleanupScroll) {
+        (wrapper as any).__cleanupScroll();
+      }
+    });
+  });
+
   // 加载角色数据
   const loadRoleData = async () => {
     if (!props.basicId || !props.episodeId || !props.roleId) {
@@ -117,6 +165,9 @@
       });
 
       roleData.value = res.data;
+
+      // 数据加载后设置横向滚动
+      setupHorizontalScroll();
     } catch (error) {
       console.error('加载角色数据失败:', error);
       roleData.value = null;
@@ -188,100 +239,199 @@
 
 <style scoped lang="scss">
   .single-character-edit-dialog {
+    :deep(.el-dialog__header) {
+      padding: 24px 24px 16px;
+      border-bottom: 1px solid #e5e7eb;
+
+      .el-dialog__title {
+        color: #1f2937;
+        font-size: 18px;
+        font-weight: 600;
+      }
+    }
+
+    :deep(.el-dialog__body) {
+      padding: 24px;
+    }
+
+    :deep(.el-dialog__footer) {
+      padding: 16px 24px;
+      border-top: 1px solid #e5e7eb;
+    }
+
     .character-content {
-      min-height: 300px;
-      max-height: 600px;
+      max-height: 440px;
       overflow-y: auto;
 
       .empty-state {
         display: flex;
         align-items: center;
         justify-content: center;
-        height: 300px;
-        color: #999;
+        height: 400px;
+        color: #9ca3af;
         font-size: 14px;
       }
 
       .role-container {
-        .role-header {
-          margin-bottom: 16px;
+        margin-bottom: 20px;
+        .role-group {
+          border-radius: 12px;
+          background: #f7f8fa;
+          padding: 20px;
 
-          .role-name {
-            margin: 0;
-            color: #262626;
-            font-size: 18px;
-            font-weight: 600;
+          .role-header {
+            flex-shrink: 0;
+            color: #1d2129;
+            font-size: 13px;
+            line-height: 13px;
+            margin-bottom: 16px;
           }
-        }
 
-        .costume-list {
-          display: grid;
-          grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-          gap: 16px;
+          .costume-list {
+            flex: 1;
+            display: flex;
+            gap: 12px;
+            overflow-x: auto;
+            overflow-y: hidden;
+            padding-top: 8px;
+            padding-bottom: 8px;
 
-          .costume-item {
-            position: relative;
-            cursor: pointer;
-            border-radius: 8px;
-            overflow: hidden;
-            border: 2px solid transparent;
-            background: white;
-            transition: all 0.3s;
+            // 滚动条样式
+            scrollbar-width: thin;
+            scrollbar-color: transparent transparent;
 
+            &::-webkit-scrollbar {
+              height: 6px;
+            }
+
+            &::-webkit-scrollbar-track {
+              background: transparent;
+            }
+
+            &::-webkit-scrollbar-thumb {
+              background: transparent;
+              border-radius: 3px;
+            }
+
+            // hover时显示滚动条
             &:hover {
-              transform: translateY(-4px);
-              box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-            }
+              scrollbar-color: rgba(0, 0, 0, 0.2) rgba(0, 0, 0, 0.05);
 
-            &.selected {
-              border-color: #5252ff;
-              box-shadow: 0 4px 12px rgba(82, 82, 255, 0.3);
-            }
+              &::-webkit-scrollbar-track {
+                background: rgba(0, 0, 0, 0.05);
+                border-radius: 3px;
+              }
 
-            .costume-image {
-              width: 100%;
-              height: 180px;
-              display: block;
+              &::-webkit-scrollbar-thumb {
+                background: rgba(0, 0, 0, 0.2);
 
-              .image-error {
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                width: 100%;
-                height: 100%;
-                background-color: #f5f7fa;
-                color: #c0c4cc;
-                font-size: 32px;
+                &:hover {
+                  background: rgba(0, 0, 0, 0.3);
+                }
               }
             }
 
-            .costume-name {
-              padding: 8px 12px;
-              font-size: 14px;
-              color: #606266;
-              text-align: center;
-              background-color: #fff;
+            .costume-item {
+              position: relative;
+              flex-shrink: 0;
+              width: 140px;
+              cursor: pointer;
+              border-radius: 8px;
               overflow: hidden;
-              text-overflow: ellipsis;
-              white-space: nowrap;
-            }
+              background: white;
+              border: 2px solid transparent;
+              transition: all 0.2s ease;
 
-            .selected-mark {
-              position: absolute;
-              top: 8px;
-              left: 8px;
-              width: 28px;
-              height: 28px;
-              background-color: #5252ff;
-              border-radius: 50%;
-              display: flex;
-              align-items: center;
-              justify-content: center;
-              color: #fff;
-              font-size: 16px;
-              box-shadow: 0 2px 8px rgba(82, 82, 255, 0.4);
+              &:hover {
+                border-color: #e5e7eb;
+                transform: translateY(-2px);
+              }
+
+              &.selected {
+                border-color: #5b5bff;
+                box-shadow: 0 0 0 2px rgba(91, 91, 255, 0.1);
+              }
+
+              .costume-image-wrapper {
+                position: relative;
+                width: 100%;
+                height: 160px;
+                background: #f9fafb;
+              }
+
+              .costume-image {
+                width: 100%;
+                height: 100%;
+                display: block;
+
+                :deep(img) {
+                  width: 100%;
+                  height: 100%;
+                  object-fit: cover;
+                }
+
+                .image-error {
+                  display: flex;
+                  align-items: center;
+                  justify-content: center;
+                  width: 100%;
+                  height: 100%;
+                  background-color: #f3f4f6;
+                  color: #d1d5db;
+                  font-size: 32px;
+                }
+              }
+
+              .costume-name {
+                position: absolute;
+                bottom: 12px;
+                left: 12px;
+                color: #fff;
+                font-size: 12px;
+                line-height: 12px;
+                width: 40px;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                white-space: nowrap;
+              }
             }
           }
+        }
+      }
+    }
+
+    .dialog-footer {
+      display: flex;
+      justify-content: center;
+      gap: 16px;
+
+      .cancel-btn {
+        min-width: 100px;
+        height: 36px;
+        border-radius: 6px;
+        font-size: 14px;
+        color: #6b7280;
+        background: #fff;
+        border: 1px solid #e5e7eb;
+
+        &:hover {
+          color: #374151;
+          border-color: #d1d5db;
+          background: #f9fafb;
+        }
+      }
+
+      .confirm-btn {
+        min-width: 100px;
+        height: 36px;
+        border-radius: 6px;
+        font-size: 14px;
+        background: #5b5bff;
+        border-color: #5b5bff;
+
+        &:hover {
+          background: #4a4aee;
+          border-color: #4a4aee;
         }
       }
     }

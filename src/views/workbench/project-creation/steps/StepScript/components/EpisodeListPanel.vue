@@ -1,7 +1,7 @@
 <template>
   <div class="episode-list-panel">
     <div class="section-title">
-      <el-icon><Film /></el-icon>
+      <svg-icon icon-class="fy-juji" style="width: 16px; height: 16px" />
       <span>剧集列表</span>
     </div>
 
@@ -14,7 +14,7 @@
 
     <div class="episode-list">
       <!-- 没有剧集时显示 -->
-      <div v-if="episodes.length === 0" class="empty-state">暂无剧集</div>
+      <div v-if="episodes.length === 0" class="empty-state">暂无列表</div>
 
       <!-- 剧集列表 -->
       <template v-else>
@@ -42,11 +42,11 @@
             <template #dropdown>
               <el-dropdown-menu>
                 <el-dropdown-item command="rename">
-                  <el-icon><Edit /></el-icon>
+                  <svg-icon icon-class="fy-pen" style="width: 16px; height: 16px; margin-right: 16px" />
                   重命名
                 </el-dropdown-item>
-                <el-dropdown-item command="delete">
-                  <el-icon><Delete /></el-icon>
+                <el-dropdown-item command="delete" class="delete-item">
+                  <svg-icon icon-class="fy-del" style="width: 16px; height: 16px; margin-right: 16px" />
                   删除
                 </el-dropdown-item>
               </el-dropdown-menu>
@@ -60,7 +60,7 @@
 
 <script setup lang="ts">
   import type { Episode } from '@/api/workbench/project/types';
-  import { Delete, Edit, Film, MoreFilled } from '@element-plus/icons-vue';
+  import { MoreFilled } from '@element-plus/icons-vue';
   import { ref } from 'vue';
 
   interface Props {
@@ -119,45 +119,54 @@
 </script>
 
 <style scoped lang="scss">
+  // 删除选项红色高亮
+  :deep(.delete-item) {
+    &:hover {
+      color: #f56c6c;
+
+      .el-icon {
+        color: #f56c6c;
+      }
+    }
+  }
   .episode-list-panel {
     display: flex;
     flex-direction: column;
-    min-width: 200px;
+    // min-width: 200px;
     max-width: 280px;
     // margin-right: 16px;
     gap: 12px;
-    padding: 20px 16px;
+    padding: 20px;
     overflow: hidden;
-    border-radius: 16px;
-    background: white;
-    box-shadow: 0 2px 8px rgb(0 0 0 / 4%);
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.8);
+    box-shadow: 0 4px 6px 0 rgba(224, 231, 255, 0.25), 0 10px 15px 0 rgba(224, 231, 255, 0.5);
     height: 100%;
 
     .section-title {
       display: flex;
       align-items: center;
-      gap: 8px;
-      padding-bottom: 12px;
-      border-bottom: 1px solid #f0f2f5;
+      gap: 6px;
       color: #303133;
       font-size: 14px;
       font-weight: 600;
 
       .el-icon {
         color: #5252ff;
-        font-size: 20px;
+        font-size: 16px;
       }
     }
 
     .add-box {
       .add-episode-btn {
+        height: 34px;
         display: flex;
         justify-content: space-between;
         align-items: center;
         gap: 6px;
-        padding: 12px;
+        padding: 0 12px;
         border: 1px solid #d6d7ff;
-        border-radius: 12px;
+        border-radius: 8px;
         background: white;
         color: #5252ff;
         font-size: 14px;
@@ -192,9 +201,10 @@
         display: flex;
         align-items: center;
         justify-content: center;
+        height: 100%;
         width: 100%;
         padding: 32px 16px;
-        color: #909399;
+        color: #4e5969;
         font-size: 14px;
         font-weight: 500;
         text-align: center;

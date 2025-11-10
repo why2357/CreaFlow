@@ -1,10 +1,11 @@
 <template>
-  <el-dialog v-model="dialogVisible" :title="title" width="400px" :close-on-click-modal="false" @closed="handleClosed">
-    <el-form ref="formRef" :model="form" :rules="rules" label-width="80px" @submit.prevent="handleSubmit">
-      <el-form-item :label="label" prop="name">
+  <el-dialog v-model="dialogVisible" :title="title" width="340px" :close-on-click-modal="false" @closed="handleClosed">
+    <el-form ref="formRef" :model="form" :rules="rules" @submit.prevent="handleSubmit">
+      <el-form-item prop="name">
         <el-input
           v-model="form.name"
           :placeholder="placeholder"
+          style="width: 100%"
           maxlength="15"
           show-word-limit
           @keyup.enter="handleSubmit"

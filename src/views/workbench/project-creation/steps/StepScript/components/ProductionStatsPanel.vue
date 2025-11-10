@@ -133,7 +133,7 @@
       .el-icon {
         color: #5252ff;
         font-size: 16px;
-        margin-right: 7px;
+        margin-right: 6px;
       }
 
       .title {
@@ -170,7 +170,7 @@
       text-align: center;
 
       .empty-title {
-        color: #909399;
+        color: #4e5969;
         font-size: 14px;
         font-weight: 500;
       }

@@ -12,7 +12,7 @@
 </template>
 
 <script setup lang="ts">
-  import logo from '@/assets/logo/logo.png';
+  import logo from '@/assets/logo/side-logo.png';
   import { ComponentInternalInstance } from 'vue';
   const { proxy } = getCurrentInstance() as ComponentInternalInstance;
 
@@ -48,15 +48,16 @@
       height: 100%;
       display: flex;
       align-items: center;
-      justify-content: center;
+      // justify-content: center;
       line-height: 60px;
       height: 60px;
       margin-bottom: 20px;
 
       & .sidebar-logo {
         width: 40px;
-        height: 40px;
+        height: 24px;
         flex-shrink: 0;
+        margin-right: 13px;
       }
 
       & .sidebar-title {

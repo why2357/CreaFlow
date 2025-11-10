@@ -41,20 +41,21 @@
           >
             <el-dropdown
               trigger="click"
+              placement="bottom-end"
               @command="(command:string) => handleCommand(command, item)"
               @visible-change="(visible :boolean) => handleDropdownChange(visible, item.projectId)"
             >
               <div class="action-btn">
-                <el-icon><MoreFilled /></el-icon>
+                <svg-icon icon-class="fy-more" style="width: 12px; height: 12px" />
               </div>
               <template #dropdown>
                 <el-dropdown-menu>
                   <el-dropdown-item command="rename">
-                    <el-icon><Edit /></el-icon>
+                    <svg-icon icon-class="fy-pen" style="width: 16px; height: 16px; margin-right: 16px" />
                     重命名
                   </el-dropdown-item>
                   <el-dropdown-item command="delete" divided class="delete-item">
-                    <el-icon><Delete /></el-icon>
+                    <svg-icon icon-class="fy-del" style="width: 16px; height: 16px; margin-right: 16px" />
                     删除
                   </el-dropdown-item>
                 </el-dropdown-menu>
@@ -106,7 +107,7 @@
 <script setup name="Index" lang="ts">
   import { addProject as createProject, delProject, listProject, renameProject } from '@/api/workbench/project';
   import type { Project, ProjectCreateRequest } from '@/api/workbench/project/types';
-  import { Clock, Delete, Edit, Loading, MoreFilled, Plus } from '@element-plus/icons-vue';
+  import { Clock, Loading, Plus } from '@element-plus/icons-vue';
   import dayjs from 'dayjs';
   import { ElMessage, ElMessageBox } from 'element-plus';
   import { onMounted, ref } from 'vue';
@@ -435,7 +436,7 @@
       .project-name {
         margin: 0 0 8px;
         overflow: hidden;
-        color: #303133;
+        color: #1d2129;
         font-size: 14px;
         font-weight: 600;
         white-space: nowrap;
@@ -544,7 +545,7 @@
 
     .empty-text {
       margin: 0 0 40px;
-      color: var(--text-color-text-2, #4e5969);
+      color: #4e5969;
     }
     .add-btn {
       display: flex;

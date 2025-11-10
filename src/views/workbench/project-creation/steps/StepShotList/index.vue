@@ -55,11 +55,13 @@
           :loading="loading"
           :project-id="Number(projectStore.currentProjectId) || 0"
           :episodes="projectStore.episodeInfoList"
+          :model-points="getCurrentModelPoints"
           @image-upload="handleImageUpload"
           @image-regenerate="handleImageRegenerate"
           @toggle-favorite="handleToggleFavorite"
           @update-shot="handleUpdateShot"
           @refresh="loadShots"
+          @delete-success="handleDeleteSuccess"
         />
       </div>
     </div>
@@ -223,12 +225,18 @@
       characters: scene.characterClothingInfoList || [],
       // 场景名称（使用场景提示作为场景名称）
       sceneLocation: scene.sceneHint || '',
+      // 历史明细ID（用于判断是否本地上传）
+      historyDetailId: scene.historyDetailId,
       // 收藏状态（默认未收藏）
       isFavorite: false,
       // 图片加载状态（1-执行中）
       imageLoading: scene.taskStatus === 1,
       // 文生图任务状态 0-待执行 1-执行中 2-执行成功 3-执行失败
-      taskStatus: scene.taskStatus
+      taskStatus: scene.taskStatus,
+      // 评论数
+      commentCount: scene.commentCnt || 0,
+      // 图片状态 0-白色 1-橙色 2-绿色 3-红色
+      imgStatus: scene.sceneStatus
     }));
   };
 
@@ -484,6 +492,21 @@
       await loadShots();
     }
   };
+
+  // 处理删除成功 - 直接从列表中移除
+  const handleDeleteSuccess = (basicId: number) => {
+    // 找到被删除的镜头索引
+    const index = shots.value.findIndex((shot) => shot.basicId === basicId);
+    if (index !== -1) {
+      // 直接从数组中移除
+      shots.value.splice(index, 1);
+      // 重新计算镜号
+      shots.value.forEach((shot, idx) => {
+        shot.shotNumber = idx + 1;
+        shot.id = idx + 1;
+      });
+    }
+  };
 </script>
 
 <style scoped lang="scss">
@@ -491,6 +514,9 @@
     display: flex;
     width: 100%;
     height: 100%;
+    .episode-list-panel {
+      min-width: 200px;
+    }
   }
 
   .right-content {

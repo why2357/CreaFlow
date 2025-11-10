@@ -403,9 +403,14 @@ export interface Shot {
   dialogue: string; // 台词
   characters: any[]; // 人物列表（CharacterClothingInfo[]）
   sceneLocation: string; // 场景
+  historyDetailId?: number; // 历史明细ID（用于判断是否本地上传）
   isFavorite?: boolean; // 是否收藏
   imageLoading?: boolean; // 图片加载状态
   taskStatus?: number; // 文生图任务状态 0-待执行 1-执行中 2-执行成功 3-执行失败
+  reviewStatus?: number; // 评审状态 1-通过 2-待修改
+  comment?: string; // 评论内容
+  commentCount?: number; // 总评论数量
+  imgStatus?: number; // 图片状态 0-白色 1-橙色 2-绿色 3-红色
   createTime?: string;
   updateTime?: string;
 }

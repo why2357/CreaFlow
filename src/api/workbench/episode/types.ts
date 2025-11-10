@@ -111,10 +111,16 @@ export interface EpisodeSceneItemInfo {
   basicId?: number;
   /** 人物服装 */
   characterClothingInfoList?: CharacterClothingInfo[];
+  /** 评论数 */
+  commentCnt?: number;
   /** 台词 */
   dialogues?: string;
   /** 环境素材信息 */
   envMaterialInfoVo?: HivisionProjectMaterialVo;
+  /** 历史记录ID */
+  historyId?: number;
+  /** 历史明细ID */
+  historyDetailId?: number;
   /** 画面图片或视频 */
   materialInfoVoList?: HivisionProjectMaterialVo[];
   /** 场景描述 */

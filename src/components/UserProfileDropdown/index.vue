@@ -1,7 +1,7 @@
 <template>
   <el-popover
     placement="bottom-end"
-    :width="300"
+    :width="210"
     trigger="click"
     popper-class="user-profile-popover"
     :show-arrow="false"
@@ -66,7 +66,7 @@
             <el-button @click="handleCancel">取消</el-button>
             <el-button type="primary" @click="handleConfirm" :loading="loading">确认</el-button>
           </div>
-          <div style="border-top: 1px solid #eee">
+          <div class="logout-box">
             <el-button text class="logout-btn" @click="handleLogout">
               <svg-icon icon-class="fy-logout" style="margin-right: 12px; font-size: 18px" />
               退出登录
@@ -163,7 +163,7 @@
           const res = await updateUserCenterProfile(updateData);
 
           if (res.code === 200) {
-            ElMessage.success('修改成功');
+            ElMessage.success('信息修改成功');
             // 更新本地数据
             Object.assign(userProfile, editForm);
             isEditing.value = false;
@@ -215,11 +215,15 @@
 </script>
 
 <style lang="scss" scoped>
+  :deep(.el-input__wrapper) {
+    border-radius: 8px !important;
+    background: #f7f8fa !important;
+    // border: 1px solid #f7f8fa !important;
+  }
   .avatar-wrapper {
     display: flex;
     align-items: center;
     gap: 8px;
-    padding: 4px;
     border-radius: 20px;
     cursor: pointer;
     transition: all 0.3s;
@@ -261,6 +265,7 @@
         font-size: 14px;
         border-radius: 4px;
         margin-bottom: 16px;
+        height: 32px;
       }
 
       .edit-btn {
@@ -268,9 +273,10 @@
         margin-bottom: 12px;
         border-radius: 8px;
       }
-
+      .logout-box {
+        border-top: 1px solid #eee;
+      }
       .logout-btn {
-        width: 100%;
         color: #f56c6c;
         border-radius: 8px;
         margin-top: 12px;
@@ -307,8 +313,9 @@
 
 <style lang="scss">
   .user-profile-popover {
-    padding: 16px !important;
-    border-radius: 12px !important;
+    padding: 20px !important;
+    border-radius: 8px !important;
+    height: 269px;
     box-shadow: 0 2px 12px 0 rgb(0 0 0 / 10%) !important;
   }
 </style>

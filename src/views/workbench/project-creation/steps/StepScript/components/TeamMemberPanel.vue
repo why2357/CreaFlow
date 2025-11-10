@@ -252,7 +252,7 @@
       .el-icon {
         color: #5252ff;
         font-size: 16px;
-        margin-right: 7px;
+        margin-right: 6px;
       }
 
       .title {
@@ -274,7 +274,7 @@
         border: 0.625px solid #d6d7ff;
         background: #f3f3ff;
         color: #5252ff;
-        font-size: 9px;
+        font-size: 10px;
       }
     }
   }
@@ -313,7 +313,7 @@
       text-align: center;
 
       .empty-title {
-        color: #909399;
+        color: #4e5969;
         font-size: 14px;
         font-weight: 500;
       }

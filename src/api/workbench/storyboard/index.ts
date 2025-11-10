@@ -5,7 +5,15 @@ import type {
   QueryEpisodeRoleRequest,
   QueryEpisodeRoleResponse,
   QuerySceneRoleRequest,
-  QuerySceneRoleResponse
+  QuerySceneRoleResponse,
+  SceneAddRequest,
+  SceneCommentListRequest,
+  SceneCommentRequest,
+  SceneCommentVo,
+  SceneImageEditRequest,
+  SceneReviewRequest,
+  StoryBoardRequest,
+  StoryBoardSceneVo
 } from './types';
 
 /**
@@ -48,6 +56,92 @@ export function editSceneRole(data: EditSceneRoleRequest) {
   return request({
     url: '/hivision/story/scene/edit-scene-role',
     method: 'put',
+    data
+  });
+}
+
+/**
+ * 查询故事板
+ */
+export function queryStoryBoard(data: StoryBoardRequest) {
+  return request<StoryBoardSceneVo[]>({
+    url: '/hivision/story/episode/story-board',
+    method: 'post',
+    data
+  });
+}
+
+/**
+ * 镜头评论
+ */
+export function addSceneComment(data: SceneCommentRequest) {
+  return request({
+    url: '/hivision/story/comment',
+    method: 'post',
+    data
+  });
+}
+
+/**
+ * 查询镜头评论列表
+ */
+export function getSceneCommentList(data: SceneCommentListRequest) {
+  return request<SceneCommentVo[]>({
+    url: '/hivision/story/comment/list',
+    method: 'post',
+    data
+  });
+}
+
+/**
+ * 删除镜头评论
+ */
+export function deleteSceneComment(ids: number[]) {
+  return request({
+    url: `/hivision/projectSceneComment/${ids.join(',')}`,
+    method: 'delete'
+  });
+}
+
+/**
+ * 分镜审阅
+ */
+export function reviewScene(data: SceneReviewRequest) {
+  return request({
+    url: '/hivision/story/scene/review',
+    method: 'post',
+    data
+  });
+}
+
+/**
+ * 分镜插入
+ */
+export function addScene(data: SceneAddRequest) {
+  return request({
+    url: '/hivision/story/scene/add',
+    method: 'post',
+    data
+  });
+}
+
+/**
+ * 删除镜头
+ */
+export function deleteScene(ids: number[]) {
+  return request({
+    url: `/hivision/story/scene/${ids.join(',')}`,
+    method: 'delete'
+  });
+}
+
+/**
+ * 图片编辑
+ */
+export function editSceneImage(data: SceneImageEditRequest) {
+  return request({
+    url: '/hivision/story/scene/edit-img',
+    method: 'post',
     data
   });
 }

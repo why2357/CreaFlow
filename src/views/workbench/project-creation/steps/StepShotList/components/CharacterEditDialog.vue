@@ -2,7 +2,7 @@
   <el-dialog
     v-model="dialogVisible"
     title="角色编辑"
-    width="1200px"
+    width="988px"
     :close-on-click-modal="false"
     class="character-edit-dialog"
     @close="handleClose"
@@ -16,7 +16,7 @@
         <div v-for="role in roleList" :key="role.roleId" class="role-group">
           <!-- 角色标题 -->
           <div class="role-header">
-            <h3 class="role-name">{{ role.roleName }}</h3>
+            <div class="role-name-tag">{{ role.roleName }}</div>
           </div>
 
           <!-- 服装列表 -->
@@ -28,19 +28,16 @@
               :class="{ selected: detail.selected }"
               @click="toggleSelection(role.roleId, detail.detailId)"
             >
-              <el-image :src="detail.previewUrl || detail.originUrl" fit="cover" class="costume-image">
-                <template #error>
-                  <div class="image-error">
-                    <el-icon><Picture /></el-icon>
-                  </div>
-                </template>
-              </el-image>
-              <div class="costume-name">{{ detail.name }}</div>
-
-              <!-- 选中标记 -->
-              <div v-if="detail.selected" class="selected-mark">
-                <el-icon><Check /></el-icon>
+              <div class="costume-image-wrapper">
+                <el-image :src="detail.previewUrl || detail.originUrl" fit="cover" class="costume-image">
+                  <template #error>
+                    <div class="image-error">
+                      <el-icon><Picture /></el-icon>
+                    </div>
+                  </template>
+                </el-image>
               </div>
+              <div class="costume-name">{{ detail.name }}</div>
             </div>
           </div>
         </div>
@@ -49,8 +46,10 @@
 
     <!-- 底部操作按钮 -->
     <template #footer>
-      <el-button @click="handleClose">取消</el-button>
-      <el-button type="primary" :loading="submitting" @click="handleConfirm">确认</el-button>
+      <div class="dialog-footer">
+        <el-button class="cancel-btn" @click="handleClose">取消</el-button>
+        <el-button class="confirm-btn" type="primary" :loading="submitting" @click="handleConfirm">确认</el-button>
+      </div>
     </template>
   </el-dialog>
 </template>
@@ -58,9 +57,9 @@
 <script setup lang="ts">
   import { editEpisodeRole, queryEpisodeRole } from '@/api/workbench/episode';
   import type { RoleData } from '@/api/workbench/episode/types';
-  import { Check, Picture } from '@element-plus/icons-vue';
+  import { Picture } from '@element-plus/icons-vue';
   import { ElMessage } from 'element-plus';
-  import { computed, ref, watch } from 'vue';
+  import { computed, nextTick, onUnmounted, ref, watch } from 'vue';
 
   // Props
   interface Props {
@@ -101,6 +100,52 @@
     }
   });
 
+  // 设置横向滚动
+  const setupHorizontalScroll = () => {
+    nextTick(() => {
+      const scrollWrappers = document.querySelectorAll('.character-edit-dialog .costume-list');
+
+      scrollWrappers.forEach((wrapper) => {
+        const handleWheel = (e: Event) => {
+          const wheelEvent = e as WheelEvent;
+          // 只处理垂直滚动
+          if (wheelEvent.deltaY !== 0) {
+            wheelEvent.preventDefault();
+            // 将垂直滚动转换为横向滚动
+            const element = wrapper as HTMLElement;
+            element.scrollLeft += wheelEvent.deltaY;
+          }
+        };
+
+        // 移除旧的监听器
+        if ((wrapper as any).__wheelHandler) {
+          wrapper.removeEventListener('wheel', (wrapper as any).__wheelHandler);
+        }
+
+        // 添加新的监听器
+        wrapper.addEventListener('wheel', handleWheel, { passive: false } as any);
+
+        // 保存事件处理器和清理函数
+        (wrapper as any).__wheelHandler = handleWheel;
+        (wrapper as any).__cleanupScroll = () => {
+          wrapper.removeEventListener('wheel', handleWheel);
+          delete (wrapper as any).__wheelHandler;
+          delete (wrapper as any).__cleanupScroll;
+        };
+      });
+    });
+  };
+
+  // 组件卸载时清理
+  onUnmounted(() => {
+    const scrollWrappers = document.querySelectorAll('.character-edit-dialog .costume-list');
+    scrollWrappers.forEach((wrapper) => {
+      if ((wrapper as any).__cleanupScroll) {
+        (wrapper as any).__cleanupScroll();
+      }
+    });
+  });
+
   // 加载角色列表
   const loadRoleList = async () => {
     if (!props.episodeId && !props.projectId) {
@@ -116,6 +161,9 @@
 
       const res = await queryEpisodeRole(params);
       roleList.value = res.data || [];
+
+      // 数据加载后设置横向滚动
+      setupHorizontalScroll();
     } catch (error) {
       console.error('加载角色列表失败:', error);
     } finally {
@@ -123,16 +171,21 @@
     }
   };
 
-  // 切换选中状态
+  // 切换选中状态（每个角色只能选中一个服装）
   const toggleSelection = (roleId: number, detailId: number) => {
     const role = roleList.value.find((r) => r.roleId === roleId);
     if (!role) return;
 
-    const detail = role.details.find((d) => d.detailId === detailId);
-    if (!detail) return;
+    // 先取消该角色的所有服装选中状态
+    role.details.forEach((d) => {
+      d.selected = false;
+    });
 
-    // 切换选中状态
-    detail.selected = !detail.selected;
+    // 然后选中当前点击的服装
+    const detail = role.details.find((d) => d.detailId === detailId);
+    if (detail) {
+      detail.selected = true;
+    }
   };
 
   // 确认提交
@@ -184,9 +237,29 @@
 
 <style scoped lang="scss">
   .character-edit-dialog {
+    :deep(.el-dialog__header) {
+      padding: 24px 24px 16px;
+      border-bottom: 1px solid #e5e7eb;
+
+      .el-dialog__title {
+        color: #1f2937;
+        font-size: 18px;
+        font-weight: 600;
+      }
+    }
+
+    :deep(.el-dialog__body) {
+      padding: 24px;
+    }
+
+    :deep(.el-dialog__footer) {
+      padding: 16px 24px;
+      border-top: 1px solid #e5e7eb;
+    }
+
     .character-content {
       min-height: 400px;
-      max-height: 600px;
+      max-height: 500px;
       overflow-y: auto;
 
       .empty-state {
@@ -194,61 +267,111 @@
         align-items: center;
         justify-content: center;
         height: 400px;
-        color: #999;
+        color: #9ca3af;
         font-size: 14px;
       }
 
       .role-list {
         display: flex;
         flex-direction: column;
-        gap: 32px;
+        gap: 24px;
       }
 
       .role-group {
         border-radius: 12px;
-        background: rgba(255, 255, 255, 0.8);
-        box-shadow: 0 4px 6px 0 rgba(224, 231, 255, 0.25), 0 10px 15px 0 rgba(224, 231, 255, 0.5);
+        background: #f7f8fa;
         padding: 20px;
 
         .role-header {
+          flex-shrink: 0;
+          color: #1d2129;
+          font-size: 13px;
+          line-height: 13px;
           margin-bottom: 16px;
-
-          .role-name {
-            margin: 0;
-            color: #262626;
-            font-size: 18px;
-            font-weight: 600;
-          }
         }
 
         .costume-list {
-          display: grid;
-          grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-          gap: 16px;
+          flex: 1;
+          display: flex;
+          gap: 12px;
+          overflow-x: auto;
+          overflow-y: hidden;
+          padding-bottom: 8px;
+          padding-top: 8px;
+
+          // 滚动条样式
+          scrollbar-width: thin;
+          scrollbar-color: transparent transparent;
+
+          &::-webkit-scrollbar {
+            height: 6px;
+          }
+
+          &::-webkit-scrollbar-track {
+            background: transparent;
+          }
+
+          &::-webkit-scrollbar-thumb {
+            background: transparent;
+            border-radius: 3px;
+          }
+
+          // hover时显示滚动条
+          &:hover {
+            scrollbar-color: rgba(0, 0, 0, 0.2) rgba(0, 0, 0, 0.05);
+
+            &::-webkit-scrollbar-track {
+              background: rgba(0, 0, 0, 0.05);
+              border-radius: 3px;
+            }
+
+            &::-webkit-scrollbar-thumb {
+              background: rgba(0, 0, 0, 0.2);
+
+              &:hover {
+                background: rgba(0, 0, 0, 0.3);
+              }
+            }
+          }
 
           .costume-item {
             position: relative;
+            flex-shrink: 0;
+            width: 140px;
             cursor: pointer;
             border-radius: 8px;
             overflow: hidden;
-            border: 2px solid transparent;
             background: white;
-            transition: all 0.3s;
+            border: 2px solid transparent;
+            transition: all 0.2s ease;
 
             &:hover {
-              transform: translateY(-4px);
-              box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+              border-color: #e5e7eb;
+              transform: translateY(-2px);
             }
 
             &.selected {
-              border-color: #5252ff;
-              box-shadow: 0 4px 12px rgba(82, 82, 255, 0.3);
+              border-color: #5b5bff;
+              box-shadow: 0 0 0 2px rgba(91, 91, 255, 0.1);
+            }
+
+            .costume-image-wrapper {
+              position: relative;
+              width: 100%;
+              height: 160px;
+              background: #f9fafb;
             }
 
             .costume-image {
               width: 100%;
-              height: 200px;
+              height: 100%;
               display: block;
+
+              :deep(img) {
+                width: 100%;
+                height: 100%;
+                object-fit: cover;
+              }
 
               .image-error {
                 display: flex;
@@ -256,39 +379,61 @@
                 justify-content: center;
                 width: 100%;
                 height: 100%;
-                background-color: #f5f7fa;
-                color: #c0c4cc;
+                background-color: #f3f4f6;
+                color: #d1d5db;
                 font-size: 32px;
               }
             }
 
             .costume-name {
-              padding: 8px 12px;
-              font-size: 14px;
-              color: #606266;
-              text-align: center;
-              background-color: #fff;
+              position: absolute;
+              bottom: 12px;
+              left: 12px;
+              color: #fff;
+              font-size: 12px;
+              line-height: 12px; /* 100% */
+              width: 40px;
               overflow: hidden;
               text-overflow: ellipsis;
               white-space: nowrap;
             }
-
-            .selected-mark {
-              position: absolute;
-              top: 8px;
-              left: 8px;
-              width: 28px;
-              height: 28px;
-              background-color: #5252ff;
-              border-radius: 50%;
-              display: flex;
-              align-items: center;
-              justify-content: center;
-              color: #fff;
-              font-size: 16px;
-              box-shadow: 0 2px 8px rgba(82, 82, 255, 0.4);
-            }
           }
+        }
+      }
+    }
+
+    .dialog-footer {
+      display: flex;
+      justify-content: center;
+      gap: 16px;
+
+      .cancel-btn {
+        min-width: 100px;
+        height: 36px;
+        border-radius: 6px;
+        font-size: 14px;
+        color: #6b7280;
+        background: #fff;
+        border: 1px solid #e5e7eb;
+
+        &:hover {
+          color: #374151;
+          border-color: #d1d5db;
+          background: #f9fafb;
+        }
+      }
+
+      .confirm-btn {
+        min-width: 100px;
+        height: 36px;
+        border-radius: 6px;
+        font-size: 14px;
+        background: #5b5bff;
+        border-color: #5b5bff;
+
+        &:hover {
+          background: #4a4aee;
+          border-color: #4a4aee;
         }
       }
     }

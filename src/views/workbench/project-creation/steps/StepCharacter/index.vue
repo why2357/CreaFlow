@@ -42,16 +42,16 @@
             </div>
             <el-dropdown trigger="click" @command="(cmd: string) => handleGroupCommand(cmd, library)">
               <el-button class="dro-btn" text>
-                <el-icon><MoreFilled /></el-icon>
+                <svg-icon icon-class="fy-more" style="width: 16px; height: 16px" />
               </el-button>
               <template #dropdown>
                 <el-dropdown-menu>
                   <el-dropdown-item command="rename">
-                    <el-icon><Edit /></el-icon>
+                    <svg-icon icon-class="fy-pen" style="width: 16px; height: 16px; margin-right: 16px" />
                     重命名
                   </el-dropdown-item>
                   <el-dropdown-item command="delete" divided class="delete-item">
-                    <el-icon><Delete /></el-icon>
+                    <svg-icon icon-class="fy-del" style="width: 16px; height: 16px; margin-right: 16px" />
                     删除
                   </el-dropdown-item>
                 </el-dropdown-menu>
@@ -112,16 +112,16 @@
                   <div class="costume-actions">
                     <el-dropdown trigger="click" @command="(cmd: string) => handleCostumeCommand(cmd, costume)">
                       <div class="more-btn">
-                        <el-icon><MoreFilled /></el-icon>
+                        <svg-icon icon-class="fy-more" style="width: 12px; height: 12px" />
                       </div>
                       <template #dropdown>
                         <el-dropdown-menu>
                           <el-dropdown-item command="rename">
-                            <el-icon><Edit /></el-icon>
+                            <svg-icon icon-class="fy-pen" style="width: 16px; height: 16px; margin-right: 16px" />
                             重命名
                           </el-dropdown-item>
                           <el-dropdown-item command="delete" divided class="delete-item">
-                            <el-icon><Delete /></el-icon>
+                            <svg-icon icon-class="fy-del" style="width: 16px; height: 16px; margin-right: 16px" />
                             删除
                           </el-dropdown-item>
                         </el-dropdown-menu>
@@ -190,7 +190,6 @@
     deleteLibrary,
     deleteLibraryDetail,
     getCharacterDetail,
-    getLibraryDetailCount,
     renameLibrary,
     renameLibraryDetail
   } from '@/api/workbench/library';
@@ -203,7 +202,7 @@
   import { LibraryType } from '@/api/workbench/project/types';
   import { useProjectStore } from '@/store/modules/project';
   import { uploadFile } from '@/utils/uploadFile';
-  import { Delete, Edit, MoreFilled, Picture, Plus } from '@element-plus/icons-vue';
+  import { Picture, Plus } from '@element-plus/icons-vue';
   import { ElMessage, ElMessageBox } from 'element-plus';
   import { nextTick, onMounted, onUnmounted, ref } from 'vue';
   import EpisodeSelector from '../components/EpisodeSelector.vue';
@@ -634,7 +633,6 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 16px 26px;
     .add-rigtop {
       display: flex;
       width: 118px;
@@ -650,7 +648,7 @@
 
   .character-content {
     flex: 1;
-    padding: 24px;
+    padding-top: 14px;
     overflow-y: auto;
     .empty-box {
       width: 100%;
@@ -713,7 +711,7 @@
       }
       .dro-btn {
         border-radius: 6px;
-        background: #f3f3ff;
+        // background: #f3f3ff;
       }
     }
 
@@ -727,10 +725,11 @@
         flex-shrink: 0;
         min-width: 120px;
         max-width: 200px;
+        height: 240px;
         position: sticky;
         left: 0;
         z-index: 2;
-        background: rgba(255, 255, 255, 0.8);
+        // background: rgba(255, 255, 255, 0.8);
         backdrop-filter: blur(10px);
       }
 
@@ -801,9 +800,6 @@
   .costume-card {
     position: relative;
     overflow: hidden;
-    border: 1px solid #e8e8e8;
-    border-radius: 8px;
-    background: white;
     transition: all 0.3s;
 
     &:hover {
@@ -857,9 +853,16 @@
     width: 100%;
     height: 240px;
 
+    &:hover {
+      .costume-actions {
+        opacity: 1;
+      }
+    }
+
     .el-image {
       width: 100%;
       height: 100%;
+      border-radius: 8px;
     }
 
     .image-error {
@@ -875,14 +878,13 @@
     // 左下角名称
     .costume-name-overlay {
       position: absolute;
-      bottom: 0;
+      bottom: 6px;
       left: 0;
       max-width: calc(100% - 80px);
       padding: 4px 8px;
       overflow: hidden;
-      background: rgb(0 0 0 / 60%);
-      color: white;
-      font-size: 14px;
+      color: #fff;
+      font-size: 12px;
       white-space: nowrap;
       text-overflow: ellipsis;
     }
@@ -937,15 +939,17 @@
       position: absolute;
       right: 8px;
       bottom: 8px;
+      opacity: 0;
 
       .more-btn {
         display: flex;
         justify-content: center;
         align-items: center;
-        width: 32px;
-        height: 32px;
-        border-radius: 4px;
-        background: rgb(255 255 255 / 90%);
+        width: 24px;
+        height: 24px;
+        border-radius: 6px;
+        background: rgba(255, 255, 255, 0.8);
+        backdrop-filter: blur(5.300000190734863px);
         cursor: pointer;
         transition: all 0.3s;
 
@@ -958,11 +962,16 @@
   }
 
   .costume-footer {
-    padding: 12px;
+    margin-top: 8px;
     text-align: center;
 
     .el-button {
       width: 100%;
+      border-radius: 3px;
+      border: 1px dashed #c9cdd4;
+      background: #f7f8fa;
+      color: #86909c;
+      font-size: 13px;
     }
   }
 </style>

@@ -8,40 +8,47 @@
       </div>
     </div>
 
-    <!-- 空状态 -->
-    <div v-else-if="shots.length === 0" class="empty-state">
-      <div class="empty-content">
-        <img style="width: 200px; height: 200px" src="../../../../../../assets/images/no-image-light.png" alt="" />
-        <p class="empty-text">暂无分镜</p>
-      </div>
-    </div>
-
     <!-- 分镜表格 -->
     <div v-else class="table-wrapper">
-      <el-table :data="shots" border stripe height="100%">
-        <el-table-column prop="shotNumber" label="镜号" width="80" align="center" />
-
-        <el-table-column label="画面" min-width="200" align="center">
+      <el-table :data="shots" border stripe height="100%" class="storyboard-table">
+        <el-table-column prop="shotNumber" label="镜号" width="120" align="center" fixed>
           <template #default="{ row }">
-            <div class="scene-image-cell">
-              <SceneImageCell
-                :image-url="row.sceneImage"
-                :material-info-vo-list="row.materialInfoVoList"
-                :aspect-ratio="aspectRatio"
-                :shot-id="row.id"
-                :basic-id="row.basicId"
-                :is-favorite="row.isFavorite"
-                :loading="row.imageLoading"
-                :task-status="row.taskStatus"
-                @upload="(file:any) => handleImageUpload(row, file)"
-                @show-history="handleShowHistory(row)"
-                @download="handleImageDownload(row)"
-                @crop="handleImageCrop(row)"
-                @toggle-favorite="handleToggleFavorite(row)"
-                @regenerate="handleImageRegenerate(row)"
-                @refresh="emit('refresh')"
+            <div class="shot-number-cell">
+              <ShotNumberActions
+                :shot-number="row.shotNumber"
+                :comment-count="row.commentCount || 0"
+                @comment="(event) => handleShotComment(row, event)"
+                @insert="handleShotInsert(row)"
+                @review="(event) => handleShotReview(row, event)"
+                @delete="handleShotDelete(row)"
+                @view-comments="handleViewComments(row)"
               />
+              <span class="shot-number-text">{{ row.shotNumber }}</span>
             </div>
+          </template>
+        </el-table-column>
+
+        <el-table-column label="画面" :width="getImageColumnWidth()" align="center" fixed>
+          <template #default="{ row }">
+            <SceneImageCell
+              :image-url="row.sceneImage"
+              :material-info-vo-list="row.materialInfoVoList"
+              :aspect-ratio="aspectRatio"
+              :shot-id="row.id"
+              :basic-id="row.basicId"
+              :history-detail-id="row.historyDetailId"
+              :is-favorite="row.isFavorite"
+              :loading="row.imageLoading"
+              :task-status="row.taskStatus"
+              :model-points="modelPoints"
+              @upload="(file:any) => handleImageUpload(row, file)"
+              @show-history="handleShowHistory(row)"
+              @download="handleImageDownload(row)"
+              @crop="handleImageCrop(row)"
+              @toggle-favorite="handleToggleFavorite(row)"
+              @regenerate="handleImageRegenerate(row)"
+              @refresh="emit('refresh')"
+            />
           </template>
         </el-table-column>
 
@@ -157,6 +164,20 @@
             </div>
           </template>
         </el-table-column>
+
+        <!-- 空状态 -->
+        <template #empty>
+          <div class="empty-state">
+            <div class="empty-content">
+              <img
+                style="width: 200px; height: 200px"
+                src="../../../../../../assets/images/no-image-light.png"
+                alt=""
+              />
+              <p class="empty-text">暂无分镜头</p>
+            </div>
+          </div>
+        </template>
       </el-table>
     </div>
 
@@ -192,6 +213,33 @@
 
     <!-- 场景上传输入框（隐藏） -->
     <input ref="sceneUploadInput" type="file" accept="image/*" style="display: none" @change="handleSceneFileChange" />
+
+    <!-- 留言popover -->
+    <CommentDialog
+      v-model="commentDialogVisible"
+      :basic-id="currentShotForAction?.basicId || 0"
+      :scene-type="1"
+      :trigger-ref="commentTriggerRef"
+      @success="handleCommentSuccess"
+    />
+
+    <!-- 留言列表对话框 -->
+    <CommentListDialog
+      v-model="commentListDialogVisible"
+      :basic-id="currentShotForAction?.basicId || 0"
+      :scene-type="1"
+      @change="handleCommentChange"
+    />
+
+    <!-- 评审popover -->
+    <ReviewDialog
+      v-model="reviewDialogVisible"
+      :basic-id="currentShotForAction?.basicId || 0"
+      :scene-type="1"
+      :current-status="currentShotForAction?.imgStatus"
+      :trigger-ref="reviewTriggerRef"
+      @success="handleReviewSuccess"
+    />
   </div>
 </template>
 
@@ -199,14 +247,19 @@
   import { editSceneBasic, setSceneEnv } from '@/api/workbench/episode';
   import type { CharacterClothingInfo } from '@/api/workbench/episode/types';
   import type { EpisodeInfo, LibrarySubInfo, Shot } from '@/api/workbench/project/types';
+  import { addScene, deleteScene } from '@/api/workbench/storyboard';
   import { uploadFile } from '@/utils/uploadFile';
   import { Edit, Loading } from '@element-plus/icons-vue';
-  import { ElMessage } from 'element-plus';
+  import { ElMessage, ElMessageBox } from 'element-plus';
   import { ref } from 'vue';
+  import CommentDialog from './CommentDialog.vue';
+  import CommentListDialog from './CommentListDialog.vue';
   import ImageCropDialog from './ImageCropDialog.vue';
   import ImageHistoryDialog from './ImageHistoryDialog.vue';
+  import ReviewDialog from './ReviewDialog.vue';
   import SceneImageCell from './SceneImageCell.vue';
   import SceneLibraryDialog from './SceneLibraryDialog.vue';
+  import ShotNumberActions from './ShotNumberActions.vue';
   import SingleCharacterEditDialog from './SingleCharacterEditDialog.vue';
 
   interface Props {
@@ -215,6 +268,7 @@
     loading?: boolean;
     projectId: number;
     episodes: EpisodeInfo[];
+    modelPoints?: number; // 当前模型的点数
   }
 
   const props = withDefaults(defineProps<Props>(), {
@@ -227,6 +281,7 @@
     (e: 'toggleFavorite', shot: Shot): void;
     (e: 'updateShot', shot: Shot): void;
     (e: 'refresh'): void;
+    (e: 'deleteSuccess', basicId: number): void;
   }>();
 
   // 裁剪相关
@@ -259,6 +314,14 @@
     episodeId: number;
     roleId: number;
   } | null>(null);
+
+  // 镜号操作相关
+  const currentShotForAction = ref<Shot | null>(null);
+  const commentDialogVisible = ref(false);
+  const commentTriggerRef = ref<HTMLElement>();
+  const commentListDialogVisible = ref(false);
+  const reviewDialogVisible = ref(false);
+  const reviewTriggerRef = ref<HTMLElement>();
 
   // 图片上传
   const handleImageUpload = (shot: Shot, file: File) => {
@@ -590,6 +653,143 @@
     emit('refresh');
   };
 
+  // 计算画面列宽度 - 根据宽高比动态计算
+  const getImageColumnWidth = () => {
+    // 固定高度为 190px (表格行高)
+    const imageHeight = 190;
+
+    // 根据宽高比计算宽度
+    const ratioMap: Record<string, number> = {
+      '1:1': 1,
+      '16:9': 16 / 9,
+      '9:16': 9 / 16,
+      '4:3': 4 / 3,
+      '3:4': 3 / 4
+    };
+
+    const ratio = ratioMap[props.aspectRatio] || 16 / 9;
+    const imageWidth = imageHeight * ratio;
+
+    // 列宽 = 图片宽度 (不加padding，完全铺满)
+    return Math.ceil(imageWidth);
+  };
+
+  // ==================== 镜号操作功能 ====================
+
+  // 留言
+  const handleShotComment = (shot: Shot, event?: MouseEvent) => {
+    if (!shot.basicId) {
+      ElMessage.warning('缺少场景基础信息ID');
+      return;
+    }
+    currentShotForAction.value = shot;
+    if (event) {
+      commentTriggerRef.value = event.currentTarget as HTMLElement;
+    }
+    commentDialogVisible.value = true;
+  };
+
+  // 留言成功
+  const handleCommentSuccess = () => {
+    emit('refresh');
+  };
+
+  // 查看留言列表
+  const handleViewComments = (shot: Shot) => {
+    if (!shot.basicId) {
+      ElMessage.warning('缺少场景基础信息ID');
+      return;
+    }
+    currentShotForAction.value = shot;
+    commentListDialogVisible.value = true;
+  };
+
+  // 留言数量变化
+  const handleCommentChange = () => {
+    emit('refresh');
+  };
+
+  // 插入镜头
+  const handleShotInsert = async (shot: Shot) => {
+    if (!shot.basicId) {
+      ElMessage.warning('缺少场景基础信息ID');
+      return;
+    }
+
+    try {
+      await ElMessageBox.confirm('确定要在此镜头后插入新镜头吗？', '插入镜头', {
+        confirmButtonText: '确定',
+        cancelButtonText: '取消',
+        type: 'info'
+      });
+
+      await addScene({
+        preBasicId: shot.basicId,
+        sceneType: 1 // 1-图片
+      });
+
+      ElMessage.success('插入镜头成功');
+      emit('refresh');
+    } catch (error: any) {
+      if (error !== 'cancel') {
+        console.error('插入镜头失败:', error);
+        ElMessage.error('插入镜头失败，请重试');
+      }
+    }
+  };
+
+  // 评审
+  const handleShotReview = (shot: Shot, event?: MouseEvent) => {
+    if (!shot.basicId) {
+      ElMessage.warning('缺少场景基础信息ID');
+      return;
+    }
+
+    // 检查是否可以评审（只有橙色、红色、绿色状态才能评审）
+    if (shot.imgStatus !== 1 && shot.imgStatus !== 2 && shot.imgStatus !== 3) {
+      ElMessage.warning('只能对橙色、红色、绿色状态的镜头进行评审');
+      return;
+    }
+
+    currentShotForAction.value = shot;
+    if (event) {
+      reviewTriggerRef.value = event.currentTarget as HTMLElement;
+    }
+    reviewDialogVisible.value = true;
+  };
+
+  // 评审成功
+  const handleReviewSuccess = () => {
+    emit('refresh');
+  };
+
+  // 删除镜头
+  const handleShotDelete = async (shot: Shot) => {
+    if (!shot.basicId) {
+      ElMessage.warning('缺少场景基础信息ID');
+      return;
+    }
+
+    try {
+      await ElMessageBox.confirm(`确定要删除镜号 ${shot.shotNumber} 吗？此操作不可恢复。`, '删除镜头', {
+        confirmButtonText: '确定删除',
+        cancelButtonText: '取消',
+        type: 'warning',
+        confirmButtonClass: 'el-button--danger'
+      });
+
+      await deleteScene([shot.basicId]);
+      ElMessage.success('删除镜头成功');
+      // 通知父组件删除成功，父组件可以选择直接移除数据或重新请求
+      emit('deleteSuccess', shot.basicId);
+    } catch (error: any) {
+      if (error !== 'cancel') {
+        console.error('删除镜头失败:', error);
+        ElMessage.error('删除镜头失败，请重试');
+      }
+    }
+  };
+
   // 暴露方法给父组件
   defineExpose({
     resetEditState
@@ -645,13 +845,40 @@
       width: 100%;
       height: 100%;
       padding: 20px 20px 0;
+      overflow-x: auto; // 允许横向滚动
+
+      // 滚动条样式优化
+      &::-webkit-scrollbar {
+        height: 8px;
+      }
+
+      &::-webkit-scrollbar-thumb {
+        background: #dcdfe6;
+        border-radius: 4px;
+
+        &:hover {
+          background: #c0c4cc;
+        }
+      }
+
+      &::-webkit-scrollbar-track {
+        background: #f5f7fa;
+        border-radius: 4px;
+      }
+
+      .storyboard-table {
+        min-width: 100%; // 确保表格可以横向扩展
+      }
 
       .editable-cell {
         position: relative;
-        min-height: 40px;
+        max-height: 100%;
         padding: 8px;
         cursor: pointer;
         transition: background-color 0.2s;
+        overflow: hidden;
+        display: flex;
+        align-items: center;
 
         &:hover {
           background-color: #f5f7fa;
@@ -687,12 +914,24 @@
         color: #606266;
         line-height: 1.6;
         white-space: pre-wrap;
+        word-break: break-word;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        display: -webkit-box;
+        -webkit-line-clamp: 3; // 最多显示3行
+        -webkit-box-orient: vertical;
       }
 
       .dialogue {
         color: #606266;
         line-height: 1.6;
         white-space: pre-wrap;
+        word-break: break-word;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        display: -webkit-box;
+        -webkit-line-clamp: 3; // 最多显示3行
+        -webkit-box-orient: vertical;
       }
 
       .characters {
@@ -714,36 +953,125 @@
         }
       }
 
-      // 画面列单元格样式 - 移除padding让内容铺满，添加hover效果
+      // 画面列单元格样式 - 完全移除padding，图片铺满
       :deep(.el-table__body .el-table__row .el-table__cell:has(.scene-image-cell)) {
         padding: 0 !important;
         cursor: pointer;
+        height: 190px !important;
+        vertical-align: middle;
+        overflow: hidden;
+
+        .cell {
+          padding: 0 !important;
+          height: 100%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+        }
+
         .hover-overlay {
           opacity: 0;
         }
         &:hover {
-          background: linear-gradient(0deg, rgba(0, 0, 0, 0.4) 0%, rgba(0, 0, 0, 0.4) 100%);
           .hover-overlay {
             opacity: 1;
           }
         }
       }
 
-      // 画面列布局样式
-      .scene-image-cell {
+      // 画面列表头样式
+      :deep(.el-table__header .el-table__cell:has(div:contains('画面'))) {
+        height: 50px !important;
+      }
+
+      // 其他列单元格样式 - 固定高度190px，内容超出滚动或省略
+      :deep(.el-table__body .el-table__row) {
+        height: 190px !important;
+        background-color: #fff;
+        transition: background-color 0.2s ease;
+        position: relative;
+        z-index: 1;
+
+        &:hover {
+          background-color: #f3f3ff !important;
+          z-index: 2;
+
+          > td {
+            background-color: transparent !important;
+          }
+        }
+      }
+
+      :deep(.el-table__body .el-table__row .el-table__cell) {
+        height: 190px !important;
+        vertical-align: middle;
+        overflow: hidden;
+
+        &:not(:has(.scene-image-cell)) {
+          padding: 12px !important;
+        }
+      }
+
+      // 镜号列样式
+      .shot-number-cell {
+        position: relative;
         display: flex;
-        flex-direction: column;
         align-items: center;
-        width: 100%;
-        // height: 120px; // 固定高度与场景列保持一致
+        justify-content: center;
+        gap: 8px;
+        font-size: 14px;
+        font-weight: 500;
+        color: #1d2129;
+        height: 100%;
+
+        .shot-number-text {
+          min-width: 24px;
+          text-align: center;
+        }
+      }
+
+      // 镜号列单元格hover效果
+      :deep(.el-table__body .el-table__row .el-table__cell:first-child) {
+        overflow: visible !important;
+        position: relative;
+        z-index: 10;
+
+        .cell {
+          overflow: visible !important;
+        }
+
+        &:hover {
+          z-index: 100;
+
+          .shot-number-actions {
+            .action-dot {
+              .dot-inner {
+                background-color: #5468ff;
+                transform: scale(1.2);
+              }
+            }
+
+            .action-menu {
+              opacity: 1;
+              visibility: visible;
+              pointer-events: auto;
+            }
+          }
+        }
       }
 
       // 场景列单元格hover效果
       :deep(.el-table__body .el-table__row .el-table__cell:has(.scene-location-cell)) {
-        padding: 0 !important;
+        padding: 12px !important;
         cursor: pointer;
+        vertical-align: middle;
+        height: 190px !important;
+
+        .cell {
+          padding: 0 !important;
+        }
+
         &:hover {
-          background: linear-gradient(0deg, rgba(0, 0, 0, 0.4) 0%, rgba(0, 0, 0, 0.4) 100%);
           .scene-actions {
             opacity: 1;
           }
@@ -752,15 +1080,15 @@
 
       .scene-location-cell {
         display: flex;
-        flex-direction: column;
         align-items: center;
-        gap: 8px;
-        padding: 8px 0;
+        justify-content: center;
+        width: 100%;
+        height: 100%;
 
         .scene-image-wrapper {
           position: relative;
-          width: 100%;
-          height: 100%;
+          width: 156px; // 180 - 24px padding
+          height: 88px; // 保持16:9比例
           overflow: hidden;
 
           .scene-location-image {

@@ -1,10 +1,9 @@
 <template>
   <el-dialog v-model="visible" title="重命名项目" width="340px" :close-on-click-modal="false" @close="handleClose">
     <el-input
-      v-model="projectName"
+      v-model.trim="projectName"
       placeholder="请输入项目名称"
       maxlength="30"
-      show-word-limit
       clearable
       autofocus
       @keyup.enter="handleConfirm"

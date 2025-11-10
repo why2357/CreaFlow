@@ -64,7 +64,9 @@
       height: 100%;
       border: none;
     }
-
+    .el-menu-item {
+      height: 34px !important;
+    }
     .el-menu-item,
     .menu-title {
       overflow: hidden !important;
@@ -163,8 +165,8 @@
 // 自定义菜单激活状态样式 - 紫色主题
 .sidebar-container {
   .el-menu {
-    padding-top: 12px;
-    padding-bottom: 12px;
+    padding-top: 20px;
+    padding-bottom: 20px;
     background: transparent !important;
   }
 

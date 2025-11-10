@@ -15,7 +15,7 @@
       <!-- 资源统计区域 35% -->
       <div class="resource-section">
         <div class="section-header">
-          <svg-icon icon-class="fy-ziyuan" class="el-icon" />
+          <svg-icon icon-class="fy-ziyuan" style="width: 16px; height: 16px; color: #5252ff" />
           <span class="title">资源统计</span>
         </div>
         <div class="stat-cards">
@@ -57,13 +57,7 @@
         <div class="header-info">
           <svg-icon icon-class="fy-word" class="el-icon" />
           <span class="title">剧集内容</span>
-          <!-- <el-tag v-if="projectStore.currentEpisode" type="primary" size="small">
-            {{ projectStore.currentEpisode.name }}
-          </el-tag> -->
         </div>
-        <!-- <div class="header-actions">
-          <span class="word-count">{{ scriptContent.length }} 字</span>
-        </div> -->
       </div>
 
       <!-- 剧本内容区域 - 支持无限滚动 -->
@@ -81,13 +75,6 @@
         <div v-else-if="showUploadEmptyState && !loading" class="empty-state-large">
           <img style="width: 200px; height: 200px" src="../../../../../assets/images/no-text.png" alt="" />
           <div style="color: #4e5969; font-size: 14px">内容由表单上传</div>
-        </div>
-
-        <!-- 空状态 - 无剧本内容 -->
-        <div v-else-if="paragraphs.length === 0 && !loading" class="empty-state-large">
-          <el-icon :size="80" color="#d9d9d9"><Document /></el-icon>
-          <h3>暂无剧本内容</h3>
-          <p>该剧集还没有剧本内容，请上传或编写剧本</p>
         </div>
 
         <!-- 剧本内容 -->
@@ -143,7 +130,7 @@
   import { deleteEpisodes, renameEpisode } from '@/api/workbench/episode';
   import type { Episode } from '@/api/workbench/project/types';
   import { useProjectStore } from '@/store/modules/project';
-  import { Document, Loading } from '@element-plus/icons-vue';
+  import { Loading } from '@element-plus/icons-vue';
   import { ElMessage, ElMessageBox } from 'element-plus';
   import { debounce } from 'lodash-es';
   import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
@@ -438,7 +425,6 @@
     .resource-section {
       display: flex;
       flex-direction: column;
-      gap: 12px;
       padding: 20px 16px;
       border-radius: 16px;
       background: white;
@@ -447,18 +433,12 @@
       .section-header {
         display: flex;
         align-items: center;
-        gap: 8px;
+        gap: 6px;
         padding-bottom: 12px;
-        border-bottom: 1px solid #f0f2f5;
-
-        .el-icon {
-          color: #5252ff;
-          font-size: 20px;
-        }
 
         .title {
-          color: #1a1a1a;
-          font-size: 16px;
+          color: #1d2129;
+          font-size: 14px;
           font-weight: 600;
         }
       }
@@ -466,30 +446,31 @@
       .stat-cards {
         display: flex;
         flex-direction: column;
-        gap: 16px;
+        gap: 12px;
 
         .image-box {
-          background-image: url('../../../../../assets/images/ai-image.png');
+          background-image: url('../../../../../assets/images/image-ai.svg');
         }
 
         .video-box {
-          background-image: url('../../../../../assets/images/ai-video.png');
+          background-image: url('../../../../../assets/images/video-ai.svg');
         }
 
         .stat-card {
           position: relative;
-          min-height: 140px;
-          padding: 60px 12px 12px;
+          width: 100%;
+          aspect-ratio: 160 / 96;
           overflow: hidden;
-          border-radius: 16px;
           background-repeat: no-repeat;
           background-size: cover;
           background-position: center;
           transition: all 0.3s;
 
           .card-info {
-            position: relative;
-            top: 30px;
+            position: absolute;
+            bottom: 12px;
+            left: 7%;
+            width: 85%;
             z-index: 1;
 
             .card-content {
@@ -505,21 +486,21 @@
               gap: 6px;
 
               .el-icon {
-                width: 16px;
-                height: 16px;
+                width: 12px;
+                height: 12px;
                 color: #5252ff;
               }
 
               .card-label {
                 color: #4e5969;
-                font-size: 14px;
+                font-size: 12px;
                 font-weight: 500;
               }
             }
 
             .card-value {
               color: #1d2129;
-              font-size: 20px;
+              font-size: 14px;
               font-weight: 700;
             }
 
@@ -617,20 +598,7 @@
         text-align: center;
         position: relative;
         top: -100px;
-
-        h3 {
-          margin: 0;
-          color: #606266;
-          font-size: 18px;
-          font-weight: 600;
-        }
-
-        p {
-          margin: 0;
-          color: #909399;
-          font-size: 14px;
-          line-height: 1.6;
-        }
+        color: #4e5969;
 
         .el-button {
           margin-top: 8px;
@@ -837,7 +805,7 @@
 
         .el-icon {
           flex-shrink: 0;
-          font-size: 20px;
+          font-size: 16px;
         }
 
         span {

@@ -1,5 +1,5 @@
 <template>
-  <div>
+  <div class="fff-input-inner">
     <transition
       :enter-active-class="proxy?.animate.searchAnimate.enter"
       :leave-active-class="proxy?.animate.searchAnimate.leave"

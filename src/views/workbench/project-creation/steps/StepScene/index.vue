@@ -50,11 +50,10 @@
                   @confirm="confirmEditEpisodes"
                   @close="handleEpisodeSelectorClose"
                 >
-                  <template #reference>
-                    <el-button size="small" @click="handleEditEpisodes(library)">+ 编辑集数</el-button>
-                  </template>
                 </EpisodeSelector>
-                <el-button v-else size="small" @click="handleEditEpisodes(library)">+ 编辑集数</el-button>
+                <el-button v-else class="select-btn" size="small" @click="handleEditEpisodes(library)"
+                  >+ 编辑集数</el-button
+                >
 
                 <!-- 集数标签显示 -->
                 <div v-if="library.episodeList && library.episodeList.length > 0" class="episode-tags">
@@ -78,16 +77,16 @@
             <div class="group-actions">
               <el-dropdown trigger="click" @command="(cmd: string) => handleGroupCommand(cmd, library)">
                 <el-button class="dro-btn" text>
-                  <el-icon><MoreFilled /></el-icon>
+                  <svg-icon icon-class="fy-more" style="width: 16px; height: 16px" />
                 </el-button>
                 <template #dropdown>
                   <el-dropdown-menu>
                     <el-dropdown-item command="rename">
-                      <el-icon><Edit /></el-icon>
+                      <svg-icon icon-class="fy-pen" style="width: 16px; height: 16px; margin-right: 16px" />
                       重命名
                     </el-dropdown-item>
                     <el-dropdown-item command="delete" divided class="delete-item">
-                      <el-icon><Delete /></el-icon>
+                      <svg-icon icon-class="fy-del" style="width: 16px; height: 16px; margin-right: 16px" />
                       删除
                     </el-dropdown-item>
                   </el-dropdown-menu>
@@ -145,12 +144,12 @@
                   <div class="scene-actions">
                     <el-dropdown trigger="click" @command="(cmd: string) => handleSceneCommand(cmd, scene)">
                       <div class="more-btn">
-                        <el-icon><MoreFilled /></el-icon>
+                        <svg-icon icon-class="fy-more" style="width: 12px; height: 12px" />
                       </div>
                       <template #dropdown>
                         <el-dropdown-menu>
                           <el-dropdown-item command="delete" class="delete-item">
-                            <el-icon><Delete /></el-icon>
+                            <svg-icon icon-class="fy-del" style="width: 16px; height: 16px; margin-right: 16px" />
                             删除
                           </el-dropdown-item>
                         </el-dropdown-menu>
@@ -197,7 +196,6 @@
     createLibraryDetail,
     deleteLibrary,
     deleteLibraryDetail,
-    getLibraryDetailCount,
     getSceneDetail,
     renameLibrary
   } from '@/api/workbench/library';
@@ -210,7 +208,7 @@
   import { LibraryType } from '@/api/workbench/project/types';
   import { useProjectStore } from '@/store/modules/project';
   import { uploadFile } from '@/utils/uploadFile';
-  import { Delete, Edit, MoreFilled, Picture, Plus } from '@element-plus/icons-vue';
+  import { Picture, Plus } from '@element-plus/icons-vue';
   import { ElMessage, ElMessageBox } from 'element-plus';
   import { nextTick, onMounted, onUnmounted, ref } from 'vue';
   import AddItemDialog from '../StepCharacter/components/AddItemDialog.vue';
@@ -597,7 +595,6 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 16px 24px;
     .add-rigtop {
       display: flex;
       width: 118px;
@@ -613,8 +610,8 @@
 
   .scene-content {
     flex: 1;
-    padding: 24px;
     overflow-y: auto;
+    padding-top: 14px;
     .empty-box {
       width: 100%;
       height: 100%;
@@ -682,6 +679,15 @@
           align-items: center;
           gap: 8px;
 
+          .select-btn {
+            width: 118px;
+            border-radius: 3px;
+            border: 1px dashed #c9cdd4;
+            background: #f7f8fa;
+            color: #86909c;
+            font-size: 13px;
+          }
+
           .episode-tags {
             display: flex;
             align-items: center;
@@ -732,7 +738,6 @@
 
         .dro-btn {
           border-radius: 6px;
-          background: #f3f3ff;
         }
       }
     }
@@ -747,10 +752,11 @@
         flex-shrink: 0;
         min-width: 120px;
         max-width: 200px;
+        height: 240px;
         position: sticky;
         left: 0;
         z-index: 2;
-        background: rgba(255, 255, 255, 0.8);
+        // background: rgba(255, 255, 255, 0.8);
         backdrop-filter: blur(10px);
       }
 
@@ -835,7 +841,11 @@
     position: relative;
     width: 100%;
     height: 240px;
-
+    &:hover {
+      .scene-actions {
+        opacity: 1;
+      }
+    }
     .el-image {
       width: 100%;
       height: 100%;
@@ -901,15 +911,17 @@
       position: absolute;
       right: 8px;
       bottom: 8px;
+      opacity: 0;
 
       .more-btn {
         display: flex;
         justify-content: center;
         align-items: center;
-        width: 32px;
-        height: 32px;
-        border-radius: 4px;
-        background: rgb(255 255 255 / 90%);
+        width: 24px;
+        height: 24px;
+        border-radius: 6px;
+        background: rgba(255, 255, 255, 0.8);
+        backdrop-filter: blur(5.300000190734863px);
         cursor: pointer;
         transition: all 0.3s;
 

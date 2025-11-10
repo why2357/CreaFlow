@@ -1,5 +1,5 @@
 <template>
-  <div class="login-container">
+  <div class="login-container white-input-inner">
     <div class="left-box">
       <div class="logo-container">
         <div class="logo-icon">
@@ -701,9 +701,8 @@
         align-items: center;
         margin-bottom: 40px;
         position: absolute;
-        left: 40px;
-        height: 50px;
-        margin-top: 30px;
+        left: 10px;
+        margin-top: 25px;
 
         .logo-icon {
           display: flex;
@@ -737,8 +736,8 @@
       align-items: center;
       /* 在1280px屏幕上为400px，使用calc实现比例自适应 */
       width: 37.5%;
-      min-width: 400px;
-      max-width: 600px;
+      // min-width: 400px;
+      // max-width: 600px;
       background: white;
       box-shadow: -2px 0 8px rgb(0 0 0 / 10%);
 

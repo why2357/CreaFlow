@@ -327,6 +327,47 @@ h6 {
   word-break: break-all;
 }
 .el-input__wrapper {
-  border-radius: 8px;
+  border-radius: 8px !important;
   background: #f7f8fa !important;
+  border: none !important;
+}
+// 登录页专
+.white-input-inner {
+  .el-input__wrapper {
+    border-radius: 4px !important;
+    background: #fff !important;
+  }
+}
+// 白色底
+.fff-input-inner {
+  .el-input__wrapper {
+    background: #fff !important;
+  }
+}
+.el-popper__arrow {
+  opacity: 0;
+}
+.el-dropdown-menu__item--divided {
+  opacity: 0;
+}
+.el-input .el-input__count .el-input__count-inner {
+  background: none !important;
+}
+.el-dialog__footer {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 8px;
+  align-self: stretch;
+  padding-top: 0 !important;
+  button {
+    display: flex;
+    width: 80px;
+    height: 32px;
+    padding: 8px 16px;
+    justify-content: center;
+    align-items: center;
+    gap: 4px;
+    border-radius: 8px;
+  }
 }

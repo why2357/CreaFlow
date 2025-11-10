@@ -17,7 +17,7 @@
       <div class="header-left">
         <div class="logo-back" @click="handleBack">
           <div>
-            <img style="width: 40px; height: 40px" src="../../../assets/images/logo.png" alt="" />
+            <img style="width: 40px; height: 24px" src="../../../assets/logo/side-logo.png" alt="" />
           </div>
           <div class="line-sty"></div>
           <span class="project-title">{{ projectName }}</span>
@@ -42,7 +42,7 @@
               <span class="step-name">{{ getCurrentStoryboardName() }}</span>
               <el-dropdown
                 trigger="hover"
-                placement="bottom"
+                placement="bottom-end"
                 :hide-on-click="true"
                 @command="handleStoryboardViewChange"
               >
@@ -364,8 +364,8 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    height: 72px;
-    padding: 0 32px;
+    height: 60px;
+    padding: 0 20px;
     // border-bottom: 2px solid #f0f2f5;
     // background: white;
     // box-shadow: 0 2px 8px rgb(0 0 0 / 6%);
@@ -375,13 +375,12 @@
         display: flex;
         align-items: center;
         gap: 14px;
-        padding: 0px 12px;
+        padding: 0px;
         border-radius: 8px;
         cursor: pointer;
         transition: all 0.3s;
 
         &:hover {
-          background: #f9f8ff;
           color: #6c5ce7;
         }
         .line-sty {
@@ -606,8 +605,8 @@
       }
 
       .step-name {
-        color: #606266;
-        font-size: 13px;
+        color: #999;
+        font-size: 14px;
         font-weight: 500;
         letter-spacing: 0.3px;
         text-align: center;
@@ -689,7 +688,7 @@
     display: flex;
     flex: 1;
     flex-direction: column;
-    padding: 12px 20px;
+    padding: 20px;
     overflow: hidden;
     // background: linear-gradient(to bottom, #f8f9fa 0%, #f0f2f5 100%);
 

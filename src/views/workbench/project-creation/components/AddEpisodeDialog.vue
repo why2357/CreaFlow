@@ -11,7 +11,7 @@
       <div class="form-section">
         <div class="form-label">剧集名称</div>
         <el-form-item prop="episodeName">
-          <el-input v-model="form.episodeName" placeholder="请输入剧集名称" maxlength="10" show-word-limit />
+          <el-input v-model.trim="form.episodeName" placeholder="请输入剧集名称" maxlength="10" show-word-limit />
         </el-form-item>
       </div>
 
@@ -27,12 +27,16 @@
             <template #dropdown>
               <el-dropdown-menu>
                 <el-dropdown-item command="text" :class="{ 'is-active': inputMode === 'text' }">
-                  <el-icon v-if="inputMode === 'text'" class="check-icon"><Check /></el-icon>
-                  剧情
+                  <div>
+                    <div>剧情</div>
+                    <el-icon v-if="inputMode === 'text'" class="check-icon"><Check /></el-icon>
+                  </div>
                 </el-dropdown-item>
                 <el-dropdown-item command="upload" :class="{ 'is-active': inputMode === 'upload' }">
-                  <el-icon v-if="inputMode === 'upload'" class="check-icon"><Check /></el-icon>
-                  上传拆分脚本
+                  <div>
+                    <div>上传拆分脚本</div>
+                    <el-icon v-if="inputMode === 'upload'" class="check-icon"><Check /></el-icon>
+                  </div>
                 </el-dropdown-item>
               </el-dropdown-menu>
             </template>
@@ -320,7 +324,7 @@
           await createEpisodeByText({
             projectId: form.value.projectId,
             episodeName: form.value.episodeName,
-            storyText: form.value.storyText,
+            storyText: form.value.storyText.trim(),
             modelCode: form.value.modelCode
           });
         } else {
@@ -464,6 +468,7 @@
       align-items: center;
       height: 32px;
       padding: 2px 12px;
+      margin-left: 12px;
       border-radius: 8px;
       background: #fff;
       color: #1d2129;
@@ -566,8 +571,9 @@
 
   :deep(.el-dropdown-menu__item) {
     position: relative;
-    padding-left: 32px;
-    border-radius: 4px;
+    box-sizing: border-box;
+    width: 134px;
+    border-radius: 6px;
     margin: 4px 8px;
 
     &.is-active {
@@ -583,7 +589,7 @@
     .check-icon {
       position: absolute;
       top: 50%;
-      left: 10px;
+      right: 10px;
       transform: translateY(-50%);
       color: #5252ff;
       font-size: 16px;

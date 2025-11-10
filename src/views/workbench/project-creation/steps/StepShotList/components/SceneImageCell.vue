@@ -20,20 +20,36 @@
           </div>
         </el-tooltip>
 
-        <el-tooltip content="下载图片" placement="top">
-          <div class="action-btn" :class="{ disabled: taskStatus === 0 }" @click="taskStatus !== 0 && handleDownload()">
+        <el-tooltip :content="hasMultipleImages ? '多张图片时不支持下载' : '下载图片'" placement="top">
+          <div
+            class="action-btn"
+            :class="{ disabled: taskStatus === 0 || !canDownload }"
+            @click="taskStatus !== 0 && canDownload && handleDownload()"
+          >
             <el-icon><Download /></el-icon>
           </div>
         </el-tooltip>
 
-        <el-tooltip content="裁剪图片" placement="top">
-          <div class="action-btn" :class="{ disabled: taskStatus === 0 }" @click="taskStatus !== 0 && handleCrop()">
+        <el-tooltip :content="hasMultipleImages ? '多张图片时不支持裁剪' : '裁剪图片'" placement="top">
+          <div
+            class="action-btn"
+            :class="{ disabled: taskStatus === 0 || !canCrop }"
+            @click="taskStatus !== 0 && canCrop && handleCrop()"
+          >
             <el-icon><Crop /></el-icon>
           </div>
         </el-tooltip>
 
         <el-tooltip
-          :content="!canFavorite ? '本地上传图片不支持收藏' : isFavorite ? '取消收藏' : '收藏'"
+          :content="
+            hasMultipleImages
+              ? '多张图片时不支持收藏'
+              : !canFavorite
+              ? '本地上传图片不支持收藏'
+              : isFavorite
+              ? '取消收藏'
+              : '收藏'
+          "
           placement="top"
         >
           <div
@@ -49,17 +65,24 @@
 
       <!-- 底部操作按钮 -->
       <div class="bottom-actions">
-        <el-button class="edit-btn" disabled>
+        <el-button class="edit-btn" :disabled="hasMultipleImages" @click="handleEdit">
           <el-icon><Edit /></el-icon>
           编辑
         </el-button>
-        <el-button class="gen-btn" @click="handleRegenerate">
-          <svg-icon icon-class="fy-shandian" class="el-icon" />
-          生成
-        </el-button>
+        <div class="gen-btn-wrapper">
+          <el-button class="gen-btn" @click="handleRegenerate">
+            <svg-icon icon-class="fy-shandian" class="el-icon" />
+            {{ modelPoints }} 生成
+          </el-button>
+        </div>
       </div>
     </div>
-    <div class="scene-image-cell" @mouseenter="isHovered = true" @mouseleave="isHovered = false">
+    <div
+      class="scene-image-cell"
+      :data-aspect-ratio="aspectRatio"
+      @mouseenter="isHovered = true"
+      @mouseleave="isHovered = false"
+    >
       <!-- 执行中状态 (taskStatus === 1 或 loading) -->
       <div v-if="taskStatus === 1 || loading" v-loading="true" class="loading-overlay">
         <p class="loading-text">生成中，请稍等...</p>
@@ -101,7 +124,12 @@
 
       <!-- 待执行/空状态 (taskStatus === 0 或其他) -->
       <div v-else class="placeholder-container">
-        <img src="../../../../../../assets/images/no-sence.png" alt="暂无图片" class="placeholder-image" />
+        <img
+          style="width: 80px; height: 80px"
+          src="../../../../../../assets/images/no-image.png"
+          alt="暂无图片"
+          class="placeholder-image"
+        />
       </div>
 
       <!-- 隐藏的文件上传 -->
@@ -111,6 +139,16 @@
     <!-- 历史记录弹窗 - 使用 teleport 传送到 body -->
     <teleport to="body">
       <SceneImageHistoryDialog v-model="historyDialogVisible" :basic-id="basicId" @refresh="handleHistoryRefresh" />
+    </teleport>
+
+    <!-- 图片编辑弹窗 - 使用 teleport 传送到 body -->
+    <teleport to="body">
+      <SceneImageEditDialog
+        v-model="editDialogVisible"
+        :basic-id="basicId"
+        :main-image-url="currentImageUrl"
+        @success="handleEditSuccess"
+      />
     </teleport>
   </div>
 </template>
@@ -122,6 +160,7 @@
   import { ElMessage } from 'element-plus';
   import { computed, ref } from 'vue';
   import SceneImageHistoryDialog from './SceneImageHistoryDialog.vue';
+  import SceneImageEditDialog from './SceneImageEditDialog.vue';
 
   interface MaterialInfoVo {
     id?: number;
@@ -143,9 +182,11 @@
     aspectRatio?: string; // '1:1' | '16:9' | '9:16' | '4:3' | '3:4'
     shotId: string | number;
     basicId?: number; // 场景基础信息ID
+    historyDetailId?: number; // 历史明细ID（用于判断是否本地上传）
     isFavorite?: boolean;
     loading?: boolean;
     taskStatus?: number; // 0-待执行 1-执行中 2-执行成功 3-执行失败
+    modelPoints?: number; // 当前模型的点数
   }
 
   const props = withDefaults(defineProps<Props>(), {
@@ -154,7 +195,8 @@
     aspectRatio: '16:9',
     isFavorite: false,
     loading: false,
-    taskStatus: 0
+    taskStatus: 0,
+    modelPoints: 0
   });
 
   const emit = defineEmits<{
@@ -172,23 +214,45 @@
   const isHovered = ref(false);
   const fileInputRef = ref<HTMLInputElement>();
   const historyDialogVisible = ref(false);
+  const editDialogVisible = ref(false);
 
-  // 计算图片填充方式
+  // 计算图片填充方式 - 始终使用cover填满容器
   const fit = computed(() => {
-    // 使用 cover 让图片填满整个容器，可能会裁剪部分内容
-    // 这样可以确保图片在格子中满格显示
-    return 'cover';
+    return 'cover' as const;
   });
 
   // 判断是否是本地上传的图片（不能收藏）
   // 当只有一张图片且没有 historyDetailId 时，说明是本地上传或者裁剪的图片
   const isLocalUploadImage = computed(() => {
-    return props.materialInfoVoList.length === 1 && !props.materialInfoVoList[0].historyDetailId;
+    return props.materialInfoVoList.length === 1 && !props.historyDetailId;
   });
 
-  // 收藏功能是否可用
+  // 是否有多张图片
+  const hasMultipleImages = computed(() => {
+    return props.materialInfoVoList.length > 1;
+  });
+
+  // 收藏功能是否可用（本地上传图片不能收藏，多张图片时也不能收藏）
   const canFavorite = computed(() => {
-    return !isLocalUploadImage.value;
+    return !isLocalUploadImage.value && !hasMultipleImages.value;
+  });
+
+  // 下载功能是否可用（多张图片时不能下载）
+  const canDownload = computed(() => {
+    return !hasMultipleImages.value;
+  });
+
+  // 裁剪功能是否可用（多张图片时不能裁剪）
+  const canCrop = computed(() => {
+    return !hasMultipleImages.value;
+  });
+
+  // 当前显示的图片URL（用于编辑弹窗）
+  const currentImageUrl = computed(() => {
+    if (props.materialInfoVoList.length > 0) {
+      return props.materialInfoVoList[0].previewOssUrl || props.materialInfoVoList[0].originOssUrl || '';
+    }
+    return props.imageUrl;
   });
 
   // 本地上传
@@ -355,6 +419,26 @@
     emit('regenerate');
   };
 
+  // 编辑图片
+  const handleEdit = () => {
+    if (hasMultipleImages.value) {
+      ElMessage.warning('多张图片时不支持编辑');
+      return;
+    }
+
+    if (props.taskStatus !== 2) {
+      ElMessage.warning('请先生成图片');
+      return;
+    }
+
+    editDialogVisible.value = true;
+  };
+
+  // 编辑成功回调
+  const handleEditSuccess = () => {
+    emit('refresh');
+  };
+
   // 处理裁剪完成后的替换
   const handleCropComplete = async (ossId: number) => {
     if (!props.basicId) {
@@ -476,25 +560,31 @@
           transform: scale(0.95);
         }
       }
-      .gen-btn {
+      .gen-btn-wrapper {
+        position: relative;
         display: flex;
-        width: 84px;
-        height: 24px;
-        justify-content: center;
         align-items: center;
-        gap: 6px;
-        flex-shrink: 0;
-        border-radius: 6px;
-        border: none;
-        outline: none;
-        background: linear-gradient(0deg, #6157ff 0%, #be75fe 100%);
-        color: #fff;
-        font-size: 12px;
-        transition: all 0.3s;
-        cursor: pointer;
 
-        &:active {
-          transform: scale(0.95);
+        .gen-btn {
+          display: flex;
+          width: 84px;
+          height: 24px;
+          justify-content: center;
+          align-items: center;
+          gap: 6px;
+          flex-shrink: 0;
+          border-radius: 6px;
+          border: none;
+          outline: none;
+          background: linear-gradient(0deg, #6157ff 0%, #be75fe 100%);
+          color: #fff;
+          font-size: 12px;
+          transition: all 0.3s;
+          cursor: pointer;
+
+          &:active {
+            transform: scale(0.95);
+          }
         }
       }
     }
@@ -504,10 +594,26 @@
     display: flex;
     justify-content: center;
     align-items: center;
-    width: 100%;
-    height: 100%; // 使用100%高度以适配父容器
+    height: 100%; // 填满父容器高度
     overflow: hidden;
-    background: #f5f7fa;
+    // background: #f5f7fa;
+
+    // 根据宽高比设置宽度,高度由父容器决定(190px)
+    &[data-aspect-ratio='16:9'] {
+      width: 338px; // 190 * (16/9) ≈ 338
+    }
+    &[data-aspect-ratio='9:16'] {
+      width: 107px; // 190 * (9/16) ≈ 107
+    }
+    &[data-aspect-ratio='1:1'] {
+      width: 190px; // 190 * 1 = 190
+    }
+    &[data-aspect-ratio='4:3'] {
+      width: 253px; // 190 * (4/3) ≈ 253
+    }
+    &[data-aspect-ratio='3:4'] {
+      width: 143px; // 190 * (3/4) ≈ 143
+    }
 
     .loading-overlay {
       display: flex;
@@ -551,6 +657,12 @@
         grid-template-columns: 1fr;
         grid-template-rows: 1fr;
         gap: 0;
+
+        .grid-item {
+          .grid-image {
+            object-fit: cover; // 单张图片时使用cover填满
+          }
+        }
       }
 
       .grid-item {
@@ -561,6 +673,7 @@
         .grid-image {
           width: 100%;
           height: 100%;
+          object-fit: cover; // 确保图片填满容器
           cursor: pointer;
         }
       }
@@ -587,11 +700,16 @@
       position: relative;
       width: 100%;
       height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      // background: #f5f7fa;
 
       .placeholder-image {
-        width: 100%;
-        height: 100%;
-        object-fit: cover;
+        width: 80px !important;
+        height: 80px !important;
+        object-fit: contain;
+        opacity: 0.5;
       }
     }
 

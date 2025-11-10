@@ -2,13 +2,14 @@
   <el-dialog
     title="新建项目"
     :model-value="dialogVisible"
-    width="760px"
+    width="840px"
     @close="handleClose"
     :close-on-click-modal="false"
+    class="input-box"
   >
     <el-form ref="formRef" :model="form" :rules="rules" label-width="100px" label-position="top">
       <el-form-item label="项目名称" prop="projectName">
-        <el-input v-model="form.projectName" maxlength="30" placeholder="请输入项目名称" clearable show-word-limit />
+        <el-input v-model.trim="form.projectName" maxlength="30" placeholder="请输入项目名称" clearable />
       </el-form-item>
 
       <el-form-item label="成员管理">
@@ -201,6 +202,10 @@
 </script>
 
 <style scoped lang="scss">
+  :deep(.el-input__wrapper) {
+    background: #fff !important;
+    height: 40px;
+  }
   // 成员管理区域
   .members-section {
     display: flex;

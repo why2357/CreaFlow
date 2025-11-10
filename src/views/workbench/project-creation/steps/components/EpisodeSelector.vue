@@ -1,5 +1,11 @@
 <template>
-  <el-popover v-model:visible="visible" placement="bottom" :width="420" trigger="click" popper-class="episode-popover">
+  <el-popover
+    v-model:visible="visible"
+    placement="bottom-start"
+    :width="260"
+    trigger="click"
+    popper-class="episode-popover"
+  >
     <template #reference>
       <slot name="reference">
         <el-button size="small">+ 编辑集数</el-button>
@@ -100,18 +106,18 @@
 
 <style scoped lang="scss">
   .episode-selector-popover {
-    padding: 4px 0;
+    padding: 8px;
 
     .popover-header {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      padding: 12px 16px;
-      border-bottom: 1px solid #f0f0f0;
+      // padding: 12px 16px;
+      // border-bottom: 1px solid #f0f0f0;
 
       .selected-info {
-        color: #262626;
-        font-size: 14px;
+        color: #86909c;
+        font-size: 10px;
         font-weight: 500;
       }
     }
@@ -120,24 +126,26 @@
       display: grid;
       grid-template-columns: repeat(3, 1fr);
       gap: 12px;
-      padding: 16px;
       max-height: 300px;
       overflow-y: auto;
+      margin-top: 8px;
 
       .episode-tag-item {
         display: flex;
         align-items: center;
         justify-content: center;
-        height: 40px;
-        padding: 0 16px;
+        height: 28px;
+        padding: 4px 12px;
         border: 1px solid #d9d9d9;
         border-radius: 6px;
-        color: #595959;
-        font-size: 14px;
+        border: 1px solid #eee;
+        background: #fff;
+        font-size: 12px;
         cursor: pointer;
         transition: all 0.3s;
         user-select: none;
         min-width: 0;
+        color: #86909c;
 
         &:hover {
           border-color: #ffa940;
@@ -146,10 +154,11 @@
         }
 
         &.active {
-          border-color: #ffa940;
-          background: #fff7e6;
-          color: #fa8c16;
+          color: #ff7d00;
           font-weight: 500;
+          border-radius: 6px;
+          border: 1px solid #ffcf8b;
+          background: #fff7e8;
         }
 
         .episode-name {

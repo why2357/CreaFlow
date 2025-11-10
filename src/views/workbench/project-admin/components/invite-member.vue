@@ -391,14 +391,17 @@
 </script>
 
 <style scoped lang="scss">
+  :deep(.el-input__wrapper) {
+    background: #fff !important;
+    height: 32px !important;
+  }
   .invite-member-content {
     display: flex;
     flex-direction: column;
     max-height: 315px;
 
     .content-header {
-      padding: 12px 12px 8px;
-      border-bottom: 1px solid #f0f0f0;
+      padding: 20px 20px 12px;
 
       .search-input {
         width: 100%;
@@ -409,7 +412,7 @@
       flex: 1;
       min-height: 200px;
       max-height: 420px;
-      padding: 8px;
+      padding: 0 20px 20px;
       overflow-y: auto;
 
       &::-webkit-scrollbar {
@@ -439,11 +442,11 @@
       margin-bottom: 4px;
       padding: 10px 12px;
       border-radius: 6px;
-      background: #fafafa;
+      // background: #fafafa;
       transition: all 0.2s;
 
       &:hover {
-        background: #f0f0f0;
+        background: #f7f8fa;
       }
 
       .user-info {
@@ -485,10 +488,10 @@
 
       .roles {
         display: flex;
-        gap: 6px;
 
         button {
-          min-width: 60px;
+          min-width: 50px;
+          height: 28px;
           border: 1px solid #eee;
           background: #fff;
           color: #4e5969;
