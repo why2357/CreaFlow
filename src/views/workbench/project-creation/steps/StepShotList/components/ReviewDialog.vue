@@ -43,7 +43,7 @@
 
   const emit = defineEmits<{
     (e: 'update:modelValue', value: boolean): void;
-    (e: 'success'): void;
+    (e: 'success', reviewType: number): void;
   }>();
 
   const popoverVisible = computed({
@@ -69,7 +69,7 @@
       });
 
       ElMessage.success(reviewType === 1 ? '通过成功' : '驳回成功');
-      emit('success');
+      emit('success', reviewType);
       handleClose();
     } catch (error) {
       console.error('评审失败:', error);

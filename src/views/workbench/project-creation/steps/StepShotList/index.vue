@@ -72,6 +72,10 @@
           @delete-success="handleDeleteSuccess"
         />
       </div>
+      <!-- 右下批量生成按钮 -->
+      <div v-if="batchStatus === 0" class="right-tools">
+        <el-button class="bottom-btn" :loading="batchGenerateLoading" @click="handleBatchGenerate"> 继续 </el-button>
+      </div>
     </div>
 
     <!-- 新增剧集对话框 -->
@@ -90,18 +94,27 @@
       @success="handleCharacterEditSuccess"
     />
 
-    <!-- 扣点确认对话框 -->
+    <!-- 扣点确认对话框（单个生成） -->
     <PointsConfirmDialog
       v-model="pointsConfirmDialogVisible"
       :shot-count="1"
-      :points-per-shot="getCurrentModelPoints"
+      :total-points="getCurrentModelPoints"
       @confirm="handleConfirmGenerate"
+    />
+
+    <!-- 批量生成扣点确认对话框 -->
+    <PointsConfirmDialog
+      v-model="batchGenerateDialogVisible"
+      :shot-count="batchShotCount"
+      :total-points="batchTotalPoints"
+      @confirm="handleConfirmBatchGenerate"
     />
   </div>
 </template>
 
 <script setup lang="ts" name="StepShotList">
   import {
+    checkEpisodeImg,
     deleteEpisodes,
     generateEpisodeImg,
     getEpisodeImgSceneList,
@@ -157,6 +170,9 @@
   // 剧集任务状态 0-待执行 1-执行中 2-执行成功 3-执行失败
   const episodeTaskStatus = ref<number | undefined>(undefined);
 
+  // 批量状态 0-未操作 1-已操作
+  const batchStatus = ref<number | undefined>(undefined);
+
   // 新增剧集对话框
   const addEpisodeDialogVisible = ref(false);
 
@@ -166,6 +182,12 @@
   // 扣点确认对话框
   const pointsConfirmDialogVisible = ref(false);
   const currentRegenerateShot = ref<Shot | null>(null);
+
+  // 批量生成相关状态
+  const batchGenerateDialogVisible = ref(false);
+  const batchTotalPoints = ref(0);
+  const batchShotCount = ref(0);
+  const batchGenerateLoading = ref(false);
 
   // 初始化
   onMounted(async () => {
@@ -261,6 +283,9 @@
 
       // 设置剧集任务状态
       episodeTaskStatus.value = episodeData?.taskStatus;
+
+      // 设置批量状态
+      batchStatus.value = episodeData?.batchStatus;
 
       if (episodeData && episodeData.episodeSceneItemInfoList) {
         shots.value = convertToShots(episodeData.episodeSceneItemInfoList);
@@ -536,6 +561,73 @@
       });
     }
   };
+
+  // 批量生成图片
+  const handleBatchGenerate = async () => {
+    if (!selectedEpisodeId.value) {
+      ElMessage.warning('请先选择剧集');
+      return;
+    }
+
+    if (!currentModelCode.value) {
+      ElMessage.warning('请先选择模型');
+      return;
+    }
+
+    try {
+      batchGenerateLoading.value = true;
+
+      // 调用检查接口
+      const checkRes = await checkEpisodeImg({
+        episodeId: Number(selectedEpisodeId.value),
+        modelCode: currentModelCode.value
+      });
+
+      const checkData = checkRes.data;
+
+      if (!checkData || !checkData.basicIdList || checkData.basicIdList.length === 0) {
+        ElMessage.warning('没有需要生成的镜头');
+        return;
+      }
+
+      // 设置批量生成的数据
+      batchShotCount.value = checkData.basicIdList.length;
+      batchTotalPoints.value = checkData.consumerTotalPoints || 0;
+
+      // 打开确认弹窗
+      batchGenerateDialogVisible.value = true;
+    } catch (error) {
+      console.error('检查图片失败:', error);
+      ElMessage.error('检查图片失败，请重试');
+    } finally {
+      batchGenerateLoading.value = false;
+    }
+  };
+
+  // 确认批量生成
+  const handleConfirmBatchGenerate = async () => {
+    if (!selectedEpisodeId.value) return;
+
+    try {
+      loading.value = true;
+
+      // 调用批量生成接口（不传 basicId）
+      await generateEpisodeImg({
+        episodeId: Number(selectedEpisodeId.value),
+        modelCode: currentModelCode.value
+      });
+
+      ElMessage.success('批量生成中，请稍候...');
+
+      // 重新加载分镜列表以获取最新状态
+      await loadShots();
+    } catch (error) {
+      console.error('批量生成失败:', error);
+      ElMessage.error('批量生成失败，请重试');
+    } finally {
+      loading.value = false;
+    }
+  };
 </script>
 
 <style scoped lang="scss">
@@ -547,7 +639,23 @@
       min-width: 200px;
     }
   }
-
+  .right-tools {
+    display: flex;
+    justify-content: end;
+    margin-top: 12px;
+    .bottom-btn {
+      display: flex;
+      align-items: center;
+      width: 80px;
+      height: 32px;
+      padding: 8px 16px;
+      gap: 4px;
+      border-radius: 8px;
+      background: #5252ff;
+      color: #fff;
+      font-size: 13px;
+    }
+  }
   .right-content {
     display: flex;
     flex: 1;

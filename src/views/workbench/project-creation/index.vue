@@ -102,20 +102,6 @@
             <component v-if="!projectStore.isInitializing" :is="currentStepComponent" :key="projectStore.currentStep" />
           </Transition>
         </div>
-
-        <!-- 底部操作按钮 -->
-        <!-- <div class="bottom-actions">
-          <el-button
-            class="next-sty"
-            v-if="projectStore.currentStep < 5"
-            type="primary"
-            size="large"
-            @click="handleNextStep"
-          >
-            下一步
-          </el-button>
-          <el-button v-else type="success" size="large" @click="handleComplete"> 完成制作 </el-button>
-        </div> -->
       </div>
     </div>
 
@@ -295,17 +281,6 @@
     if (targetStep) {
       await projectStore.goToStep(targetStep);
     }
-  };
-
-  // 下一步
-  const handleNextStep = async () => {
-    await projectStore.nextStep();
-  };
-
-  // 完成制作
-  const handleComplete = () => {
-    ElMessage.success('制作完成!');
-    // TODO: 跳转到预览页面或其他逻辑
   };
 </script>
 

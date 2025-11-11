@@ -437,7 +437,7 @@
               font-size: 12px;
               border-radius: 4px;
               background: white;
-              border: 1px solid #e5e7eb;
+              border: 1px dash #e5e7eb;
               color: #6b7280;
 
               &:hover {

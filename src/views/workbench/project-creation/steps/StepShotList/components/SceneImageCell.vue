@@ -5,7 +5,11 @@
       <!-- 顶部操作按钮 -->
       <div class="top-actions">
         <el-tooltip content="本地上传" placement="top">
-          <div class="action-btn" @click="handleUpload">
+          <div
+            class="action-btn"
+            :class="{ disabled: isOperationDisabled }"
+            @click="!isOperationDisabled && handleUpload()"
+          >
             <svg-icon icon-class="fy-tihuan" />
           </div>
         </el-tooltip>
@@ -13,8 +17,8 @@
         <el-tooltip content="查看历史" placement="top">
           <div
             class="action-btn"
-            :class="{ disabled: taskStatus === 0 }"
-            @click="taskStatus !== 0 && handleShowHistory()"
+            :class="{ disabled: isOperationDisabled || isHistoryDisabled }"
+            @click="!isOperationDisabled && !isHistoryDisabled && handleShowHistory()"
           >
             <svg-icon icon-class="fy-lishi" />
           </div>
@@ -23,8 +27,8 @@
         <el-tooltip :content="hasMultipleImages ? '多张图片时不支持下载' : '下载图片'" placement="top">
           <div
             class="action-btn"
-            :class="{ disabled: taskStatus === 0 || !canDownload }"
-            @click="taskStatus !== 0 && canDownload && handleDownload()"
+            :class="{ disabled: isOperationDisabled || !canDownload || isDownloadDisabled }"
+            @click="!isOperationDisabled && canDownload && !isDownloadDisabled && handleDownload()"
           >
             <svg-icon icon-class="fy-download" />
           </div>
@@ -33,8 +37,8 @@
         <el-tooltip :content="hasMultipleImages ? '多张图片时不支持裁剪' : '裁剪图片'" placement="top">
           <div
             class="action-btn"
-            :class="{ disabled: taskStatus === 0 || !canCrop }"
-            @click="taskStatus !== 0 && canCrop && handleCrop()"
+            :class="{ disabled: isOperationDisabled || !canCrop || isCropDisabled }"
+            @click="!isOperationDisabled && canCrop && !isCropDisabled && handleCrop()"
           >
             <svg-icon icon-class="fy-clip" />
           </div>
@@ -54,8 +58,8 @@
         >
           <div
             class="action-btn"
-            :class="{ active: isCollect, disabled: taskStatus === 0 || !canFavorite }"
-            @click="taskStatus !== 0 && canFavorite && handleToggleFavorite()"
+            :class="{ active: isCollect, disabled: isOperationDisabled || !canFavorite || isFavoriteDisabled }"
+            @click="!isOperationDisabled && canFavorite && !isFavoriteDisabled && handleToggleFavorite()"
           >
             <svg-icon v-if="isCollect" icon-class="fy-starfilled" style="width: 12px; height: 12px; color: #ff7d00" />
             <svg-icon v-else icon-class="fy-star" style="width: 16px; height: 16px" />
@@ -65,12 +69,20 @@
 
       <!-- 底部操作按钮 -->
       <div class="bottom-actions">
-        <el-button class="edit-btn" :disabled="hasMultipleImages" @click="handleEdit">
+        <el-button
+          class="edit-btn"
+          :disabled="hasMultipleImages || isOperationDisabled || isEditDisabled"
+          @click="handleEdit"
+        >
           <el-icon><Edit /></el-icon>
           编辑
         </el-button>
         <div class="gen-btn-wrapper">
-          <el-button class="gen-btn" @click="handleRegenerate">
+          <el-button
+            class="gen-btn"
+            :disabled="isOperationDisabled"
+            @click="!isOperationDisabled && handleRegenerate()"
+          >
             <svg-icon icon-class="fy-shandian" class="el-icon" />
             {{ modelPoints }} 生成
           </el-button>
@@ -83,8 +95,15 @@
       @mouseenter="isHovered = true"
       @mouseleave="isHovered = false"
     >
-      <!-- 执行中状态 (taskStatus === 1 或 loading) -->
-      <div v-if="taskStatus === 1 || loading" v-loading="true" class="loading-overlay">
+      <!-- 排队中状态 (taskStatus === 0 或 loading) -->
+      <div v-if="taskStatus === 0" class="queue-overlay">
+        <svg-icon icon-class="fy-gen-waiting" class="queue-icon" />
+        <p class="queue-text">排队中...</p>
+      </div>
+
+      <!-- 执行中状态 (taskStatus === 1) -->
+      <div v-else-if="taskStatus === 1" class="loading-overlay">
+        <svg-icon icon-class="fy-gen-genering" class="loading-icon" />
         <p class="loading-text">生成中，请稍等...</p>
       </div>
 
@@ -110,18 +129,43 @@
       </div>
 
       <!-- 执行失败状态 (taskStatus === 3) -->
-      <div v-else-if="taskStatus === 3" class="failure-container">
+      <!-- 首次失败：没有历史图片 -->
+      <div
+        v-else-if="taskStatus === 3 && (!materialInfoVoList || materialInfoVoList.length === 0)"
+        class="failure-container"
+      >
         <div class="failure-icon">
-          <el-icon :size="48"><CircleClose /></el-icon>
+          <svg-icon class="error-icon" icon-class="fy-gen-failed" />
         </div>
         <p class="failure-text">生成失败</p>
-        <el-button type="primary" size="small" @click="handleRegenerate">
-          <el-icon><Refresh /></el-icon>
-          重新生成
-        </el-button>
       </div>
 
-      <!-- 待执行/空状态 (taskStatus === 0 或其他) -->
+      <!-- 再次失败：有历史图片，显示图片+失败提示层 -->
+      <div
+        v-else-if="taskStatus === 3 && materialInfoVoList && materialInfoVoList.length > 0"
+        class="failure-with-image"
+      >
+        <!-- 背景图片 -->
+        <div class="image-grid-container" :class="{ 'single-image': materialInfoVoList.length === 1 }">
+          <div v-for="(item, index) in materialInfoVoList.slice(0, 4)" :key="index" class="grid-item">
+            <el-image
+              :src="item.previewOssUrl || item.originOssUrl"
+              :fit="fit"
+              class="grid-image"
+              :preview-src-list="materialInfoVoList.map((i) => i.previewOssUrl || i.originOssUrl || '')"
+              :initial-index="index"
+            />
+          </div>
+        </div>
+        <!-- 失败提示遮罩 -->
+        <div class="failure-overlay">
+          <div class="failure-badge">
+            <span class="badge-text">生成失败</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- 其他状态/空状态 -->
       <div v-else class="placeholder-container">
         <img
           style="width: 80px; height: 80px"
@@ -155,7 +199,7 @@
 <script setup lang="ts">
   import { cancelCollectHistoryDetail, collectHistoryDetail, replaceSceneImage } from '@/api/workbench/episode';
   import { uploadFile } from '@/utils/uploadFile';
-  import { CircleClose, Edit, Refresh } from '@element-plus/icons-vue';
+  import { Edit } from '@element-plus/icons-vue';
   import { ElMessage } from 'element-plus';
   import { computed, ref } from 'vue';
   import SceneImageEditDialog from './SceneImageEditDialog.vue';
@@ -229,6 +273,37 @@
   // 是否有多张图片
   const hasMultipleImages = computed(() => {
     return props.materialInfoVoList.length > 1;
+  });
+
+  // taskStatus === 0 或 1 时，所有操作都禁用
+  const isOperationDisabled = computed(() => {
+    return props.taskStatus === 0 || props.taskStatus === 1;
+  });
+
+  // 判断是否没有历史图片
+  const hasNoImages = computed(() => {
+    return !props.materialInfoVoList || props.materialInfoVoList.length === 0;
+  });
+
+  // taskStatus 为 undefined 或 (taskStatus === 3 且没有历史图片) 时，查看历史、下载、剪裁、收藏、编辑操作禁用
+  const isHistoryDisabled = computed(() => {
+    return props.taskStatus === null || (props.taskStatus === 3 && hasNoImages.value);
+  });
+
+  const isDownloadDisabled = computed(() => {
+    return props.taskStatus === null || (props.taskStatus === 3 && hasNoImages.value);
+  });
+
+  const isCropDisabled = computed(() => {
+    return props.taskStatus === null || (props.taskStatus === 3 && hasNoImages.value);
+  });
+
+  const isFavoriteDisabled = computed(() => {
+    return props.taskStatus === null || (props.taskStatus === 3 && hasNoImages.value);
+  });
+
+  const isEditDisabled = computed(() => {
+    return props.taskStatus === null || (props.taskStatus === 3 && hasNoImages.value);
   });
 
   // 收藏功能是否可用（本地上传图片不能收藏，多张图片时也不能收藏）
@@ -365,11 +440,9 @@
   // 查看历史
   const handleShowHistory = () => {
     // 当taskStatus === 2时打开历史弹窗
-    if (props.taskStatus === 2) {
-      historyDialogVisible.value = true;
-    } else {
-      emit('showHistory');
-    }
+    // if (props.taskStatus === 2 || props.taskStatus === 4) {
+    historyDialogVisible.value = true;
+    // }
   };
 
   // 点击遮罩层空白区域（只在taskStatus === 2时）
@@ -626,6 +699,20 @@
         &:active {
           transform: scale(0.95);
         }
+
+        &.is-disabled {
+          opacity: 0.4;
+          cursor: not-allowed;
+
+          &:hover {
+            background: #f7f8fa;
+            transform: none;
+          }
+
+          &:active {
+            transform: none;
+          }
+        }
       }
       .gen-btn-wrapper {
         position: relative;
@@ -651,6 +738,19 @@
 
           &:active {
             transform: scale(0.95);
+          }
+
+          &.is-disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+
+            &:hover {
+              transform: none;
+            }
+
+            &:active {
+              transform: none;
+            }
           }
         }
       }
@@ -682,6 +782,29 @@
       width: 143px; // 190 * (3/4) ≈ 143
     }
 
+    // 排队中状态样式
+    .queue-overlay {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      width: 100%;
+      height: 100%;
+
+      .queue-icon {
+        width: 60px;
+        height: 60px;
+      }
+
+      .queue-text {
+        margin-top: 12px;
+        color: #4e5969;
+        font-size: 13px;
+        font-weight: 400;
+      }
+    }
+
+    // 生成中状态样式
     .loading-overlay {
       display: flex;
       flex-direction: column;
@@ -689,12 +812,29 @@
       align-items: center;
       width: 100%;
       height: 100%;
-      background: rgb(255 255 255 / 90%);
+      // background: linear-gradient(180deg, #f0ebff 0%, #fef5ff 100%);
+
+      .loading-icon {
+        width: 80px;
+        height: 80px;
+        animation: rotate 1.5s linear infinite;
+      }
 
       .loading-text {
         margin-top: 12px;
-        color: #606266;
+        color: #4e5969;
         font-size: 13px;
+        font-weight: 400;
+      }
+    }
+
+    // 旋转动画
+    @keyframes rotate {
+      from {
+        transform: rotate(0deg);
+      }
+      to {
+        transform: rotate(360deg);
       }
     }
 
@@ -783,6 +923,7 @@
       }
     }
 
+    // 首次失败容器
     .failure-container {
       display: flex;
       flex-direction: column;
@@ -790,22 +931,72 @@
       align-items: center;
       width: 100%;
       height: 100%;
-      gap: 8px;
+      gap: 12px;
 
       .failure-icon {
-        color: #f56c6c;
-        opacity: 0.6;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+
+        .error-icon {
+          width: 80px;
+          height: 80px;
+          opacity: 0.8;
+        }
       }
 
       .failure-text {
         margin: 0;
-        color: #f56c6c;
-        font-size: 14px;
+        color: #f53f3f;
+        font-size: 13px;
         font-weight: 500;
       }
+    }
 
-      .el-button {
-        margin-top: 4px;
+    // 再次失败：有图片的失败状态
+    .failure-with-image {
+      position: relative;
+      width: 100%;
+      height: 100%;
+
+      .image-grid-container {
+        width: 100%;
+        height: 100%;
+        filter: brightness(0.8);
+      }
+
+      .failure-overlay {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        background: rgb(0 0 0 / 30%);
+        pointer-events: none;
+
+        .failure-badge {
+          display: flex;
+          align-items: center;
+          gap: 6px;
+          padding: 8px 16px;
+          border-radius: 67px;
+          background: linear-gradient(0deg, rgba(255, 255, 255, 0.2) 0%, rgba(255, 255, 255, 0.2) 100%);
+          backdrop-filter: blur(4.75px);
+
+          .badge-icon {
+            font-size: 16px;
+            color: #fff;
+          }
+
+          .badge-text {
+            color: #f53f3f;
+            font-size: 13px;
+            font-weight: 500;
+          }
+        }
       }
     }
   }

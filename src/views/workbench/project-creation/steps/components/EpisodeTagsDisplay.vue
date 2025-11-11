@@ -26,9 +26,9 @@
         <el-tag size="small" type="warning" class="episode-tag-more"> +{{ extraCount }} </el-tag>
       </template>
       <div class="all-episodes-content">
-        <div class="popover-header">
+        <!-- <div class="popover-header">
           <span class="title">查看全部剧集</span>
-        </div>
+        </div> -->
         <div class="episode-tags-list">
           <el-tooltip
             v-for="episode in episodeList"

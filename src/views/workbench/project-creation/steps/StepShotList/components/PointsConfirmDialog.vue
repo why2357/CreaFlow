@@ -15,12 +15,12 @@
 </template>
 
 <script setup lang="ts">
-  import { computed, ref, watch } from 'vue';
+  import { ref, watch } from 'vue';
 
   interface Props {
     modelValue: boolean;
     shotCount: number; // 镜头数量
-    pointsPerShot: number; // 单个镜头消耗积分
+    totalPoints: number; // 总消耗积分（从接口获取）
   }
 
   const props = defineProps<Props>();
@@ -30,11 +30,6 @@
   }>();
 
   const visible = ref(false);
-
-  // 计算总积分
-  const totalPoints = computed(() => {
-    return props.shotCount * props.pointsPerShot;
-  });
 
   // 监听 modelValue 变化
   watch(

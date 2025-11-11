@@ -218,9 +218,6 @@
       @success="handleCropSuccess"
     />
 
-    <!-- 历史记录弹窗 -->
-    <ImageHistoryDialog v-model="historyDialogVisible" :shot-id="currentShotId" @select="handleHistorySelect" />
-
     <!-- 场景库选择弹窗 -->
     <SceneLibraryDialog
       v-model="sceneLibraryDialogVisible"
@@ -283,7 +280,6 @@
   import CommentDialog from './CommentDialog.vue';
   import CommentListDialog from './CommentListDialog.vue';
   import ImageCropDialog from './ImageCropDialog.vue';
-  import ImageHistoryDialog from './ImageHistoryDialog.vue';
   import ReviewDialog from './ReviewDialog.vue';
   import SceneImageCell from './SceneImageCell.vue';
   import SceneLibraryDialog from './SceneLibraryDialog.vue';
@@ -805,8 +801,12 @@
   };
 
   // 评审成功
-  const handleReviewSuccess = () => {
-    emit('refresh');
+  const handleReviewSuccess = (reviewType: number) => {
+    // 无感刷新：直接更新当前镜头的状态，不重新加载整个列表
+    if (currentShotForAction.value) {
+      // reviewType: 1-通过(绿色) 2-待修改(红色)
+      currentShotForAction.value.imgStatus = reviewType === 1 ? 2 : 3;
+    }
   };
 
   // 删除镜头

@@ -170,6 +170,38 @@ export const editEpisodeRole = (data: {
 };
 
 /**
+ * 检查图片请求
+ */
+export interface EpisodeCheckImgRequest {
+  /** 剧集id */
+  episodeId: number;
+  /** 模型码 */
+  modelCode: string;
+}
+
+/**
+ * 检查图片响应
+ */
+export interface EpisodeCheckImgResponse {
+  /** 镜头id列表 */
+  basicIdList?: number[];
+  /** 累计消费积分 */
+  consumerTotalPoints?: number;
+}
+
+/**
+ * 检查图片接口
+ * @param params 检查图片请求参数
+ */
+export const checkEpisodeImg = (params: EpisodeCheckImgRequest): AxiosPromise<EpisodeCheckImgResponse> => {
+  return request({
+    url: '/hivision/story/episode/check-img',
+    method: 'get',
+    params
+  });
+};
+
+/**
  * 生成图片接口
  * @param data 图片生成请求数据
  */

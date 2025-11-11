@@ -11,7 +11,16 @@
       <!-- 左侧：当前选中图片 -->
       <div class="left-section">
         <div class="current-image-title">当前选中图片</div>
-        <div v-if="!selectedHistoryDetail" class="empty-state">
+
+        <!-- Loading 状态 -->
+        <div v-if="loading" class="loading-state">
+          <el-icon class="is-loading" :size="40">
+            <Loading />
+          </el-icon>
+          <p class="loading-text">加载中...</p>
+        </div>
+
+        <div v-else-if="!selectedHistoryDetail" class="empty-state">
           <img src="../../../../../../assets/images/no-sence.png" alt="暂无图片" class="empty-image" />
           <p class="empty-text">点击右侧图片进行查看</p>
         </div>
@@ -42,8 +51,16 @@
       <div class="right-section">
         <div class="history-title">历史记录</div>
 
+        <!-- Loading 状态 -->
+        <div v-if="loading" class="loading-container">
+          <el-icon class="is-loading" :size="40">
+            <Loading />
+          </el-icon>
+          <p class="loading-text">加载中...</p>
+        </div>
+
         <!-- 空状态 -->
-        <div v-if="historyList.length === 0" class="empty-history">
+        <div v-else-if="historyList.length === 0" class="empty-history">
           <el-empty description="暂无历史记录" />
         </div>
 
@@ -193,7 +210,7 @@
     type SceneItemHistoryInfo
   } from '@/api/workbench/episode';
   import { formatDate } from '@/utils';
-  import { Delete, Download, MoreFilled } from '@element-plus/icons-vue';
+  import { Delete, Download, Loading, MoreFilled } from '@element-plus/icons-vue';
   import { ElImageViewer, ElMessage, ElMessageBox } from 'element-plus';
   import { ref, watch } from 'vue';
   import CommentListDialog from './CommentListDialog.vue';
@@ -231,6 +248,7 @@
   }>();
 
   const visible = ref(false);
+  const loading = ref(false);
   const selectedHistoryDetail = ref<HistoryDetail | null>(null);
   const historyList = ref<HistoryGroup[]>([]);
   const showImageViewer = ref(false);
@@ -277,6 +295,7 @@
       return;
     }
 
+    loading.value = true;
     try {
       const { data } = await getSceneHistoryList({
         basicId: props.basicId,
@@ -328,6 +347,8 @@
     } catch (error) {
       console.error('加载历史记录失败:', error);
       ElMessage.error('加载历史记录失败');
+    } finally {
+      loading.value = false;
     }
   };
 
@@ -690,6 +711,25 @@
         font-size: 13px;
         line-height: 13px;
         height: 13px;
+      }
+
+      .loading-container {
+        display: flex;
+        flex: 1;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        gap: 16px;
+
+        .is-loading {
+          color: #6157ff;
+        }
+
+        .loading-text {
+          color: #86909c;
+          font-size: 14px;
+          margin: 0;
+        }
       }
 
       .empty-history {
