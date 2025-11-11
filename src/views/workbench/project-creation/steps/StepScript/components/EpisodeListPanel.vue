@@ -23,13 +23,22 @@
           :key="episode.id"
           class="episode-item"
           :class="{ active: episode.id === selectedId }"
-          @click="handleSelect(episode.id)"
+          @click="handleSelect(episode.id, episode.taskStatus)"
         >
           <div class="episode-info">
             <el-tooltip :content="episode.name" placement="top" :disabled="!isNameOverflow(episode.name)">
               <span class="episode-name">{{ episode.name }}</span>
             </el-tooltip>
             <div v-if="showProgress" class="progress-badge">{{ episode.progress || 0 }}%</div>
+
+            <!-- 任务状态显示 -->
+            <div v-if="episode.taskStatus === 1 && !showProgress" class="status-badge generating">
+              <span>生成中...</span>
+            </div>
+            <div v-else-if="episode.taskStatus === 3 && !showProgress" class="status-badge failed">
+              <span>生成失败</span>
+              <svg-icon icon-class="fy-refresh" class="retry-icon" />
+            </div>
           </div>
           <el-dropdown
             trigger="click"
@@ -75,7 +84,7 @@
   });
 
   interface Emits {
-    (e: 'select', id: string | number): void;
+    (e: 'select', id: string | number, taskStatus?: number): void;
     (e: 'add'): void;
     (e: 'rename', episode: Episode): void;
     (e: 'delete', episode: Episode): void;
@@ -92,8 +101,8 @@
   };
 
   // 选择剧集
-  const handleSelect = (id: string | number) => {
-    emits('select', id);
+  const handleSelect = (id: string | number, taskStatus?: number) => {
+    emits('select', id, taskStatus);
   };
 
   // 新增剧集
@@ -257,6 +266,32 @@
             text-overflow: ellipsis;
             white-space: nowrap;
             width: 100px;
+          }
+
+          .status-badge {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 10px;
+            font-weight: 500;
+            flex-shrink: 0;
+
+            &.generating {
+              color: #86909c;
+              margin-right: 13px;
+            }
+
+            &.failed {
+              color: #f53f3f;
+              margin-right: 13px;
+
+              .retry-icon {
+                width: 12px;
+                height: 12px;
+              }
+            }
           }
 
           .episode-progress {

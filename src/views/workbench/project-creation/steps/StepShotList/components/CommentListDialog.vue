@@ -1,34 +1,48 @@
 <template>
-  <el-dialog
-    v-model="dialogVisible"
-    title="留言"
-    width="600px"
-    :close-on-click-modal="false"
-    @close="handleClose"
-    @open="loadComments"
-    class="comment-list-dialog"
+  <el-popover
+    v-model:visible="popoverVisible"
+    :virtual-ref="triggerRef"
+    trigger="manual"
+    virtual-triggering
+    placement="bottom-start"
+    :width="382"
+    popper-class="comment-list-popover"
+    :offset="8"
+    @show="loadComments"
   >
     <div v-loading="loading" class="comment-list">
+      <!-- 标题栏 -->
+      <div class="comment-header">
+        <svg-icon icon-class="fy-comment" class="header-icon" />
+        <span class="header-title">留言</span>
+      </div>
+
+      <!-- 留言列表 -->
       <div v-if="comments.length === 0" class="empty-state">
-        <el-empty description="暂无留言" />
+        <div class="empty-text">暂无留言</div>
       </div>
       <div v-else class="comment-items">
         <div v-for="comment in comments" :key="comment.id" class="comment-item">
-          <div class="comment-header">
-            <div class="user-info">
-              <div class="avatar">{{ getInitial(comment.commentUsername) }}</div>
-              <div class="user-details">
-                <div class="username">{{ comment.commentUsername }}</div>
-                <div class="time">{{ formatTime(comment.createTime) }}</div>
+          <div class="avatar">{{ getInitial(comment.commentUsername) }}</div>
+          <div class="comment-content-wrapper">
+            <div class="comment-info">
+              <div>
+                <span class="username">{{ comment.commentUsername || '匿名用户' }}</span>
+                <span class="time">{{ formatTime(comment.createTime) }}</span>
               </div>
+              <svg-icon @click="handleDelete(comment.id!)" icon-class="fy-del" class="delete-icon" />
+              <!-- <el-icon  ">
+                <Close />
+              </el-icon> -->
             </div>
-            <el-button text type="danger" size="small" @click="handleDelete(comment.id!)">删除</el-button>
+            <div class="comment-bubble">
+              <p class="comment-text">{{ comment.comment }}</p>
+            </div>
           </div>
-          <div class="comment-content">{{ comment.comment }}</div>
         </div>
       </div>
     </div>
-  </el-dialog>
+  </el-popover>
 </template>
 
 <script setup lang="ts">
@@ -41,6 +55,7 @@
     modelValue: boolean;
     basicId: number;
     sceneType: number;
+    triggerRef?: HTMLElement;
   }
 
   const props = defineProps<Props>();
@@ -49,15 +64,17 @@
     (e: 'change'): void;
   }>();
 
-  const dialogVisible = computed({
+  const popoverVisible = computed({
     get: () => props.modelValue,
     set: (value) => emit('update:modelValue', value)
   });
 
+  const triggerRef = computed(() => props.triggerRef);
+
   const loading = ref(false);
   const comments = ref<SceneCommentVo[]>([]);
 
-  // 加载留言列表
+  // 加载留言列表（只显示最新的一条）
   const loadComments = async () => {
     try {
       loading.value = true;
@@ -65,7 +82,18 @@
         basicId: props.basicId,
         sceneType: props.sceneType
       });
-      comments.value = res.data || [];
+      const allComments = res.data || [];
+      // 按创建时间降序排序，取最新的一条
+      if (allComments.length > 0) {
+        const sortedComments = allComments.sort((a, b) => {
+          const timeA = new Date(a.createTime || 0).getTime();
+          const timeB = new Date(b.createTime || 0).getTime();
+          return timeB - timeA;
+        });
+        comments.value = [sortedComments[0]];
+      } else {
+        comments.value = [];
+      }
     } catch (error) {
       console.error('加载留言列表失败:', error);
       ElMessage.error('加载留言列表失败');
@@ -90,7 +118,6 @@
     } catch (error: any) {
       if (error !== 'cancel') {
         console.error('删除留言失败:', error);
-        ElMessage.error('删除留言失败');
       }
     }
   };
@@ -101,133 +128,159 @@
     return username.charAt(0).toUpperCase();
   };
 
-  // 格式化时间
+  // 格式化时间 - 只显示时:分
   const formatTime = (time?: Date) => {
     if (!time) return '';
     const date = new Date(time);
-    const now = new Date();
-    const diff = now.getTime() - date.getTime();
-
-    // 小于1分钟
-    if (diff < 60000) {
-      return '刚刚';
-    }
-    // 小于1小时
-    if (diff < 3600000) {
-      return `${Math.floor(diff / 60000)}分钟前`;
-    }
-    // 小于1天
-    if (diff < 86400000) {
-      return `${Math.floor(diff / 3600000)}小时前`;
-    }
-    // 超过1天，显示具体日期
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const day = String(date.getDate()).padStart(2, '0');
     const hour = String(date.getHours()).padStart(2, '0');
     const minute = String(date.getMinutes()).padStart(2, '0');
-
-    return `${year}-${month}-${day} ${hour}:${minute}`;
-  };
-
-  const handleClose = () => {
-    dialogVisible.value = false;
+    return `${hour}:${minute}`;
   };
 </script>
 
 <style scoped lang="scss">
-  .comment-list-dialog {
-    :deep(.el-dialog__header) {
-      padding: 20px 24px;
+  .comment-list {
+    width: 100%;
+    background: #fff;
+
+    // 标题栏样式 - 按 Figma 设计
+    .comment-header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 12px;
       border-bottom: 1px solid #e5e6eb;
+      background: #f7f8fa;
 
-      .el-dialog__title {
-        font-size: 16px;
+      .header-icon {
+        width: 16px;
+        height: 16px;
+        color: #5252ff;
+      }
+
+      .header-title {
+        font-size: 12px;
         font-weight: 500;
-        color: #1d2129;
+        color: #101828;
+        line-height: 12px;
       }
     }
 
-    :deep(.el-dialog__body) {
-      padding: 24px;
-      max-height: 500px;
-      overflow-y: auto;
+    // 空状态
+    .empty-state {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 40px 16px;
+
+      .empty-text {
+        font-size: 14px;
+        color: #86909c;
+      }
     }
 
-    .comment-list {
-      min-height: 200px;
+    // 留言列表
+    .comment-items {
+      padding: 12px;
 
-      .empty-state {
+      .comment-item {
         display: flex;
-        justify-content: center;
-        align-items: center;
-        min-height: 200px;
-      }
+        gap: 12px;
+        align-items: flex-start;
 
-      .comment-items {
-        display: flex;
-        flex-direction: column;
-        gap: 16px;
+        // 头像样式 - 按 Figma 设计
+        .avatar {
+          width: 32px;
+          height: 32px;
+          border-radius: 50%;
+          background: linear-gradient(180deg, #e8e9ff 0%, #f5f6ff 100%);
+          color: #5252ff;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-size: 12px;
+          font-weight: 400;
+          flex-shrink: 0;
+          line-height: 12px;
+        }
 
-        .comment-item {
-          padding: 16px;
-          background: #f7f8fa;
-          border-radius: 8px;
-          transition: all 0.3s;
+        // 留言内容区
+        .comment-content-wrapper {
+          flex: 1;
+          min-width: 0;
+          display: flex;
+          flex-direction: column;
+          gap: 4px;
 
-          &:hover {
-            background: #f2f3f5;
-          }
-
-          .comment-header {
+          // 用户信息行
+          .comment-info {
             display: flex;
-            justify-content: space-between;
             align-items: center;
-            margin-bottom: 12px;
+            justify-content: space-between;
+            gap: 8px;
+            height: 20px;
 
-            .user-info {
-              display: flex;
-              align-items: center;
-              gap: 12px;
+            .username {
+              font-size: 12px;
+              font-weight: 500;
+              color: #1d2129;
+              line-height: 12px;
+            }
 
-              .avatar {
-                width: 36px;
-                height: 36px;
-                border-radius: 50%;
-                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-                color: white;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                font-size: 14px;
-                font-weight: 500;
-              }
+            .time {
+              font-size: 12px;
+              font-weight: 400;
+              color: #86909c;
+              line-height: 12px;
+            }
+            // 删除图标
+            .delete-icon {
+              flex-shrink: 0;
+              width: 14px;
+              height: 14px;
+              color: #86909c;
+              cursor: pointer;
+              transition: color 0.2s;
+              margin-top: 2px;
 
-              .user-details {
-                .username {
-                  font-size: 14px;
-                  font-weight: 500;
-                  color: #1d2129;
-                  margin-bottom: 4px;
-                }
-
-                .time {
-                  font-size: 12px;
-                  color: #86909c;
-                }
+              &:hover {
+                color: #f53f3f;
               }
             }
           }
 
-          .comment-content {
-            padding-left: 48px;
-            font-size: 14px;
-            color: #4e5969;
-            line-height: 1.6;
-            word-break: break-word;
+          // 留言气泡 - 按 Figma 设计
+          .comment-bubble {
+            position: relative;
+            background: #f7f8fa;
+            padding: 10px 16px;
+            border-radius: 0 16px 16px 16px; // 左上角直角，其他圆角
+            display: flex;
+            align-items: flex-start;
+            gap: 8px;
+
+            .comment-text {
+              flex: 1;
+              font-size: 12px;
+              font-weight: 400;
+              color: #4e5969;
+              line-height: 18px;
+              word-break: break-word;
+              white-space: pre-wrap;
+              margin: 0;
+            }
           }
         }
       }
     }
+  }
+</style>
+
+<style lang="scss">
+  .comment-list-popover {
+    padding: 0 !important;
+    border-radius: 8px !important;
+    overflow: hidden;
+    box-shadow: 0 4px 6px rgba(224, 231, 255, 0.25), 0 10px 15px rgba(224, 231, 255, 0.5) !important;
   }
 </style>

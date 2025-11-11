@@ -1,35 +1,35 @@
 <template>
-  <el-dialog v-model="visible" title="裁剪图片" width="800px" :close-on-click-modal="false" @close="handleClose">
-    <div class="crop-container">
-      <div class="crop-area">
-        <img ref="imageRef" :src="imageUrl" alt="裁剪图片" />
-      </div>
+  <teleport to="body">
+    <transition name="fade">
+      <div v-if="visible" class="image-crop-dialog">
+        <div class="crop-overlay">
+          <!-- 裁剪图片区域 -->
+          <div class="crop-wrapper">
+            <!-- 裁剪尺寸提示 - 左上角 -->
+            <div v-if="cropSize" class="crop-size-tip">{{ cropSize }}</div>
 
-      <div class="crop-info">
-        <div class="info-item">
-          <span class="label">裁剪比例：</span>
-          <span class="value">{{ aspectRatio }}</span>
-        </div>
-        <div class="info-tip">
-          <el-icon><InfoFilled /></el-icon>
-          <span>裁剪后的图片将保持 {{ aspectRatio }} 的比例</span>
+            <img ref="imageRef" :src="imageUrl" alt="裁剪图片" class="crop-image" />
+
+            <!-- 底部提示文字 -->
+            <div class="crop-tip">拖动裁切框调整位置，拖动右下角调整大小</div>
+
+            <!-- 底部操作按钮 -->
+            <div class="crop-footer">
+              <el-button class="cancel-btn" :disabled="uploading" @click="handleClose">取消</el-button>
+              <el-button class="confirm-btn" :loading="uploading" @click="handleConfirm">
+                {{ uploading ? '上传中...' : '确认裁切' }}
+              </el-button>
+            </div>
+          </div>
         </div>
       </div>
-    </div>
-
-    <template #footer>
-      <el-button :disabled="uploading" @click="handleClose">取消</el-button>
-      <el-button type="primary" :loading="uploading" @click="handleConfirm">
-        {{ uploading ? '上传中...' : '确认裁剪' }}
-      </el-button>
-    </template>
-  </el-dialog>
+    </transition>
+  </teleport>
 </template>
 
 <script setup lang="ts">
   import { replaceSceneImage } from '@/api/workbench/episode';
   import { uploadFile } from '@/utils/uploadFile';
-  import { InfoFilled } from '@element-plus/icons-vue';
   import Cropper from 'cropperjs';
   import 'cropperjs/dist/cropper.css';
   import { ElMessage } from 'element-plus';
@@ -52,6 +52,7 @@
   const visible = ref(false);
   const imageRef = ref<HTMLImageElement>();
   const uploading = ref(false);
+  const cropSize = ref('');
   let cropper: Cropper | null = null;
 
   // 监听 modelValue 变化
@@ -84,15 +85,27 @@
       aspectRatio: ratio,
       viewMode: 1,
       dragMode: 'move',
-      autoCropArea: 0.8,
+      autoCropArea: 0.7, // 增大初始裁剪区域，提供更好的视觉效果
       restore: false,
       guides: true,
       center: true,
       highlight: true,
       cropBoxMovable: true,
       cropBoxResizable: true,
-      toggleDragModeOnDblclick: false
+      toggleDragModeOnDblclick: false,
+      responsive: true, // 响应式调整
+      // 监听裁剪框变化，更新尺寸显示
+      crop(event) {
+        const width = Math.round(event.detail.width);
+        const height = Math.round(event.detail.height);
+        updateCropSize(width, height);
+      }
     });
+  };
+
+  // 更新裁剪框尺寸显示
+  const updateCropSize = (width: number, height: number) => {
+    cropSize.value = `${width} × ${height} (${props.aspectRatio})`;
   };
 
   // 销毁裁剪器
@@ -195,56 +208,183 @@
 </script>
 
 <style scoped lang="scss">
-  .crop-container {
-    .crop-area {
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      width: 100%;
-      max-height: 500px;
-      margin-bottom: 20px;
-      background: #000000;
+  // 淡入淡出动画
+  .fade-enter-active,
+  .fade-leave-active {
+    transition: opacity 0.3s ease;
+  }
 
-      img {
-        max-width: 100%;
-        max-height: 500px;
+  .fade-enter-from,
+  .fade-leave-to {
+    opacity: 0;
+  }
+
+  .image-crop-dialog {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 3000;
+
+    .crop-overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100vh;
+      background: rgba(0, 0, 0, 0.5);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .crop-wrapper {
+      position: relative;
+      width: 80vw;
+      height: 80vh;
+      max-width: 1200px;
+      max-height: 800px;
+
+      .crop-image {
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
       }
     }
 
-    .crop-info {
-      .info-item {
-        display: flex;
-        align-items: center;
-        margin-bottom: 12px;
+    // 自定义 Cropper.js 样式以匹配设计稿
+    :deep(.cropper-container) {
+      // 裁剪框外的黑色蒙层
+      .cropper-modal {
+        background: rgba(0, 0, 0, 0.6);
+      }
 
-        .label {
-          margin-right: 8px;
-          color: #606266;
-          font-size: 14px;
-          font-weight: 600;
-        }
+      // 裁剪框边框
+      .cropper-view-box {
+        outline: 2px solid #ffffff;
+        outline-offset: 0;
+      }
 
-        .value {
-          color: #409eff;
-          font-size: 14px;
-          font-weight: 600;
+      // 九宫格辅助线
+      .cropper-dashed {
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        opacity: 1;
+      }
+
+      // 隐藏中心十字线
+      .cropper-center {
+        display: none;
+      }
+
+      // 裁剪框四角和边的拖拽点 - 隐藏大部分，只保留右下角
+      .cropper-point {
+        display: none;
+        // width: 16px;
+        // height: 16px;
+        background: #ffffff;
+        border: 3px solid #5252ff;
+        border-radius: 2px;
+        opacity: 1;
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+
+        // 只显示右下角的拖拽点
+        &.point-se {
+          display: block;
+          cursor: se-resize;
         }
       }
 
-      .info-tip {
-        display: flex;
-        align-items: center;
-        gap: 6px;
-        padding: 8px 12px;
-        border-left: 3px solid #409eff;
-        border-radius: 4px;
-        background: #f0f9ff;
-        color: #606266;
-        font-size: 13px;
+      // 隐藏边框线条
+      .cropper-line {
+        display: none;
+      }
 
-        .el-icon {
-          color: #409eff;
-          font-size: 16px;
+      // 裁剪框的尺寸提示 - 移除该样式，使用固定定位
+      .cropper-face {
+        &::before {
+          display: none;
+        }
+      }
+    }
+
+    // 裁剪框尺寸提示 - 相对于 crop-wrapper 定位在左上角
+    .crop-size-tip {
+      position: absolute;
+      top: -40px;
+      left: 0;
+      z-index: 9000;
+      background: rgba(0, 0, 0, 0.7);
+      border-radius: 4px;
+      padding: 5px 7.406px 3px 8px;
+      color: #ffffff;
+      font-size: 13px;
+      font-weight: 500;
+      line-height: 13px;
+      white-space: nowrap;
+      pointer-events: none;
+    }
+
+    .crop-tip {
+      position: absolute;
+      left: 0;
+      bottom: -50px;
+      background: rgba(0, 0, 0, 0.7);
+      border-radius: 28px;
+      padding: 16px 18px;
+      color: #ffffff;
+      font-size: 13px;
+      font-weight: 500;
+      line-height: 13px;
+      white-space: nowrap;
+    }
+
+    .crop-footer {
+      position: absolute;
+      right: 0px;
+      bottom: -60px;
+      transform: translateX(-50%);
+      display: flex;
+      gap: 8px;
+      padding: 12px;
+
+      .cancel-btn {
+        background: #ffffff;
+        color: #4e5969;
+        border: none;
+        border-radius: 8px;
+        font-size: 13px;
+        font-weight: 500;
+        height: 32px;
+        padding: 8px 16px;
+
+        &:hover {
+          background: #f7f8fa;
+        }
+
+        &:disabled {
+          opacity: 0.5;
+          cursor: not-allowed;
+        }
+      }
+
+      .confirm-btn {
+        background: #5252ff;
+        color: #ffffff;
+        border: none;
+        border-radius: 8px;
+        font-size: 13px;
+        font-weight: 500;
+        height: 32px;
+        padding: 8px 16px;
+
+        &:hover {
+          background: #4040dd;
+        }
+
+        &:disabled {
+          opacity: 0.5;
+          cursor: not-allowed;
         }
       }
     }

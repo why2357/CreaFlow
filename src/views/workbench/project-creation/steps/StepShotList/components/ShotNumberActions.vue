@@ -2,11 +2,7 @@
   <div class="shot-number-actions">
     <!-- 小圆点 -->
     <div class="action-dot">
-      <!-- 留言徽标 -->
-      <el-badge v-if="commentCount > 0" :value="commentCount" class="comment-badge" @click.stop="handleViewComments">
-        <div class="dot-inner"></div>
-      </el-badge>
-      <div v-else class="dot-inner"></div>
+      <div class="dot-inner" :class="getDotColorClass()"></div>
     </div>
 
     <!-- 功能菜单 -->
@@ -38,11 +34,11 @@
 <script setup lang="ts">
   interface Props {
     shotNumber: number;
-    commentCount?: number;
+    sceneStatus?: number; // 图片状态 0-未判定(灰色) 1-橙色 2-绿色 3-红色
   }
 
   const props = withDefaults(defineProps<Props>(), {
-    commentCount: 0
+    sceneStatus: 0
   });
 
   const emit = defineEmits<{
@@ -52,6 +48,21 @@
     (e: 'delete'): void;
     (e: 'viewComments'): void;
   }>();
+
+  // 根据状态获取小圆点颜色类名
+  const getDotColorClass = () => {
+    switch (props.sceneStatus) {
+      case 1:
+        return 'status-orange'; // 橙色
+      case 2:
+        return 'status-green'; // 绿色
+      case 3:
+        return 'status-red'; // 红色
+      case 0:
+      default:
+        return 'status-gray'; // 未判定(灰色)
+    }
+  };
 
   const handleComment = (event: MouseEvent) => {
     emit('comment', event);
@@ -68,10 +79,6 @@
   const handleDelete = () => {
     emit('delete');
   };
-
-  const handleViewComments = () => {
-    emit('viewComments');
-  };
 </script>
 
 <style scoped lang="scss">
@@ -87,24 +94,28 @@
       transition: all 0.3s;
       z-index: 1;
 
-      .comment-badge {
-        :deep(.el-badge__content) {
-          background-color: #5468ff;
-          border: none;
-          font-size: 10px;
-          height: 16px;
-          line-height: 16px;
-          padding: 0 5px;
-          cursor: pointer;
-        }
-      }
-
       .dot-inner {
-        width: 10px;
-        height: 10px;
-        background-color: #c9cdd4;
+        width: 12px;
+        height: 12px;
         border-radius: 50%;
         transition: all 0.3s;
+
+        // 状态颜色
+        &.status-gray {
+          background-color: #c9cdd4; // 未判定
+        }
+
+        &.status-orange {
+          background-color: #ff7d00; // 橙色
+        }
+
+        &.status-green {
+          background-color: #23c343; // 绿色
+        }
+
+        &.status-red {
+          background-color: #f53f3f; // 红色
+        }
       }
     }
 

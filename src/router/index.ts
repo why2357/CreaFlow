@@ -134,6 +134,19 @@ export const constantRoutes: RouteOption[] = [
       }
     ]
   },
+  // {
+  //   path: '',
+  //   component: Layout,
+  //   redirect: 'menu',
+  //   children: [
+  //     {
+  //       path: '/menu',
+  //       component: () => import('@/views/system/menu/index.vue'),
+  //       name: 'Menu',
+  //       meta: { title: '菜单管理', icon: 'logo-menu' }
+  //     }
+  //   ]
+  // },
   {
     path: '/user',
     component: Layout,

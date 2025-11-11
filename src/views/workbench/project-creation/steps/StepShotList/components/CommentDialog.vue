@@ -24,6 +24,7 @@
             maxlength="300"
             show-word-limit
             autofocus
+            resize="none"
           />
         </el-form-item>
       </el-form>

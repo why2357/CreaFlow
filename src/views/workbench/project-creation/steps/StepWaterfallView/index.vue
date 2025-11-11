@@ -69,7 +69,7 @@
       dialogue: scene.dialogues || '',
       characters: scene.characterClothingInfoList?.map((c) => c.clothingName || '') || [],
       sceneLocation: scene.sceneHint || '',
-      isFavorite: false,
+      isCollect: false,
       imageLoading: scene.taskStatus === 1
     }));
   };

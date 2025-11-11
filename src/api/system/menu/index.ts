@@ -1,11 +1,11 @@
 import request from '@/utils/request';
 import { AxiosPromise } from 'axios';
-import { MenuQuery, MenuVO, MenuForm, MenuTreeOption, RoleMenuTree } from './types';
+import { MenuForm, MenuQuery, MenuTreeOption, MenuVO, RoleMenuTree } from './types';
 
 // 查询菜单列表
 export const listMenu = (query?: MenuQuery): AxiosPromise<MenuVO[]> => {
   return request({
-    url: '/system/menu/list',
+    url: '/hivision/system/menu/list',
     method: 'get',
     params: query
   });
@@ -14,7 +14,7 @@ export const listMenu = (query?: MenuQuery): AxiosPromise<MenuVO[]> => {
 // 查询菜单详细
 export const getMenu = (menuId: string | number): AxiosPromise<MenuVO> => {
   return request({
-    url: '/system/menu/' + menuId,
+    url: '/hivision/system/menu/' + menuId,
     method: 'get'
   });
 };
@@ -22,7 +22,7 @@ export const getMenu = (menuId: string | number): AxiosPromise<MenuVO> => {
 // 查询菜单下拉树结构
 export const treeselect = (): AxiosPromise<MenuTreeOption[]> => {
   return request({
-    url: '/system/menu/treeselect',
+    url: '/hivision/system/menu/treeselect',
     method: 'get'
   });
 };
@@ -30,7 +30,7 @@ export const treeselect = (): AxiosPromise<MenuTreeOption[]> => {
 // 根据角色ID查询菜单下拉树结构
 export const roleMenuTreeselect = (roleId: string | number): AxiosPromise<RoleMenuTree> => {
   return request({
-    url: '/system/menu/roleMenuTreeselect/' + roleId,
+    url: '/hivision/system/menu/roleMenuTreeselect/' + roleId,
     method: 'get'
   });
 };
@@ -38,7 +38,7 @@ export const roleMenuTreeselect = (roleId: string | number): AxiosPromise<RoleMe
 // 根据角色ID查询菜单下拉树结构
 export const tenantPackageMenuTreeselect = (packageId: string | number): AxiosPromise<RoleMenuTree> => {
   return request({
-    url: '/system/menu/tenantPackageMenuTreeselect/' + packageId,
+    url: '/hivision/system/menu/tenantPackageMenuTreeselect/' + packageId,
     method: 'get'
   });
 };
@@ -46,7 +46,7 @@ export const tenantPackageMenuTreeselect = (packageId: string | number): AxiosPr
 // 新增菜单
 export const addMenu = (data: MenuForm) => {
   return request({
-    url: '/system/menu',
+    url: '/hivision/system/menu',
     method: 'post',
     data: data
   });
@@ -55,7 +55,7 @@ export const addMenu = (data: MenuForm) => {
 // 修改菜单
 export const updateMenu = (data: MenuForm) => {
   return request({
-    url: '/system/menu',
+    url: '/hivision/system/menu',
     method: 'put',
     data: data
   });
@@ -64,7 +64,7 @@ export const updateMenu = (data: MenuForm) => {
 // 删除菜单
 export const delMenu = (menuId: string | number) => {
   return request({
-    url: '/system/menu/' + menuId,
+    url: '/hivision/system/menu/' + menuId,
     method: 'delete'
   });
 };

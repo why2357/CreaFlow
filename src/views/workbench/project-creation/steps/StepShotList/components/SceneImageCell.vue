@@ -6,7 +6,7 @@
       <div class="top-actions">
         <el-tooltip content="本地上传" placement="top">
           <div class="action-btn" @click="handleUpload">
-            <el-icon><Upload /></el-icon>
+            <svg-icon icon-class="fy-tihuan" />
           </div>
         </el-tooltip>
 
@@ -16,7 +16,7 @@
             :class="{ disabled: taskStatus === 0 }"
             @click="taskStatus !== 0 && handleShowHistory()"
           >
-            <el-icon><Clock /></el-icon>
+            <svg-icon icon-class="fy-lishi" />
           </div>
         </el-tooltip>
 
@@ -26,7 +26,7 @@
             :class="{ disabled: taskStatus === 0 || !canDownload }"
             @click="taskStatus !== 0 && canDownload && handleDownload()"
           >
-            <el-icon><Download /></el-icon>
+            <svg-icon icon-class="fy-download" />
           </div>
         </el-tooltip>
 
@@ -36,7 +36,7 @@
             :class="{ disabled: taskStatus === 0 || !canCrop }"
             @click="taskStatus !== 0 && canCrop && handleCrop()"
           >
-            <el-icon><Crop /></el-icon>
+            <svg-icon icon-class="fy-clip" />
           </div>
         </el-tooltip>
 
@@ -46,7 +46,7 @@
               ? '多张图片时不支持收藏'
               : !canFavorite
               ? '本地上传图片不支持收藏'
-              : isFavorite
+              : isCollect
               ? '取消收藏'
               : '收藏'
           "
@@ -54,11 +54,11 @@
         >
           <div
             class="action-btn"
-            :class="{ active: isFavorite, disabled: taskStatus === 0 || !canFavorite }"
+            :class="{ active: isCollect, disabled: taskStatus === 0 || !canFavorite }"
             @click="taskStatus !== 0 && canFavorite && handleToggleFavorite()"
           >
-            <el-icon v-if="isFavorite"><StarFilled /></el-icon>
-            <el-icon v-else><Star /></el-icon>
+            <svg-icon v-if="isCollect" icon-class="fy-starfilled" style="width: 12px; height: 12px; color: #ff7d00" />
+            <svg-icon v-else icon-class="fy-star" style="width: 16px; height: 16px" />
           </div>
         </el-tooltip>
       </div>
@@ -103,10 +103,9 @@
             :initial-index="index"
           />
         </div>
-
         <!-- 收藏标记 -->
-        <div v-if="isFavorite" class="favorite-badge">
-          <el-icon><StarFilled /></el-icon>
+        <div v-if="isCollect" class="favorite-badge">
+          <svg-icon icon-class="fy-starfilled" />
         </div>
       </div>
 
@@ -154,13 +153,13 @@
 </template>
 
 <script setup lang="ts">
-  import { replaceSceneImage } from '@/api/workbench/episode';
+  import { cancelCollectHistoryDetail, collectHistoryDetail, replaceSceneImage } from '@/api/workbench/episode';
   import { uploadFile } from '@/utils/uploadFile';
-  import { CircleClose, Clock, Crop, Download, Edit, Refresh, Star, StarFilled, Upload } from '@element-plus/icons-vue';
+  import { CircleClose, Edit, Refresh } from '@element-plus/icons-vue';
   import { ElMessage } from 'element-plus';
   import { computed, ref } from 'vue';
-  import SceneImageHistoryDialog from './SceneImageHistoryDialog.vue';
   import SceneImageEditDialog from './SceneImageEditDialog.vue';
+  import SceneImageHistoryDialog from './SceneImageHistoryDialog.vue';
 
   interface MaterialInfoVo {
     id?: number;
@@ -183,7 +182,7 @@
     shotId: string | number;
     basicId?: number; // 场景基础信息ID
     historyDetailId?: number; // 历史明细ID（用于判断是否本地上传）
-    isFavorite?: boolean;
+    isCollect?: boolean;
     loading?: boolean;
     taskStatus?: number; // 0-待执行 1-执行中 2-执行成功 3-执行失败
     modelPoints?: number; // 当前模型的点数
@@ -193,7 +192,7 @@
     imageUrl: '',
     materialInfoVoList: () => [],
     aspectRatio: '16:9',
-    isFavorite: false,
+    isCollect: false,
     loading: false,
     taskStatus: 0,
     modelPoints: 0
@@ -205,7 +204,7 @@
     (e: 'download'): void;
     (e: 'crop', imageUrl: string): void;
     (e: 'cropComplete', ossId: number): void;
-    (e: 'toggleFavorite'): void;
+    (e: 'toggleFavorite', isCollect: boolean): void;
     (e: 'regenerate'): void;
     (e: 'refresh'): void;
   }>();
@@ -386,12 +385,59 @@
   };
 
   // 下载图片
-  const handleDownload = () => {
-    if (!props.imageUrl) {
+  const handleDownload = async () => {
+    // 获取当前显示的图片URL
+    const imageUrl =
+      props.materialInfoVoList.length > 0
+        ? props.materialInfoVoList[0].originOssUrl || props.materialInfoVoList[0].previewOssUrl
+        : props.imageUrl;
+
+    if (!imageUrl) {
       ElMessage.warning('暂无图片可下载');
       return;
     }
-    emit('download');
+
+    try {
+      // 创建一个隐藏的 a 标签来触发下载
+      const link = document.createElement('a');
+      link.style.display = 'none';
+
+      // 使用 fetch 获取图片数据
+      const response = await fetch(imageUrl, {
+        mode: 'cors'
+      });
+
+      if (!response.ok) {
+        throw new Error('下载失败');
+      }
+
+      const blob = await response.blob();
+      const blobUrl = window.URL.createObjectURL(blob);
+
+      // 从 URL 中提取文件名，或使用默认名称
+      const urlParts = imageUrl.split('/');
+      const fileName = urlParts[urlParts.length - 1] || `scene-image-${props.shotId}.jpg`;
+
+      link.href = blobUrl;
+      link.download = fileName;
+      document.body.appendChild(link);
+      link.click();
+
+      // 清理
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(blobUrl);
+
+      ElMessage.success('下载成功');
+    } catch (error) {
+      console.error('下载图片失败:', error);
+      // 如果 fetch 失败（可能是跨域问题），尝试直接打开链接
+      try {
+        window.open(imageUrl, '_blank');
+        ElMessage.info('已在新标签页打开图片，请手动保存');
+      } catch {
+        ElMessage.error('下载失败，请稍后重试');
+      }
+    }
   };
 
   // 裁剪图片
@@ -410,8 +456,29 @@
   };
 
   // 收藏/取消收藏
-  const handleToggleFavorite = () => {
-    emit('toggleFavorite');
+  const handleToggleFavorite = async () => {
+    if (!props.historyDetailId) {
+      return;
+    }
+
+    try {
+      if (props.isCollect) {
+        // 取消收藏
+        await cancelCollectHistoryDetail({ historyDetailId: props.historyDetailId });
+        ElMessage.success('取消收藏成功');
+        // 触发状态更新,传递新的收藏状态
+        emit('toggleFavorite', false);
+      } else {
+        // 收藏
+        await collectHistoryDetail({ historyDetailId: props.historyDetailId });
+        ElMessage.success('收藏成功');
+        // 触发状态更新,传递新的收藏状态
+        emit('toggleFavorite', true);
+      }
+    } catch (error) {
+      console.error('收藏操作失败:', error);
+      ElMessage.error('操作失败,请重试');
+    }
   };
 
   // 重新生成
@@ -492,7 +559,7 @@
         width: 32px;
         height: 32px;
         border-radius: 50%;
-        background: rgb(255 255 255 / 90%);
+        background: #f7f8fa;
         cursor: pointer;
         transition: all 0.3s;
 
@@ -506,7 +573,7 @@
         }
 
         &.active {
-          background: #ffc107;
+          // background: #ffc107;
           color: white;
 
           &:active {
@@ -682,17 +749,22 @@
         position: absolute;
         top: 8px;
         right: 8px;
-        z-index: 1;
+        z-index: 3;
         display: flex;
         justify-content: center;
         align-items: center;
         width: 24px;
         height: 24px;
         border-radius: 50%;
-        background: rgb(255 193 7 / 90%);
+        background-color: rgb(255 255 255 / 90%);
         box-shadow: 0 2px 4px rgb(0 0 0 / 20%);
-        color: white;
         font-size: 14px;
+
+        .svg-icon {
+          width: 12px;
+          height: 12px;
+          color: #ff7d00;
+        }
       }
     }
 
@@ -706,8 +778,6 @@
       // background: #f5f7fa;
 
       .placeholder-image {
-        width: 80px !important;
-        height: 80px !important;
         object-fit: contain;
         opacity: 0.5;
       }

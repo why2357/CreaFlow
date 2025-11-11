@@ -406,6 +406,7 @@
   .left-sidebar {
     display: flex;
     flex-direction: column;
+    flex-shrink: 0; // 防止压缩
     gap: 18px;
     width: 16%;
     min-width: 200px;
@@ -524,6 +525,8 @@
     display: flex;
     flex: 1;
     flex-direction: column;
+    flex-shrink: 1; // 允许压缩,优先压缩
+    min-width: 400px; // 设置最小宽度,防止过度压缩
     margin: 0 8px;
     overflow: hidden;
     border-radius: 12px;
@@ -717,6 +720,7 @@
   .right-panel {
     display: flex;
     flex-direction: column;
+    flex-shrink: 0; // 防止压缩
     gap: 20px;
     width: 24%;
     min-width: 300px;

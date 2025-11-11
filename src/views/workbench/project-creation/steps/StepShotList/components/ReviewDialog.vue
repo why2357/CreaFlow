@@ -5,14 +5,11 @@
     trigger="manual"
     virtual-triggering
     placement="bottom-start"
-    :width="200"
+    :width="96"
     popper-class="review-popover"
     :offset="8"
   >
     <div class="review-content">
-      <div class="review-header">
-        <span class="review-title">评审</span>
-      </div>
       <div class="review-options">
         <div class="review-option pass" @click="handleSelect(1)">
           <div class="option-icon green"></div>
@@ -76,7 +73,6 @@
       handleClose();
     } catch (error) {
       console.error('评审失败:', error);
-      ElMessage.error('评审失败，请重试');
     } finally {
       loading.value = false;
     }
@@ -86,29 +82,19 @@
 <style scoped lang="scss">
   .review-content {
     padding: 0;
-
-    .review-header {
-      padding: 12px 16px;
-      border-bottom: 1px solid #e5e6eb;
-
-      .review-title {
-        font-size: 14px;
-        font-weight: 500;
-        color: #1d2129;
-      }
-    }
+    width: 100%;
 
     .review-options {
-      padding: 12px;
+      padding: 6px;
       display: flex;
       flex-direction: column;
-      gap: 8px;
+      width: 100%;
 
       .review-option {
         display: flex;
         align-items: center;
-        gap: 12px;
-        padding: 10px 12px;
+        gap: 8px;
+        padding: 6px;
         border-radius: 6px;
         cursor: pointer;
         transition: all 0.2s;
@@ -119,8 +105,8 @@
         }
 
         .option-icon {
-          width: 20px;
-          height: 20px;
+          width: 12px;
+          height: 12px;
           border-radius: 50%;
           flex-shrink: 0;
 
@@ -139,8 +125,9 @@
 
         .option-text {
           font-size: 14px;
-          color: #4e5969;
+          color: #1d2129;
           font-weight: 400;
+          white-space: nowrap;
         }
       }
     }
@@ -152,5 +139,7 @@
     padding: 0 !important;
     border-radius: 8px !important;
     box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12) !important;
+    min-width: 96px !important;
+    width: 96px !important;
   }
 </style>

@@ -18,9 +18,9 @@
         <div class="left-tools">
           <!-- 模型选择下拉框 -->
           <el-dropdown trigger="click" @command="handleModelChange">
-            <el-button>
+            <el-button class="model-btn">
               {{ currentModel }}
-              <el-icon class="el-icon--right"><ArrowDown /></el-icon>
+              <svg-icon icon-class="fy-down" style="height: 16px; width: 16px; margin-left: 6px" />
             </el-button>
             <template #dropdown>
               <el-dropdown-menu>
@@ -32,15 +32,15 @@
           </el-dropdown>
 
           <!-- 角色编辑按钮 -->
-          <el-button @click="handleEditCharacters">
-            <el-icon><User /></el-icon>
+          <el-button class="edit-role" @click="handleEditCharacters">
+            <svg-icon icon-class="fy-role" style="height: 16px; width: 16px; margin-right: 4px" />
             角色编辑
           </el-button>
 
           <!-- 重新匹配角色按钮 -->
           <el-tooltip content="重新匹配角色" placement="bottom">
-            <el-button @click="handleRematchCharacters">
-              <el-icon><Refresh /></el-icon>
+            <el-button class="refresh-btn" @click="handleRematchCharacters">
+              <svg-icon icon-class="fy-refresh" style="height: 16px; width: 16px" />
             </el-button>
           </el-tooltip>
         </div>
@@ -48,6 +48,14 @@
 
       <!-- 主内容区 - 分镜表视图 -->
       <div class="content-area">
+        <!-- 分镜生成中提示 -->
+        <div v-if="episodeTaskStatus === 1" class="generating-overlay">
+          <div class="generating-content">
+            <svg-icon icon-class="fy-loading" class="loading-icon" />
+            <p class="generating-text">分镜生成中，请稍等...</p>
+          </div>
+        </div>
+
         <StoryboardTable
           ref="storyboardTableRef"
           :shots="shots"
@@ -105,7 +113,6 @@
   import type { Episode, Shot, ShotForm } from '@/api/workbench/project/types';
   import { useProjectStore } from '@/store/modules/project';
   import { convertModelsToOptions, getDefaultModel, getModelName } from '@/utils/projectUtils';
-  import { ArrowDown, Refresh, User } from '@element-plus/icons-vue';
   import { ElMessage, ElMessageBox } from 'element-plus';
   import { computed, onMounted, ref, watch } from 'vue';
 
@@ -146,6 +153,9 @@
 
   // 加载状态
   const loading = ref(false);
+
+  // 剧集任务状态 0-待执行 1-执行中 2-执行成功 3-执行失败
+  const episodeTaskStatus = ref<number | undefined>(undefined);
 
   // 新增剧集对话框
   const addEpisodeDialogVisible = ref(false);
@@ -228,13 +238,13 @@
       // 历史明细ID（用于判断是否本地上传）
       historyDetailId: scene.historyDetailId,
       // 收藏状态（默认未收藏）
-      isFavorite: false,
+      isCollect: scene.isCollect,
       // 图片加载状态（1-执行中）
       imageLoading: scene.taskStatus === 1,
       // 文生图任务状态 0-待执行 1-执行中 2-执行成功 3-执行失败
       taskStatus: scene.taskStatus,
       // 评论数
-      commentCount: scene.commentCnt || 0,
+      commentCount: Number(scene.commentCount) || 0,
       // 图片状态 0-白色 1-橙色 2-绿色 3-红色
       imgStatus: scene.sceneStatus
     }));
@@ -249,6 +259,9 @@
       const res = await getEpisodeImgSceneList(Number(selectedEpisodeId.value));
       const episodeData: EpisodeInfoResponseDto = res.data;
 
+      // 设置剧集任务状态
+      episodeTaskStatus.value = episodeData?.taskStatus;
+
       if (episodeData && episodeData.episodeSceneItemInfoList) {
         shots.value = convertToShots(episodeData.episodeSceneItemInfoList);
       } else {
@@ -257,20 +270,36 @@
     } catch (error) {
       console.error('加载分镜列表失败:', error);
       shots.value = [];
+      episodeTaskStatus.value = undefined;
     } finally {
       loading.value = false;
     }
   };
 
   // 选择剧集
-  const handleSelectEpisode = async (episodeId: string | number) => {
+  const handleSelectEpisode = async (episodeId: string | number, taskStatus?: number) => {
+    // 如果是当前剧集且处于生成中状态，刷新项目信息
+    if (projectStore.currentProjectId && taskStatus === 1) {
+      if (projectStore.currentProjectId) {
+        try {
+          await projectStore.loadProjectInfo(Number(projectStore.currentProjectId));
+          // 刷新后重新加载分镜头列表
+          loadShots();
+        } catch (error) {
+          console.error('刷新项目信息失败:', error);
+        }
+      }
+      return;
+    }
+
     if (episodeId === selectedEpisodeId.value) return;
 
     // 重置编辑状态
     storyboardTableRef.value?.resetEditState();
 
     selectedEpisodeId.value = episodeId;
-    // await projectStore.switchEpisode(episodeId);
+    // 更新全局状态和工作流记录
+    await projectStore.switchEpisode(episodeId);
     loadShots();
   };
 
@@ -465,8 +494,8 @@
 
   // 切换收藏
   const handleToggleFavorite = (shot: Shot) => {
-    shot.isFavorite = !shot.isFavorite;
-    ElMessage.success(shot.isFavorite ? '已收藏' : '已取消收藏');
+    shot.isCollect = !shot.isCollect;
+    ElMessage.success(shot.isCollect ? '已收藏' : '已取消收藏');
   };
 
   // 更新分镜信息
@@ -529,21 +558,94 @@
       display: flex;
       justify-content: space-between;
       align-items: center;
-      padding: 0px 20px 0;
-      // border-bottom: 1px solid #e4e7ed;
-      // background: white;
+      padding: 0px 20px 20px;
 
       .left-tools {
         display: flex;
         align-items: center;
-        gap: 12px;
+        .model-btn {
+          display: flex;
+          height: 32px;
+          padding: 2px 12px;
+          justify-content: center;
+          align-items: center;
+          gap: 6px;
+          border-radius: 8px;
+          border: 1px solid #eee;
+          background: #fff;
+          margin-right: 12px;
+        }
+        .edit-role {
+          display: flex;
+          height: 32px;
+          padding: 8px 16px;
+          justify-content: center;
+          align-items: center;
+          gap: 4px;
+          border-radius: 8px;
+          border: 1px solid #eee;
+          background: #fff;
+        }
+        .refresh-btn {
+          display: flex;
+          width: 32px;
+          height: 32px;
+          justify-content: center;
+          align-items: center;
+          border-radius: 8px;
+          border: 1px solid #eee;
+          background: #fff;
+        }
       }
     }
 
     .content-area {
       flex: 1;
       overflow: hidden;
-      // background: white;
+      position: relative;
+
+      // 分镜生成中遮罩层
+      .generating-overlay {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        z-index: 1000;
+
+        .generating-content {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          gap: 16px;
+
+          .loading-icon {
+            width: 48px;
+            height: 48px;
+            color: #5b5bff;
+            animation: rotate 1.5s linear infinite;
+          }
+
+          .generating-text {
+            color: #1d2129;
+            font-size: 16px;
+            font-weight: 500;
+            margin: 0;
+          }
+        }
+
+        @keyframes rotate {
+          from {
+            transform: rotate(0deg);
+          }
+          to {
+            transform: rotate(360deg);
+          }
+        }
+      }
     }
   }
 </style>

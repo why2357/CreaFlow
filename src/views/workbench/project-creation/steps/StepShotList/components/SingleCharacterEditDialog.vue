@@ -37,6 +37,9 @@
                     </div>
                   </template>
                 </el-image>
+
+                <!-- 右上角剧集标签 -->
+                <EpisodeTagsDisplay :episode-list="detail.episodeList" />
               </div>
               <div class="costume-name">{{ detail.name }}</div>
             </div>
@@ -61,6 +64,7 @@
   import { Picture } from '@element-plus/icons-vue';
   import { ElMessage } from 'element-plus';
   import { computed, nextTick, onUnmounted, ref, watch } from 'vue';
+  import EpisodeTagsDisplay from '../../components/EpisodeTagsDisplay.vue';
 
   // Props
   interface Props {

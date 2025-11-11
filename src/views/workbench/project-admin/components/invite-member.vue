@@ -31,7 +31,7 @@
         </div>
         <div class="roles">
           <el-button
-            v-for="roleInfo in roles"
+            v-for="roleInfo in roles.filter((r) => r.isShow !== false)"
             :key="roleInfo.roleId"
             size="small"
             :class="getUserRoleId(u) === roleInfo.roleId ? getRoleClass(roleInfo.roleKey) : ''"

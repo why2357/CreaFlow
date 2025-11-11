@@ -9,20 +9,13 @@
   >
     <!-- 剧集筛选 -->
     <div class="episode-filter">
-      <div class="filter-tabs">
-        <div class="filter-tab" :class="{ active: selectedEpisodeId === null }" @click="handleEpisodeChange(null)">
-          全部
-        </div>
-        <div
-          v-for="episode in episodes"
-          :key="episode.episodeId"
-          class="filter-tab"
-          :class="{ active: selectedEpisodeId === episode.episodeId }"
-          @click="handleEpisodeChange(episode.episodeId!)"
-        >
-          {{ episode.episodeName }}
-        </div>
-      </div>
+      <HorizontalScrollTabs
+        v-model="selectedEpisodeId"
+        :items="episodes"
+        item-key="episodeId"
+        item-label="episodeName"
+        @change="handleEpisodeChange"
+      />
     </div>
 
     <!-- 场景库内容 -->
@@ -57,10 +50,18 @@
 
               <!-- 集数标签显示 -->
               <div v-if="library.episodeList && library.episodeList.length > 0" class="episode-tags">
-                <el-tag v-for="(ep, idx) in getDisplayEpisodes(library.episodeList)" :key="idx" size="small">
-                  {{ ep.episodeName }}
-                </el-tag>
-                <el-tag v-if="getExtraEpisodeCount(library.episodeList) > 0" size="small">
+                <el-tooltip
+                  v-for="(ep, idx) in getDisplayEpisodes(library.episodeList)"
+                  :key="idx"
+                  :content="ep.episodeName"
+                  placement="top"
+                  :disabled="!isEpisodeNameOverflow(ep.episodeName)"
+                >
+                  <el-tag size="small" type="warning" class="episode-tag-ellipsis">
+                    <span class="episode-tag-text">{{ ep.episodeName }}</span>
+                  </el-tag>
+                </el-tooltip>
+                <el-tag v-if="getExtraEpisodeCount(library.episodeList) > 0" size="small" type="warning">
                   +{{ getExtraEpisodeCount(library.episodeList) }}
                 </el-tag>
               </div>
@@ -82,8 +83,25 @@
                     </div>
                   </template>
                 </el-image>
+
+                <!-- 右上角剧集标签 -->
+                <div v-if="item.episodeList && item.episodeList.length > 0" class="episode-tags-on-image">
+                  <el-tooltip
+                    v-for="(ep, idx) in getDisplayEpisodes(item.episodeList)"
+                    :key="idx"
+                    :content="ep.episodeName"
+                    placement="top"
+                    :disabled="!isEpisodeNameOverflow(ep.episodeName)"
+                  >
+                    <el-tag size="small" type="warning" class="episode-tag-ellipsis">
+                      <span class="episode-tag-text">{{ ep.episodeName }}</span>
+                    </el-tag>
+                  </el-tooltip>
+                  <el-tag v-if="getExtraEpisodeCount(item.episodeList) > 0" size="small" type="warning">
+                    +{{ getExtraEpisodeCount(item.episodeList) }}
+                  </el-tag>
+                </div>
               </div>
-              <div class="scene-name">{{ item.detailName }}</div>
             </div>
           </div>
         </div>
@@ -108,6 +126,7 @@
   import { ElMessage } from 'element-plus';
   import { nextTick, onUnmounted, ref, watch } from 'vue';
   import EpisodeSelector from '../../components/EpisodeSelector.vue';
+  import HorizontalScrollTabs from '../../components/HorizontalScrollTabs.vue';
 
   interface Props {
     modelValue: boolean;
@@ -226,12 +245,11 @@
     }
   };
 
-  // 切换剧集
-  const handleEpisodeChange = (episodeId: number | null) => {
-    selectedEpisodeId.value = episodeId;
+  // 切换剧集（兼容 HorizontalScrollTabs 的参数格式）
+  const handleEpisodeChange = (episodeId: number | null | undefined) => {
     selectedSceneId.value = undefined;
     selectedScene.value = undefined;
-    if (episodeId !== null) {
+    if (episodeId !== undefined && episodeId !== null) {
       loadSceneLibraries();
     } else {
       // 选择"全部"时，加载所有场景
@@ -267,6 +285,12 @@
   // 获取超出数量
   const getExtraEpisodeCount = (episodes: EpisodeInfo[]) => {
     return Math.max(0, episodes.length - 3);
+  };
+
+  // 判断剧集名称是否溢出（简单判断：超过4个字符认为可能溢出）
+  const isEpisodeNameOverflow = (name: string | undefined): boolean => {
+    if (!name) return false;
+    return name.length > 4;
   };
 
   // 编辑集数（针对场景库分组）
@@ -359,61 +383,6 @@
 
     .episode-filter {
       margin-bottom: 20px;
-      padding-bottom: 16px;
-
-      .filter-tabs {
-        display: flex;
-        gap: 8px;
-        overflow-x: auto;
-        padding-bottom: 4px;
-
-        // 隐藏滚动条但保持滚动功能
-        scrollbar-width: thin;
-        scrollbar-color: transparent transparent;
-
-        &::-webkit-scrollbar {
-          height: 4px;
-        }
-
-        &::-webkit-scrollbar-track {
-          background: transparent;
-        }
-
-        &::-webkit-scrollbar-thumb {
-          background: transparent;
-        }
-
-        &:hover {
-          scrollbar-color: rgba(0, 0, 0, 0.2) rgba(0, 0, 0, 0.05);
-
-          &::-webkit-scrollbar-thumb {
-            background: rgba(0, 0, 0, 0.2);
-          }
-        }
-      }
-
-      .filter-tab {
-        flex-shrink: 0;
-        padding: 6px 16px;
-        border-radius: 6px;
-        background: #fff;
-        border: 1px solid #eee;
-        color: #86909c;
-        font-size: 14px;
-        cursor: pointer;
-        transition: all 0.2s;
-
-        &:hover {
-          background: #e8f3ff;
-          color: #5b5bff;
-        }
-
-        &.active {
-          background: #5b5bff;
-          color: white;
-          border-color: #5b5bff;
-        }
-      }
     }
 
     .scene-content {
@@ -444,6 +413,7 @@
         .library-header {
           display: flex;
           margin-bottom: 16px;
+          align-items: center;
 
           .library-name-tag {
             flex-shrink: 0;
@@ -458,7 +428,8 @@
             align-items: center;
             gap: 8px;
             flex: 1;
-            justify-content: flex-end;
+            margin-left: 16px;
+            // justify-content: flex-end;
 
             .edit-episodes-btn {
               height: 24px;
@@ -483,12 +454,37 @@
               flex-wrap: wrap;
 
               .el-tag {
-                height: 22px;
-                padding: 0 8px;
-                font-size: 12px;
-                border: none;
-                background: rgba(91, 91, 255, 0.1);
-                color: #5b5bff;
+                flex-shrink: 0;
+                height: 20px;
+                line-height: 20px;
+                border-radius: 62px;
+                border: 0.556px solid #ffcf8b;
+                background: #fff7e8;
+                display: flex;
+                align-items: center;
+              }
+
+              .episode-tag-ellipsis {
+                display: inline-block;
+                max-width: 60px;
+                height: 20px;
+                line-height: 20px;
+                display: flex;
+                align-items: center;
+
+                :deep(.el-tag__content) {
+                  display: block;
+                  overflow: hidden;
+                  text-overflow: ellipsis;
+                  white-space: nowrap;
+                }
+
+                .episode-tag-text {
+                  display: block;
+                  overflow: hidden;
+                  text-overflow: ellipsis;
+                  white-space: nowrap;
+                }
               }
             }
           }
@@ -541,7 +537,6 @@
           .scene-item {
             position: relative;
             flex-shrink: 0;
-            width: 140px;
             cursor: pointer;
             border-radius: 8px;
             overflow: hidden;
@@ -564,6 +559,51 @@
               width: 100%;
               height: 160px;
               background: #f9fafb;
+
+              // 右上角剧集标签
+              .episode-tags-on-image {
+                position: absolute;
+                top: 8px;
+                right: 8px;
+                display: flex;
+                flex-wrap: wrap;
+                gap: 4px;
+                max-width: calc(100% - 16px);
+                z-index: 1;
+                justify-content: flex-end;
+
+                .el-tag {
+                  flex-shrink: 0;
+                  height: 16px;
+                  padding: 2px 6px;
+                  line-height: 16px;
+                  border-radius: 62px;
+                  border: 0.556px solid #ffcf8b;
+                  background: #fff7e8;
+                  display: flex;
+                  align-items: center;
+                  justify-content: center;
+
+                  :deep(.el-tag__content) {
+                    display: flex;
+                    justify-content: center;
+                    align-items: center;
+                    text-align: center;
+                  }
+                }
+
+                .episode-tag-ellipsis {
+                  max-width: 60px;
+
+                  .episode-tag-text {
+                    display: inline-block;
+                    max-width: 100%;
+                    overflow: hidden;
+                    text-overflow: ellipsis;
+                    white-space: nowrap;
+                  }
+                }
+              }
             }
 
             .scene-image {
@@ -587,20 +627,6 @@
                 color: #d1d5db;
                 font-size: 32px;
               }
-            }
-
-            .scene-name {
-              position: absolute;
-              bottom: 12px;
-              left: 12px;
-              color: #fff;
-              font-size: 12px;
-              line-height: 12px;
-              max-width: calc(100% - 24px);
-              overflow: hidden;
-              text-overflow: ellipsis;
-              white-space: nowrap;
-              text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
             }
           }
         }

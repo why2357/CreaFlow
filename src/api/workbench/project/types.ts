@@ -205,6 +205,7 @@ export interface EpisodeInfo {
   episodeName?: string; // 剧集名称
   storyText?: string; // 剧集文本
   modelCode?: string; // 模型码
+  taskStatus?: number; // 文生文任务状态 0-待执行 1-执行中 2-执行成功 3-执行失败
   userProcessInfoList?: UserProcessInfo[]; // 剧集成员进度信息
   projectProcessInfo?: ProjectProcessInfo; // 剧集项目进度
 }
@@ -252,6 +253,7 @@ export interface Episode {
   scriptContent?: string; // 剧本内容
   createTime?: string;
   updateTime?: string;
+  taskStatus?: number; // 文生文任务状态 0-待执行 1-执行中 2-执行成功 3-执行失败
 }
 
 /**
@@ -404,7 +406,7 @@ export interface Shot {
   characters: any[]; // 人物列表（CharacterClothingInfo[]）
   sceneLocation: string; // 场景
   historyDetailId?: number; // 历史明细ID（用于判断是否本地上传）
-  isFavorite?: boolean; // 是否收藏
+  isCollect: boolean; // 是否收藏
   imageLoading?: boolean; // 图片加载状态
   taskStatus?: number; // 文生图任务状态 0-待执行 1-执行中 2-执行成功 3-执行失败
   reviewStatus?: number; // 评审状态 1-通过 2-待修改

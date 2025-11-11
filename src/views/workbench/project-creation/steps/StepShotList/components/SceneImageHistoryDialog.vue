@@ -1,5 +1,12 @@
 <template>
-  <el-dialog v-model="visible" title="图片历史" width="1100px" :close-on-click-modal="false" @close="handleClose">
+  <el-dialog
+    style="background-color: #f7f8fa"
+    v-model="visible"
+    title="图片历史"
+    width="70%"
+    :close-on-click-modal="false"
+    @close="handleClose"
+  >
     <div class="history-dialog-container">
       <!-- 左侧：当前选中图片 -->
       <div class="left-section">
@@ -9,16 +16,24 @@
           <p class="empty-text">点击右侧图片进行查看</p>
         </div>
         <div v-else class="current-image-container">
-          <el-image :src="selectedHistoryDetail.previewOssUrl || selectedHistoryDetail.originOssUrl" fit="contain" />
-          <div class="current-image-info">
-            <p class="info-item">
-              <span class="label">提示词描述：</span>
-              <span class="value">{{ selectedHistoryDetail.prompt || '-' }}</span>
-            </p>
-            <p class="info-item">
-              <span class="label">该画面：</span>
-              <span class="value">{{ selectedHistoryDetail.description || '-' }}</span>
-            </p>
+          <div class="current-image-wrapper">
+            <el-image :src="selectedHistoryDetail.previewOssUrl || selectedHistoryDetail.originOssUrl" fit="contain" />
+          </div>
+          <div class="lb-box">
+            <div class="current-image-info">
+              <div class="memo-sty">提示词描述</div>
+              <p class="info-item">
+                <span class="label">·</span>
+                <span class="value">{{ selectedHistoryDetail.description || '-' }}</span>
+              </p>
+              <p class="info-item">
+                <span class="label">·</span>
+                <span class="value">{{ selectedHistoryDetail.prompt || '-' }}</span>
+              </p>
+            </div>
+            <div class="left-footer">
+              <el-button type="primary" @click="handleConfirm">确认</el-button>
+            </div>
           </div>
         </div>
       </div>
@@ -40,11 +55,11 @@
               <div class="header-content">
                 <div class="prompt-section">
                   <div v-if="history.sceneDesc" class="prompt-line">
-                    <span class="label">中景镜头：</span>
+                    <span class="label">·</span>
                     <span class="text">{{ history.sceneDesc }}</span>
                   </div>
                   <div v-if="history.sceneHint" class="prompt-line">
-                    <span class="label">该画面：</span>
+                    <span class="label">·</span>
                     <span class="text">{{ history.sceneHint }}</span>
                   </div>
                 </div>
@@ -67,19 +82,30 @@
                   <div class="action-top-left">
                     <el-tooltip content="放大" placement="top">
                       <div class="action-icon" @click.stop="handlePreviewImage(detail)">
-                        <el-icon><ZoomIn /></el-icon>
+                        <svg-icon icon-class="fy-zoomin" />
                       </div>
                     </el-tooltip>
                   </div>
 
                   <!-- 右上角：收藏按钮 -->
-                  <div class="action-top-right">
+                  <div class="action-top-right" :class="{ 'is-collected': detail.isCollected }">
                     <el-tooltip :content="detail.isCollected ? '取消收藏' : '收藏'" placement="top">
                       <div class="action-icon" @click.stop="handleToggleCollect(detail)">
-                        <el-icon v-if="detail.isCollected" style="color: #ffa500">
-                          <StarFilled />
-                        </el-icon>
-                        <el-icon v-else><Star /></el-icon>
+                        <svg-icon v-if="detail.isCollected" icon-class="fy-starfilled" />
+                        <svg-icon v-else icon-class="fy-star" />
+                      </div>
+                    </el-tooltip>
+                  </div>
+
+                  <!-- 右下角左侧：评论按钮 -->
+                  <div class="action-bottom-left" @click.stop>
+                    <el-tooltip content="查看评论" placement="top">
+                      <div
+                        ref="commentTriggerRef"
+                        class="action-icon comment-btn"
+                        @click.stop="handleShowComments(detail, $event)"
+                      >
+                        <svg-icon icon-class="fy-comment" />
                       </div>
                     </el-tooltip>
                   </div>
@@ -118,12 +144,12 @@
               <div class="footer-actions">
                 <el-dropdown trigger="click" @command="() => handleDeleteHistory(history.historyId)">
                   <div class="more-btn-footer">
-                    <el-icon><MoreFilled /></el-icon>
+                    <svg-icon icon-class="fy-more" style="width: 12px; height: 12px" />
                   </div>
                   <template #dropdown>
                     <el-dropdown-menu>
                       <el-dropdown-item command="delete" style="color: #f56c6c">
-                        <el-icon><Delete /></el-icon>
+                        <svg-icon icon-class="fy-del" style="width: 16px; height: 16px; margin-right: 12px" />
                         删除该批次结果
                       </el-dropdown-item>
                     </el-dropdown-menu>
@@ -135,11 +161,6 @@
         </div>
       </div>
     </div>
-
-    <template #footer>
-      <el-button @click="handleClose">取消</el-button>
-      <el-button type="primary" :disabled="!selectedHistoryDetail" @click="handleConfirm">确认</el-button>
-    </template>
   </el-dialog>
 
   <!-- 图片预览 -->
@@ -149,6 +170,15 @@
     :initial-index="0"
     :z-index="9999"
     @close="showImageViewer = false"
+  />
+
+  <!-- 评论列表弹窗 -->
+  <CommentListDialog
+    v-model="showCommentList"
+    :basic-id="commentBasicId"
+    :scene-type="1"
+    :trigger-ref="commentTriggerElement"
+    @change="handleCommentChange"
   />
 </template>
 
@@ -163,9 +193,10 @@
     type SceneItemHistoryInfo
   } from '@/api/workbench/episode';
   import { formatDate } from '@/utils';
-  import { Delete, Download, MoreFilled, Star, StarFilled, ZoomIn } from '@element-plus/icons-vue';
+  import { Delete, Download, MoreFilled } from '@element-plus/icons-vue';
   import { ElImageViewer, ElMessage, ElMessageBox } from 'element-plus';
   import { ref, watch } from 'vue';
+  import CommentListDialog from './CommentListDialog.vue';
 
   interface HistoryDetail extends SceneItemHistoryInfo {
     originOssUrl?: string;
@@ -204,6 +235,11 @@
   const historyList = ref<HistoryGroup[]>([]);
   const showImageViewer = ref(false);
   const previewImageUrl = ref('');
+
+  // 评论相关状态
+  const showCommentList = ref(false);
+  const commentBasicId = ref(0);
+  const commentTriggerElement = ref<HTMLElement>();
 
   // 监听 modelValue 变化
   watch(
@@ -486,27 +522,51 @@
   const handleClose = () => {
     visible.value = false;
   };
+
+  // 显示评论列表
+  const handleShowComments = (detail: HistoryDetail, event: MouseEvent) => {
+    commentBasicId.value = detail.historyDetailId || 0;
+    commentTriggerElement.value = event.currentTarget as HTMLElement;
+    showCommentList.value = true;
+  };
+
+  // 评论变化回调
+  const handleCommentChange = () => {
+    // 评论变化后可以刷新数据或做其他处理
+    console.log('评论已更新');
+  };
 </script>
 
 <style scoped lang="scss">
+  :deep(.el-dialog) {
+    border-radius: 12px;
+  }
   .history-dialog-container {
     display: flex;
     gap: 16px;
+    height: calc(100vh - 240px);
     min-height: 600px;
+    max-height: 800px;
 
     // 左侧区域
     .left-section {
       flex: 0 0 450px;
       display: flex;
       flex-direction: column;
-      border-right: 1px solid #e4e7ed;
-      padding-right: 16px;
+      padding: 20px;
+      position: relative;
 
+      height: 100%;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 20px;
+      border-radius: 8px;
+      background: #fff;
+      box-shadow: 0 4px 12px -1px rgba(0, 0, 0, 0.06);
       .current-image-title {
-        margin-bottom: 12px;
         color: #1d2129;
-        font-weight: 500;
-        font-size: 14px;
+        font-size: 13px;
+        line-height: 13px;
       }
 
       .empty-state {
@@ -515,11 +575,12 @@
         flex-direction: column;
         justify-content: center;
         align-items: center;
-        background: #f5f7fa;
         border-radius: 8px;
+        border: 1px solid #eee;
+        background: #f7f8fa;
 
         .empty-image {
-          width: 200px;
+          width: auto;
           height: 200px;
           object-fit: contain;
           opacity: 0.5;
@@ -537,20 +598,43 @@
         flex: 1;
         flex-direction: column;
         gap: 16px;
+        position: relative;
 
-        .el-image {
-          flex: 1;
+        // 图片容器 - 固定高度180px
+        .current-image-wrapper {
+          height: 180px;
           border-radius: 8px;
           background: #f5f7fa;
-        }
+          overflow: hidden;
 
-        .current-image-info {
-          padding: 16px;
+          .el-image {
+            width: 100%;
+            height: 100%;
+          }
+        }
+        .lb-box {
           border-radius: 8px;
-          background: #f7f8fa;
+          border: 1px solid #eee;
+          background-color: #fff;
+          flex: 1;
+          height: 100%;
+        }
+        // 提示词描述区域 - 可滚动，自适应高度
+        .current-image-info {
+          flex: 1;
+          padding: 12px;
+          overflow-y: auto;
+          min-height: 100px;
+          height: calc(100% - 52px);
+          .memo-sty {
+            color: #4e5969;
+            font-size: 13px;
+            line-height: 13px; /* 100% */
+            margin-bottom: 16px;
+          }
 
           .info-item {
-            margin: 0 0 12px;
+            margin: 0 0 14px;
             line-height: 20px;
 
             &:last-child {
@@ -558,15 +642,29 @@
             }
 
             .label {
-              color: #4e5969;
-              font-size: 13px;
+              color: #1d2129;
+              font-size: 16px;
+              font-weight: 600;
+              margin-right: 4px;
             }
 
             .value {
               color: #1d2129;
               font-size: 13px;
+              word-break: break-word;
             }
           }
+        }
+
+        // 左侧底部按钮
+        .left-footer {
+          height: 52px;
+          display: flex;
+          align-items: center;
+          justify-content: flex-end;
+          padding: 12px;
+          border-top: 1px solid #eee;
+          background: rgba(255, 255, 255, 0);
         }
       }
     }
@@ -576,13 +674,22 @@
       flex: 1;
       display: flex;
       flex-direction: column;
+      height: 100%;
       overflow: hidden;
+      border-radius: 8px;
+      padding: 20px;
+      gap: 20px;
+      background: var(--text-color-text-6, #fff);
+
+      /* 中层投影 */
+      box-shadow: 0 4px 12px -1px rgba(0, 0, 0, 0.06);
 
       .history-title {
-        margin-bottom: 12px;
         color: #1d2129;
         font-weight: 500;
-        font-size: 14px;
+        font-size: 13px;
+        line-height: 13px;
+        height: 13px;
       }
 
       .empty-history {
@@ -598,6 +705,9 @@
 
         .history-group {
           margin-bottom: 24px;
+          border-radius: 8px;
+          background: #f7f8fa;
+          padding: 12px;
 
           &:last-child {
             margin-bottom: 0;
@@ -606,7 +716,6 @@
           .history-group-header {
             margin-bottom: 12px;
             padding-bottom: 8px;
-            border-bottom: 1px solid #e4e7ed;
 
             .header-content {
               .prompt-section {
@@ -619,9 +728,10 @@
                   }
 
                   .label {
-                    color: #4e5969;
-                    font-weight: 500;
-                    font-size: 13px;
+                    color: #1d2129;
+                    font-size: 16px;
+                    font-weight: 600;
+                    margin-right: 4px;
                   }
 
                   .text {
@@ -635,7 +745,7 @@
 
           .image-grid {
             display: grid;
-            grid-template-columns: repeat(4, 1fr);
+            grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
             gap: 12px;
 
             .image-item {
@@ -651,10 +761,13 @@
                 border-color: #6157ff;
                 box-shadow: 0 4px 12px rgb(97 87 255 / 20%);
 
-                .action-top-left,
-                .action-top-right,
-                .action-bottom-right {
-                  opacity: 1;
+                .image-wrapper {
+                  .action-top-left,
+                  .action-top-right,
+                  .action-bottom-left,
+                  .action-bottom-right {
+                    opacity: 1;
+                  }
                 }
               }
 
@@ -687,14 +800,14 @@
 
                   .action-icon {
                     display: flex;
+                    width: 24px;
+                    height: 24px;
                     justify-content: center;
                     align-items: center;
-                    width: 28px;
-                    height: 28px;
-                    border-radius: 50%;
-                    background: rgb(255 255 255 / 90%);
-                    cursor: pointer;
-                    transition: all 0.3s;
+                    flex-shrink: 0;
+                    border-radius: 4px;
+                    background: var(--text-color-text-5, #f7f8fa);
+                    z-index: 99;
 
                     &:hover {
                       background: white;
@@ -715,6 +828,41 @@
                   opacity: 0;
                   transition: opacity 0.3s;
 
+                  // 已收藏状态时始终显示
+                  &.is-collected {
+                    opacity: 1;
+                  }
+
+                  .action-icon {
+                    display: flex;
+                    justify-content: center;
+                    align-items: center;
+                    width: 28px;
+                    height: 28px;
+                    border-radius: 50%;
+                    background: #f7f8fa;
+                    cursor: pointer;
+                    transition: all 0.3s;
+
+                    &:hover {
+                      background: white;
+                      transform: scale(1.1);
+                    }
+
+                    .el-icon {
+                      font-size: 14px;
+                    }
+                  }
+                }
+
+                // 左下角：评论按钮
+                .action-bottom-left {
+                  position: absolute;
+                  bottom: 8px;
+                  left: 8px;
+                  opacity: 0;
+                  transition: opacity 0.3s;
+
                   .action-icon {
                     display: flex;
                     justify-content: center;
@@ -731,8 +879,10 @@
                       transform: scale(1.1);
                     }
 
-                    .el-icon {
+                    .svg-icon {
                       font-size: 14px;
+                      width: 14px;
+                      height: 14px;
                     }
                   }
                 }
@@ -767,23 +917,21 @@
                   }
                 }
               }
-
             }
           }
 
           // 历史组底部信息
           .history-group-footer {
             display: flex;
-            justify-content: space-between;
+            justify-content: end;
             align-items: center;
-            margin-top: 12px;
             padding-top: 12px;
-            border-top: 1px solid #e4e7ed;
 
             .footer-info {
               display: flex;
-              gap: 16px;
+              gap: 17px;
               align-items: center;
+              margin-right: 17px;
 
               .info-text {
                 color: #86909c;
@@ -796,15 +944,14 @@
                 display: flex;
                 justify-content: center;
                 align-items: center;
-                width: 28px;
-                height: 28px;
-                border-radius: 50%;
-                background: #f5f7fa;
+                width: 24px;
+                height: 24px;
+                border-radius: 5.143px;
                 cursor: pointer;
                 transition: all 0.3s;
 
                 &:hover {
-                  background: #e5e7eb;
+                  background: #fff;
                   transform: scale(1.1);
                 }
 

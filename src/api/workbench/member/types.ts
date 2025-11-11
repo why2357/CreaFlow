@@ -33,6 +33,8 @@ export interface ProjectUserRole {
   roleKey?: string;
   /** 角色名称 */
   roleName?: string;
+  /** 是否显示在下拉列表中 */
+  isShow?: boolean;
 }
 
 /**

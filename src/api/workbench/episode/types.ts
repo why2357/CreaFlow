@@ -131,6 +131,8 @@ export interface EpisodeSceneItemInfo {
   sceneStatus?: number;
   /** 文生图任务状态 0-待执行 1-执行中 2-执行成功 3-执行失败 */
   taskStatus?: number;
+  isCollect: boolean;
+  commentCount: number;
 }
 
 /**
@@ -189,6 +191,11 @@ export interface RoleDetail {
   previewUrl: string;
   /** 是否选中 */
   selected: boolean;
+  /** 剧集列表 */
+  episodeList?: Array<{
+    episodeId?: number;
+    episodeName?: string;
+  }>;
 }
 
 /**

@@ -11,12 +11,12 @@
     <!-- 分镜表格 -->
     <div v-else class="table-wrapper">
       <el-table :data="shots" border stripe height="100%" class="storyboard-table">
-        <el-table-column prop="shotNumber" label="镜号" width="120" align="center" fixed>
+        <el-table-column prop="shotNumber" label="镜号" width="120" align="center" fixed="left">
           <template #default="{ row }">
             <div class="shot-number-cell">
               <ShotNumberActions
                 :shot-number="row.shotNumber"
-                :comment-count="row.commentCount || 0"
+                :scene-status="row.imgStatus"
                 @comment="(event) => handleShotComment(row, event)"
                 @insert="handleShotInsert(row)"
                 @review="(event) => handleShotReview(row, event)"
@@ -24,11 +24,21 @@
                 @view-comments="handleViewComments(row)"
               />
               <span class="shot-number-text">{{ row.shotNumber }}</span>
+              <!-- 留言数量显示 -->
+              <div
+                v-if="row.commentCount > 0"
+                class="comment-count-badge"
+                @click.stop="(event) => handleViewComments(row, event)"
+              >
+                <svg-icon icon-class="fy-comment" class="comment-icon" />
+
+                <span class="count-text">{{ row.commentCount }}</span>
+              </div>
             </div>
           </template>
         </el-table-column>
 
-        <el-table-column label="画面" :width="getImageColumnWidth()" align="center" fixed>
+        <el-table-column label="画面" :width="getImageColumnWidth()" align="center" fixed="left">
           <template #default="{ row }">
             <SceneImageCell
               :image-url="row.sceneImage"
@@ -37,7 +47,7 @@
               :shot-id="row.id"
               :basic-id="row.basicId"
               :history-detail-id="row.historyDetailId"
-              :is-favorite="row.isFavorite"
+              :isCollect="row.isCollect"
               :loading="row.imageLoading"
               :task-status="row.taskStatus"
               :model-points="modelPoints"
@@ -45,17 +55,21 @@
               @show-history="handleShowHistory(row)"
               @download="handleImageDownload(row)"
               @crop="handleImageCrop(row)"
-              @toggle-favorite="handleToggleFavorite(row)"
+              @toggle-favorite="(isCollect: boolean) => handleToggleFavorite(row, isCollect)"
               @regenerate="handleImageRegenerate(row)"
               @refresh="emit('refresh')"
             />
           </template>
         </el-table-column>
 
-        <el-table-column prop="sceneHint" label="画面描述" min-width="200">
+        <el-table-column prop="sceneHint" label="画面描述" min-width="350">
           <template #default="{ row }">
             <div v-if="!isEditing(row, 'sceneDesc')" class="editable-cell" @click="startEdit(row, 'sceneDesc')">
-              <div class="scene-description" v-html="highlightCharacterNames(row.sceneDesc, row.characters)"></div>
+              <div
+                class="scene-description"
+                :class="{ 'empty-placeholder': !row.sceneDesc }"
+                v-html="highlightCharacterNames(row.sceneDesc, row.characters) || '点击输入特写镜头描述'"
+              ></div>
               <el-icon class="edit-icon"><Edit /></el-icon>
             </div>
             <div v-else class="editing-cell">
@@ -73,7 +87,11 @@
               </div>
             </div>
             <div v-if="!isEditing(row, 'sceneHint')" class="editable-cell" @click="startEdit(row, 'sceneHint')">
-              <div class="scene-description" v-html="highlightCharacterNames(row.sceneHint, row.characters)"></div>
+              <div
+                class="scene-description"
+                :class="{ 'empty-placeholder': !row.sceneHint }"
+                v-html="highlightCharacterNames(row.sceneHint, row.characters) || '点击输入场景提示'"
+              ></div>
               <el-icon class="edit-icon"><Edit /></el-icon>
             </div>
             <div v-else class="editing-cell">
@@ -96,7 +114,11 @@
         <el-table-column prop="dialogue" label="台词" min-width="150">
           <template #default="{ row }">
             <div v-if="!isEditing(row, 'dialogue')" class="editable-cell" @click="startEdit(row, 'dialogue')">
-              <div class="dialogue" v-html="highlightCharacterNames(row.dialogue, row.characters)"></div>
+              <div
+                class="dialogue"
+                :class="{ 'empty-placeholder': !row.dialogue }"
+                v-html="highlightCharacterNames(row.dialogue, row.characters) || '点击输入台词'"
+              ></div>
               <el-icon class="edit-icon"><Edit /></el-icon>
             </div>
             <div v-else class="editing-cell">
@@ -131,35 +153,40 @@
           </template>
         </el-table-column>
 
-        <el-table-column prop="sceneLocation" label="场景" width="180">
+        <el-table-column prop="sceneLocation" label="场景" :width="getImageColumnWidth()">
           <template #default="{ row }">
-            <div class="scene-location-cell">
-              <div class="scene-image-wrapper">
+            <div
+              class="scene-location-cell"
+              @mouseenter="handleSceneHover(row, true)"
+              @mouseleave="handleSceneHover(row, false)"
+            >
+              <!-- Hover操作遮罩层 -->
+              <div v-if="isSceneHovered(row)" class="scene-hover-overlay">
+                <div class="scene-top-actions">
+                  <el-tooltip content="场景库" placement="top">
+                    <div class="scene-action-btn" @click="handleSelectSceneLibrary(row)">
+                      <svg-icon icon-class="fy-sence-tupian" />
+                    </div>
+                  </el-tooltip>
+                  <el-tooltip content="上传" placement="top">
+                    <div class="scene-action-btn" @click="handleUploadScene(row)">
+                      <svg-icon icon-class="fy-sence-upload" />
+                    </div>
+                  </el-tooltip>
+                </div>
+              </div>
+
+              <!-- 图片内容区域 -->
+              <div v-if="row.envMaterialInfoVo" class="scene-image-container">
                 <el-image
-                  v-if="row.envMaterialInfoVo"
                   :src="row.envMaterialInfoVo.previewOssUrl || row.envMaterialInfoVo.originOssUrl"
-                  fit="cover"
+                  fit="contain"
                   class="scene-location-image"
                   :preview-src-list="[row.envMaterialInfoVo.previewOssUrl || row.envMaterialInfoVo.originOssUrl]"
                 />
-                <div v-else class="scene-placeholder">
-                  <img src="../../../../../../assets/images/no-sence.png" alt="暂无图片" class="placeholder-image" />
-                </div>
-                <!-- Hover操作按钮 -->
-                <div class="scene-actions">
-                  <div class="scence-box">
-                    <el-tooltip content="场景库" placement="top">
-                      <el-button class="sence-btn" @click="handleSelectSceneLibrary(row)">
-                        <svg-icon icon-class="fy-sence-tupian" class="el-icon" />
-                      </el-button>
-                    </el-tooltip>
-                    <el-tooltip content="上传" placement="top">
-                      <el-button class="sence-btn" @click="handleUploadScene(row)">
-                        <svg-icon icon-class="fy-sence-upload" class="el-icon" />
-                      </el-button>
-                    </el-tooltip>
-                  </div>
-                </div>
+              </div>
+              <div v-else class="scene-placeholder">
+                <img src="../../../../../../assets/images/no-sence.png" alt="暂无图片" class="placeholder-image" />
               </div>
             </div>
           </template>
@@ -223,11 +250,12 @@
       @success="handleCommentSuccess"
     />
 
-    <!-- 留言列表对话框 -->
+    <!-- 留言列表 popover -->
     <CommentListDialog
       v-model="commentListDialogVisible"
       :basic-id="currentShotForAction?.basicId || 0"
       :scene-type="1"
+      :trigger-ref="commentListTriggerRef"
       @change="handleCommentChange"
     />
 
@@ -278,7 +306,7 @@
   const emit = defineEmits<{
     (e: 'imageUpload', shot: Shot, file: File): void;
     (e: 'imageRegenerate', shot: Shot): void;
-    (e: 'toggleFavorite', shot: Shot): void;
+    (e: 'toggleFavorite', shot: Shot, isCollect: boolean): void;
     (e: 'updateShot', shot: Shot): void;
     (e: 'refresh'): void;
     (e: 'deleteSuccess', basicId: number): void;
@@ -320,6 +348,7 @@
   const commentDialogVisible = ref(false);
   const commentTriggerRef = ref<HTMLElement>();
   const commentListDialogVisible = ref(false);
+  const commentListTriggerRef = ref<HTMLElement>();
   const reviewDialogVisible = ref(false);
   const reviewTriggerRef = ref<HTMLElement>();
 
@@ -387,8 +416,9 @@
   };
 
   // 切换收藏
-  const handleToggleFavorite = (shot: Shot) => {
-    emit('toggleFavorite', shot);
+  const handleToggleFavorite = (shot: Shot, isCollect: boolean) => {
+    // 直接更新本地状态，无需刷新整个列表
+    shot.isCollect = isCollect;
   };
 
   // 重新生成图片
@@ -399,6 +429,19 @@
   // ==================== 场景相关操作 ====================
 
   // 打开场景库选择
+  // 场景hover状态
+  const sceneHoveredMap = ref<Map<number, boolean>>(new Map());
+
+  const handleSceneHover = (shot: Shot, isHovered: boolean) => {
+    if (shot.basicId) {
+      sceneHoveredMap.value.set(shot.basicId, isHovered);
+    }
+  };
+
+  const isSceneHovered = (shot: Shot) => {
+    return shot.basicId ? sceneHoveredMap.value.get(shot.basicId) || false : false;
+  };
+
   const handleSelectSceneLibrary = (shot: Shot) => {
     currentSceneShot.value = shot;
     sceneLibraryDialogVisible.value = true;
@@ -695,12 +738,15 @@
   };
 
   // 查看留言列表
-  const handleViewComments = (shot: Shot) => {
+  const handleViewComments = (shot: Shot, event?: MouseEvent) => {
     if (!shot.basicId) {
       ElMessage.warning('缺少场景基础信息ID');
       return;
     }
     currentShotForAction.value = shot;
+    if (event) {
+      commentListTriggerRef.value = event.currentTarget as HTMLElement;
+    }
     commentListDialogVisible.value = true;
   };
 
@@ -798,6 +844,7 @@
 
 <style scoped lang="scss">
   .storyboard-table-container {
+    margin-left: 20px;
     display: flex;
     justify-content: center;
     align-items: center;
@@ -844,7 +891,7 @@
     .table-wrapper {
       width: 100%;
       height: 100%;
-      padding: 20px 20px 0;
+      padding: 0px 20px 0 0;
       overflow-x: auto; // 允许横向滚动
 
       // 滚动条样式优化
@@ -920,6 +967,11 @@
         display: -webkit-box;
         -webkit-line-clamp: 3; // 最多显示3行
         -webkit-box-orient: vertical;
+
+        &.empty-placeholder {
+          color: #c0c4cc;
+          // font-style: italic;
+        }
       }
 
       .dialogue {
@@ -932,6 +984,11 @@
         display: -webkit-box;
         -webkit-line-clamp: 3; // 最多显示3行
         -webkit-box-orient: vertical;
+
+        &.empty-placeholder {
+          color: #c0c4cc;
+          // font-style: italic;
+        }
       }
 
       .characters {
@@ -960,6 +1017,7 @@
         height: 190px !important;
         vertical-align: middle;
         overflow: hidden;
+        isolation: isolate; // 创建新的层叠上下文，防止hover-overlay溢出到其他列
 
         .cell {
           padding: 0 !important;
@@ -989,15 +1047,10 @@
         height: 190px !important;
         background-color: #fff;
         transition: background-color 0.2s ease;
-        position: relative;
-        z-index: 1;
 
         &:hover {
-          background-color: #f3f3ff !important;
-          z-index: 2;
-
           > td {
-            background-color: transparent !important;
+            background-color: #f3f3ff !important;
           }
         }
       }
@@ -1006,9 +1059,23 @@
         height: 190px !important;
         vertical-align: middle;
         overflow: hidden;
+        background-color: #fff;
 
         &:not(:has(.scene-image-cell)) {
           padding: 12px !important;
+        }
+      }
+
+      // Fixed列在hover时也需要改变背景色
+      :deep(.el-table__fixed) {
+        .el-table__body .el-table__row:hover .el-table__cell {
+          background-color: #f3f3ff !important;
+        }
+      }
+
+      :deep(.el-table__fixed-right) {
+        .el-table__body .el-table__row:hover .el-table__cell {
+          background-color: #f3f3ff !important;
         }
       }
 
@@ -1022,11 +1089,60 @@
         font-size: 14px;
         font-weight: 500;
         color: #1d2129;
+        width: 100%;
         height: 100%;
+        min-height: 160px; // 确保高度充足
 
         .shot-number-text {
           min-width: 24px;
           text-align: center;
+        }
+
+        // 留言数量徽标
+        .comment-count-badge {
+          position: absolute;
+          left: -10px;
+          bottom: -10px;
+          display: flex;
+          align-items: center;
+          gap: 4px;
+          padding: 2px 6px;
+          border-radius: 10px;
+          cursor: pointer;
+          transition: all 0.3s;
+          z-index: 10;
+          width: 24px;
+          height: 24px;
+          border-radius: 5px;
+          background: #fff;
+          &:hover {
+            // background: #4141dd;
+            transform: scale(1.05);
+          }
+
+          .comment-icon {
+            font-size: 12px;
+            width: 12px;
+            height: 12px;
+            color: #5252ff;
+          }
+
+          .count-text {
+            position: absolute;
+            left: 12px;
+            top: -12px;
+            display: flex;
+            width: 20px;
+            height: 20px;
+            justify-content: center;
+            align-items: center;
+            flex-shrink: 0;
+            border-radius: 50%;
+            background: #5252ff;
+            color: #fff;
+            font-size: 12px;
+            line-height: 20px; /* 133.333% */
+          }
         }
       }
 
@@ -1034,23 +1150,15 @@
       :deep(.el-table__body .el-table__row .el-table__cell:first-child) {
         overflow: visible !important;
         position: relative;
-        z-index: 10;
 
         .cell {
           overflow: visible !important;
         }
 
         &:hover {
-          z-index: 100;
+          z-index: 10;
 
           .shot-number-actions {
-            .action-dot {
-              .dot-inner {
-                background-color: #5468ff;
-                transform: scale(1.2);
-              }
-            }
-
             .action-menu {
               opacity: 1;
               visibility: visible;
@@ -1154,6 +1262,114 @@
           font-size: 13px;
           text-align: center;
           word-break: break-word;
+        }
+      }
+
+      // ==================== 场景列样式 ====================
+      // 场景列单元格样式 - 完全移除padding，图片铺满
+      :deep(.el-table__body .el-table__row .el-table__cell:has(.scene-location-cell)) {
+        padding: 0 !important;
+        cursor: pointer;
+        height: 190px !important;
+        vertical-align: middle;
+        overflow: hidden;
+        isolation: isolate; // 创建新的层叠上下文，防止hover-overlay溢出到其他列
+
+        .cell {
+          padding: 0 !important;
+          height: 100%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+        }
+      }
+
+      .scene-location-cell {
+        position: relative;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+
+        .scene-hover-overlay {
+          position: absolute;
+          top: 0;
+          right: 0;
+          bottom: 0;
+          left: 0;
+          z-index: 2;
+          display: flex;
+          flex-direction: column;
+          justify-content: flex-start;
+          padding: 12px;
+          background: rgb(0 0 0 / 70%);
+
+          .scene-top-actions {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            width: 100%;
+            height: 100%;
+            gap: 8px;
+
+            .scene-action-btn {
+              display: flex;
+              justify-content: center;
+              align-items: center;
+              width: 40px;
+              height: 40px;
+              border-radius: 8px;
+              background: #f7f8fa;
+              cursor: pointer;
+              transition: all 0.3s;
+
+              &:hover {
+                background: white;
+                transform: scale(1.1);
+              }
+
+              &:active {
+                transform: scale(0.95);
+              }
+
+              .svg-icon {
+                font-size: 20px;
+              }
+            }
+          }
+        }
+
+        .scene-image-container {
+          position: relative;
+          width: 100%;
+          height: 100%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+
+          .scene-location-image {
+            max-width: 100%;
+            max-height: 100%;
+            width: auto;
+            height: auto;
+            cursor: pointer;
+          }
+        }
+
+        .scene-placeholder {
+          position: relative;
+          width: 100%;
+          height: 100%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+
+          .placeholder-image {
+            object-fit: contain;
+            opacity: 0.5;
+          }
         }
       }
     }

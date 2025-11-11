@@ -84,6 +84,10 @@ export interface SceneRoleDetail {
   originUrl: string;
   previewUrl: string;
   selected: boolean;
+  episodeList?: Array<{
+    episodeId?: number;
+    episodeName?: string;
+  }>;
 }
 
 /**

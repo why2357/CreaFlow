@@ -73,8 +73,8 @@
                 <el-icon class="play-icon"><video-play /></el-icon>
               </div>
             </div>
-            <div class="download-icon">
-              <el-icon><download /></el-icon>
+            <div class="download-icon" @click.stop="handleDownload(item)">
+              <svg-icon icon-class="fy-download" />
             </div>
           </div>
         </div>
@@ -119,7 +119,7 @@
   import type { ProjectHistoryDetailVo } from '@/api/workbench/history/types';
   import { listProject } from '@/api/workbench/project';
   import type { ProjectPageInfoResponseDto } from '@/api/workbench/project/types';
-  import { Download, Picture as IconPicture, VideoPlay } from '@element-plus/icons-vue';
+  import { Picture as IconPicture, VideoPlay } from '@element-plus/icons-vue';
   import { ElMessage } from 'element-plus';
   import { computed, onMounted, ref } from 'vue';
 
@@ -315,6 +315,70 @@
     previewVisible.value = true;
   };
 
+  // 下载资源
+  const handleDownload = async (item: ProjectHistoryDetailVo) => {
+    const url = item.originOssUrl || item.previewOssUrl;
+    if (!url) {
+      ElMessage.warning('暂无资源可下载');
+      return;
+    }
+
+    try {
+      // 创建一个隐藏的 a 标签来触发下载
+      const link = document.createElement('a');
+      link.style.display = 'none';
+
+      // 使用 fetch 获取图片数据
+      const response = await fetch(url, {
+        mode: 'cors'
+      });
+
+      if (!response.ok) {
+        throw new Error('下载失败');
+      }
+
+      const blob = await response.blob();
+      const blobUrl = window.URL.createObjectURL(blob);
+
+      // 从 URL 中提取文件名，或使用默认名称
+      const urlParts = url.split('/');
+      const fileName = urlParts[urlParts.length - 1] || `asset-${item.id}${getFileExtension(url)}`;
+
+      link.href = blobUrl;
+      link.download = fileName;
+      document.body.appendChild(link);
+      link.click();
+
+      // 清理
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(blobUrl);
+
+      ElMessage.success('下载成功');
+    } catch (error) {
+      console.error('下载资源失败:', error);
+      // 如果 fetch 失败（可能是跨域问题），尝试直接打开链接
+      try {
+        window.open(url, '_blank');
+        ElMessage.info('已在新标签页打开资源，请手动保存');
+      } catch {
+        ElMessage.error('下载失败，请稍后重试');
+      }
+    }
+  };
+
+  // 获取文件扩展名
+  const getFileExtension = (url: string): string => {
+    try {
+      const urlObj = new URL(url);
+      const pathname = urlObj.pathname;
+      const lastDotIndex = pathname.lastIndexOf('.');
+      if (lastDotIndex === -1) return '';
+      return pathname.substring(lastDotIndex);
+    } catch {
+      return '';
+    }
+  };
+
   onMounted(() => {
     getProjectList();
   });
@@ -323,7 +387,7 @@
 <style scoped lang="scss">
   .property-admin-container {
     padding: 0;
-    background: #f0f2f5;
+    background: #f3f5fb;
     min-height: 100vh;
   }
 
@@ -370,10 +434,10 @@
         }
 
         &.active {
-          background: #5d58e8;
-          color: #fff;
-          border-color: #5d58e8;
-          box-shadow: 0 2px 8px rgba(93, 88, 232, 0.3);
+          background: #f3f3ff;
+          color: #5252ff;
+          border-color: #5252ff;
+          box-shadow: none;
         }
       }
     }
@@ -405,18 +469,19 @@
           }
 
           &.active {
-            color: #303133;
-            font-weight: 600;
+            color: #333333;
+            font-weight: 500;
 
             &::after {
               content: '';
               position: absolute;
               bottom: 0;
-              left: 0;
-              right: 0;
-              height: 3px;
-              background: #5d58e8;
-              border-radius: 2px 2px 0 0;
+              left: 50%;
+              transform: translateX(-50%);
+              width: 45%;
+              height: 4px;
+              background: #5252ff;
+              border-radius: 19px;
             }
           }
         }
@@ -456,42 +521,50 @@
         }
 
         &.active {
-          background: #5d58e8;
+          background: #5252ff;
           color: #fff;
-          border-color: #5d58e8;
+          border-color: #5252ff;
         }
       }
     }
 
     .asset-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-      gap: 16px;
+      grid-template-columns: repeat(4, 240px);
+      gap: 20px;
       padding: 24px;
       min-height: 400px;
+      justify-content: start;
+
+      @media (max-width: 1280px) {
+        grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+      }
 
       .asset-card {
         cursor: pointer;
         border-radius: 12px;
         overflow: hidden;
-        transition: all 0.3s;
-        background: #fff;
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+        transition: all 0.3s ease;
+        background: rgba(255, 255, 255, 0.8);
+        box-shadow: 0px 4px 6px 0px rgba(224, 231, 255, 0.25), 0px 10px 15px 0px rgba(224, 231, 255, 0.5);
 
         &:hover {
-          transform: translateY(-4px);
-          box-shadow: 0 6px 16px rgba(0, 0, 0, 0.12);
-
-          .download-icon {
-            opacity: 1;
-          }
+          transform: translateY(-2px);
+          box-shadow: 0px 6px 10px 0px rgba(224, 231, 255, 0.35), 0px 12px 20px 0px rgba(224, 231, 255, 0.6);
         }
 
         .asset-thumbnail {
           position: relative;
-          width: 100%;
-          padding-bottom: 100%; // 1:1 ratio
+          width: 240px;
+          height: 226px;
           overflow: hidden;
+          background: #f3f5fb;
+
+          &:hover {
+            .download-icon {
+              opacity: 1;
+            }
+          }
 
           .thumbnail-image,
           .video-wrapper {
@@ -558,27 +631,31 @@
 
           .download-icon {
             position: absolute;
-            bottom: 8px;
-            right: 8px;
-            width: 32px;
-            height: 32px;
+            bottom: 12px;
+            right: 12px;
+            width: 24px;
+            height: 24px;
             display: flex;
             justify-content: center;
             align-items: center;
-            background: rgba(255, 255, 255, 0.9);
-            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(5.3px);
+            -webkit-backdrop-filter: blur(5.3px);
+            border-radius: 6px;
             opacity: 0;
-            transition: all 0.3s;
+            transition: all 0.3s ease;
             cursor: pointer;
+            z-index: 2;
 
             &:hover {
-              background: #fff;
+              background: rgba(255, 255, 255, 0.95);
               transform: scale(1.1);
             }
 
-            .el-icon {
-              font-size: 16px;
-              color: #606266;
+            :deep(.svg-icon) {
+              width: 12px;
+              height: 12px;
+              color: #333;
             }
           }
         }

@@ -234,7 +234,8 @@ export const useProjectStore = defineStore('project', {
             name: ep.episodeName!,
             currentStep: 1,
             progress: parseFloat(ep.episodePercent || '0') || 0,
-            scriptContent: ep.storyText
+            scriptContent: ep.storyText,
+            taskStatus: ep.taskStatus // 添加任务状态字段
           }));
       } catch (error) {
         console.error('加载项目信息失败:', error);
@@ -280,6 +281,24 @@ export const useProjectStore = defineStore('project', {
 
         this.currentEpisodeId = episodeInfo.episodeId!;
         // 不要再次设置 currentStep，保持当前值
+
+        // 更新工作流记录，保存当前剧集ID和步骤
+        if (this.currentProjectId) {
+          try {
+            await createProcessRecord({
+              projectId: Number(this.currentProjectId),
+              episodeId: Number(episodeInfo.episodeId!),
+              currentPage: previousStep
+            });
+            console.log(
+              '[switchEpisodeFromInfo] 更新工作流记录:',
+              `项目=${this.currentProjectId}, 剧集=${episodeInfo.episodeId}, 步骤=${previousStep}`
+            );
+          } catch (error) {
+            console.error('[switchEpisodeFromInfo] 更新工作流记录失败:', error);
+            // 继续执行，不阻塞剧集切换
+          }
+        }
 
         // 加载剧集相关数据
       } catch (error) {
@@ -329,12 +348,17 @@ export const useProjectStore = defineStore('project', {
       }
 
       // 创建工作流记录（直接使用步骤号，无需映射）
+      // 重要：保存当前剧集ID到工作流记录中，确保下次进入时能恢复到当前剧集
       try {
         await createProcessRecord({
           projectId: Number(this.currentProjectId),
           episodeId: this.currentEpisodeId ? Number(this.currentEpisodeId) : undefined,
           currentPage: step
         });
+        console.log(
+          '[goToStep] 保存工作流记录:',
+          `项目=${this.currentProjectId}, 剧集=${this.currentEpisodeId}, 步骤=${step}`
+        );
       } catch (error) {
         console.error('创建工作流记录失败:', error);
         // 继续执行，不阻塞步骤切换

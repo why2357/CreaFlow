@@ -132,7 +132,7 @@
 <script setup lang="ts" name="ProjectCreation">
   import { useProjectStore } from '@/store/modules/project';
   import { Loading } from '@element-plus/icons-vue';
-  import { ElMessage, ElMessageBox } from 'element-plus';
+  import { ElMessage } from 'element-plus';
   import { computed, defineAsyncComponent, onBeforeUnmount, onMounted, ref } from 'vue';
   import { useRoute, useRouter } from 'vue-router';
 
@@ -253,6 +253,7 @@
 
   // 返回工作台
   const handleBack = async () => {
+    // router.push('/index');
     try {
       await ElMessageBox.confirm('确定要返回工作台吗?未保存的数据将丢失', '提示', {
         confirmButtonText: '确定',

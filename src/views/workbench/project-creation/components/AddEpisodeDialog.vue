@@ -72,7 +72,7 @@
                         :command="model.value"
                         :class="{ 'is-active': form.modelCode === model.value }"
                       >
-                        <el-icon v-if="form.modelCode === model.value" class="check-icon"><Check /></el-icon>
+                        <!-- <el-icon v-if="form.modelCode === model.value" class="check-icon"><Check /></el-icon> -->
                         {{ model.label }}
                       </el-dropdown-item>
                     </el-dropdown-menu>
@@ -543,7 +543,8 @@
   // 对话框底部
   .dialog-footer {
     display: flex;
-    justify-content: center;
+    width: 100%;
+    justify-content: center !important;
     .gen-btn {
       display: flex;
       width: 400px;
