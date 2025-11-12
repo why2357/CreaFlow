@@ -17,25 +17,23 @@
       <div v-else class="stats-table">
         <div class="table-header">
           <div class="col col-member">成员</div>
-          <div class="col col-shot">分镜图/图片</div>
-          <div class="col col-video">视频次数</div>
+          <div class="col col-shot">图片</div>
+          <div class="col col-video">视频</div>
           <div class="col col-score">积分</div>
         </div>
         <div class="table-body">
           <div v-for="member in memberData" :key="member.name" class="table-row">
             <div class="col col-member">
-              <div class="member-avatar" :style="{ backgroundColor: member.color }">
+              <div class="member-avatar" :style="{ background: member.bgColor, color: member.textColor }">
                 {{ member.icon }}
               </div>
               <span class="member-name">{{ member.name }}</span>
             </div>
             <div class="col col-shot">
-              <span class="value">{{ member.validImgCount }}</span>
-              <span class="total">/ {{ member.imgTaskCount }}</span>
+              <span class="total"> {{ member.imgTaskCount }}</span>
             </div>
             <div class="col col-video">
-              <span class="value">{{ member.validVideoCount }}</span>
-              <span class="total">/ {{ member.videoTaskCount }}</span>
+              <span class="total"> {{ member.videoTaskCount }}</span>
             </div>
             <div class="col col-score" :class="`score-${member.scoreColor}`">
               {{ member.score }}
@@ -50,7 +48,7 @@
 <script setup lang="ts" name="ProductionStatsPanel">
   import type { UserProcessInfo } from '@/api/workbench/project/types';
   import { useProjectStore } from '@/store/modules/project';
-  import { getRoleColor, getRoleShortName } from '@/utils/roleUtils';
+  import { getRoleBgColor, getRoleShortName, getRoleTextColor } from '@/utils/roleUtils';
   import { computed } from 'vue';
 
   const projectStore = useProjectStore();
@@ -77,12 +75,14 @@
     if (currentEpisodeInfo?.userProcessInfoList && currentEpisodeInfo.userProcessInfoList.length > 0) {
       return currentEpisodeInfo.userProcessInfoList.map((user: UserProcessInfo) => {
         const icon = getRoleShortName(user.memberRoleKey);
-        const color = getRoleColor(user.memberRoleKey);
+        const bgColor = getRoleBgColor(user.memberRoleKey);
+        const textColor = getRoleTextColor(user.memberRoleKey);
 
         return {
           name: user.memberName || '未命名',
           icon,
-          color,
+          bgColor,
+          textColor,
           validImgCount: user.validImgCount || 0,
           imgTaskCount: user.imgTaskCount || 0,
           validVideoCount: user.validVideoCount || 0,
@@ -188,9 +188,7 @@
         display: flex;
         align-items: center;
         padding: 14px 20px;
-        border-bottom: 2px solid #f0f2f5;
-        background: linear-gradient(135deg, #fafbfc 0%, #f5f7fa 100%);
-        color: #909399;
+        color: #86909c;
         font-size: 12px;
         font-weight: 600;
 
@@ -220,8 +218,7 @@
         .table-row {
           display: flex;
           align-items: center;
-          padding: 16px 20px;
-          border-bottom: 1px solid #f5f7fa;
+          padding: 16px 20px 16px 10px;
           transition: all 0.3s;
 
           &:hover {
@@ -251,16 +248,16 @@
                 height: 32px;
                 border-radius: 50%;
                 box-shadow: 0 2px 6px rgb(108 92 231 / 20%);
-                color: white;
                 font-size: 14px;
                 font-weight: 700;
               }
 
               .member-name {
+                max-width: 3em; // 限制最多显示5个字符宽度
                 overflow: hidden;
-                color: #303133;
-                font-size: 14px;
-                font-weight: 500;
+                color: #1d2129;
+                font-size: 13px;
+                font-weight: 600;
                 white-space: nowrap;
                 text-overflow: ellipsis;
               }
@@ -271,29 +268,17 @@
               flex: 1;
               font-size: 14px;
 
-              .value {
-                color: #303133;
-                font-weight: 700;
-              }
-
               .total {
-                color: #909399;
-                font-size: 12px;
+                color: #86909c;
+                font-size: 13px;
               }
             }
 
             &.col-score {
               flex: 0 0 60px;
-              font-size: 16px;
-              font-weight: 700;
-
-              &.score-orange {
-                color: #e6a23c;
-              }
-
-              &.score-red {
-                color: #f56c6c;
-              }
+              font-size: 13px;
+              font-weight: 500;
+              color: #f54900;
             }
           }
         }

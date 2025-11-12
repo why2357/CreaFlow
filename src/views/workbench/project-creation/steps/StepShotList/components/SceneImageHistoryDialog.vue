@@ -155,7 +155,7 @@
             <!-- 历史组底部信息 -->
             <div class="history-group-footer">
               <div class="footer-info">
-                <span v-if="history.modelCode" class="info-text">{{ history.modelCode }}</span>
+                <span v-if="history.modelCode" class="info-text">{{ getModelNameByCode(history.modelCode) }}</span>
                 <span class="info-text">{{ history.ratio }}</span>
                 <span class="info-text">{{ history.createTime }}</span>
               </div>
@@ -211,11 +211,14 @@
     getSceneHistoryList,
     type SceneItemHistoryInfo
   } from '@/api/workbench/episode';
+  import { useProjectStore } from '@/store/modules/project';
   import { formatDate } from '@/utils';
   import { Delete, Download, Loading, MoreFilled } from '@element-plus/icons-vue';
   import { ElImageViewer, ElMessage, ElMessageBox } from 'element-plus';
   import { ref, watch } from 'vue';
   import CommentListDialog from './CommentListDialog.vue';
+
+  const projectStore = useProjectStore();
 
   interface HistoryDetail extends SceneItemHistoryInfo {
     originOssUrl?: string;
@@ -279,6 +282,13 @@
   watch(visible, (val) => {
     emit('update:modelValue', val);
   });
+
+  // 根据modelCode获取modelName
+  const getModelNameByCode = (modelCode?: string): string => {
+    if (!modelCode) return '';
+    const model = projectStore.t2iModelInfoList?.find((m) => m.modelCode === modelCode);
+    return model?.modelName || modelCode;
+  };
 
   // 比例映射
   const getRatioText = (pictureRatio?: number): string => {
@@ -362,7 +372,7 @@
 
   // 预览图片
   const handlePreviewImage = (detail: HistoryDetail) => {
-    const imageUrl = detail.previewOssUrl || detail.originOssUrl;
+    const imageUrl = detail.originOssUrl || detail.previewOssUrl;
     if (!imageUrl) {
       ElMessage.warning('图片地址不存在');
       return;

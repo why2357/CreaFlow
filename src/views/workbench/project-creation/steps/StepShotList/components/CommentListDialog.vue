@@ -1,5 +1,6 @@
 <template>
   <el-popover
+    v-if="props.basicId && props.basicId > 0"
     v-model:visible="popoverVisible"
     :virtual-ref="triggerRef"
     trigger="manual"
@@ -23,7 +24,15 @@
       </div>
       <div v-else class="comment-items">
         <div v-for="comment in comments" :key="comment.id" class="comment-item">
-          <div class="avatar">{{ getInitial(comment.commentUsername) }}</div>
+          <div
+            class="avatar"
+            :style="{
+              background: getRoleBgColor(comment.roleKey),
+              color: getRoleTextColor(comment.roleKey)
+            }"
+          >
+            {{ getRoleShortName(comment.roleKey) }}
+          </div>
           <div class="comment-content-wrapper">
             <div class="comment-info">
               <div>
@@ -48,6 +57,7 @@
 <script setup lang="ts">
   import { deleteSceneComment, getSceneCommentList } from '@/api/workbench/storyboard';
   import type { SceneCommentVo } from '@/api/workbench/storyboard/types';
+  import { getRoleBgColor, getRoleShortName, getRoleTextColor } from '@/utils/roleUtils';
   import { ElMessage, ElMessageBox } from 'element-plus';
   import { computed, ref } from 'vue';
 
@@ -81,11 +91,13 @@
     // 如果传入了 commentList，则直接使用，不调用接口
     if (props.commentList && props.commentList.length > 0) {
       // 按创建时间降序排序，显示所有评论
-      const sortedComments = [...props.commentList].sort((a, b) => {
-        const timeA = new Date(a.createTime || 0).getTime();
-        const timeB = new Date(b.createTime || 0).getTime();
-        return timeB - timeA;
-      });
+      const sortedComments = [...props.commentList]
+        .filter((comment) => comment && comment.id) // 过滤无效评论
+        .sort((a, b) => {
+          const timeA = new Date(a.createTime || 0).getTime();
+          const timeB = new Date(b.createTime || 0).getTime();
+          return timeB - timeA;
+        });
       comments.value = sortedComments;
       console.log('使用传入的 commentList，无需调用接口');
       return;
@@ -100,9 +112,10 @@
         sceneType: props.sceneType
       });
       const allComments = res.data || [];
-      // 按创建时间降序排序，取最新的一条
-      if (allComments.length > 0) {
-        const sortedComments = allComments.sort((a, b) => {
+      // 过滤无效评论并按创建时间降序排序，取最新的一条
+      const validComments = allComments.filter((comment) => comment && comment.id);
+      if (validComments.length > 0) {
+        const sortedComments = validComments.sort((a, b) => {
           const timeA = new Date(a.createTime || 0).getTime();
           const timeB = new Date(b.createTime || 0).getTime();
           return timeB - timeA;
@@ -114,6 +127,7 @@
     } catch (error) {
       console.error('加载留言列表失败:', error);
       ElMessage.error('加载留言列表失败');
+      comments.value = [];
     } finally {
       loading.value = false;
     }
@@ -137,12 +151,6 @@
         console.error('删除留言失败:', error);
       }
     }
-  };
-
-  // 获取用户名首字母
-  const getInitial = (username?: string) => {
-    if (!username) return '?';
-    return username.charAt(0).toUpperCase();
   };
 
   // 格式化时间 - 只显示时:分
@@ -210,15 +218,14 @@
           width: 32px;
           height: 32px;
           border-radius: 50%;
-          background: linear-gradient(180deg, #e8e9ff 0%, #f5f6ff 100%);
-          color: #5252ff;
           display: flex;
           align-items: center;
           justify-content: center;
           font-size: 12px;
-          font-weight: 400;
+          font-weight: 600;
           flex-shrink: 0;
           line-height: 12px;
+          box-shadow: 0 2px 6px rgba(108, 92, 231, 0.2);
         }
 
         // 留言内容区
@@ -239,9 +246,10 @@
 
             .username {
               font-size: 12px;
-              font-weight: 500;
+              font-weight: 600;
               color: #1d2129;
               line-height: 12px;
+              margin-right: 16px;
             }
 
             .time {

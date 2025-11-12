@@ -82,7 +82,7 @@
               >
                 <!-- 图片 -->
                 <div class="costume-image">
-                  <el-image :src="costume.ossUrl || ''" fit="cover" :preview-src-list="[costume.ossUrl || '']">
+                  <el-image :src="costume.ossUrl || ''" fit="contain" :preview-src-list="[costume.ossUrl || '']">
                     <template #error>
                       <div class="image-error">
                         <el-icon :size="40"><Picture /></el-icon>
@@ -781,7 +781,7 @@
       // 服装卡片不换行
       .costume-card {
         flex-shrink: 0;
-        width: 200px;
+        // width: 200px; // 移除固定宽度，让图片自适应
       }
     }
   }

@@ -72,6 +72,17 @@ export interface ProjectPageInfoResponseDto {
 }
 
 /**
+ * 项目基础信息响应（后端返回格式）
+ */
+export interface ProjectResponse {
+  id?: string | number; // 项目ID
+  pictureRatio?: number;
+  projectName?: string; // 项目名称
+  status?: number;
+  userId?: string | number;
+}
+
+/**
  * 项目基础信息（列表响应）
  */
 export interface Project {

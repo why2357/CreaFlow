@@ -107,29 +107,7 @@
         <p class="loading-text">生成中，请稍等...</p>
       </div>
 
-      <!-- 执行成功状态 (taskStatus === 2 且有图片) -->
-      <div
-        v-else-if="taskStatus === 2 && materialInfoVoList && materialInfoVoList.length > 0"
-        class="image-grid-container"
-        :class="{ 'single-image': materialInfoVoList.length === 1 }"
-      >
-        <div v-for="(item, index) in materialInfoVoList.slice(0, 4)" :key="index" class="grid-item">
-          <el-image
-            :src="item.previewOssUrl || item.originOssUrl"
-            :fit="fit"
-            class="grid-image"
-            :preview-src-list="materialInfoVoList.map((i) => i.previewOssUrl || i.originOssUrl || '')"
-            :initial-index="index"
-          />
-        </div>
-        <!-- 收藏标记 -->
-        <div v-if="isCollect" class="favorite-badge">
-          <svg-icon icon-class="fy-starfilled" />
-        </div>
-      </div>
-
-      <!-- 执行失败状态 (taskStatus === 3) -->
-      <!-- 首次失败：没有历史图片 -->
+      <!-- 执行失败状态 (taskStatus === 3 且没有历史图片) -->
       <div
         v-else-if="taskStatus === 3 && (!materialInfoVoList || materialInfoVoList.length === 0)"
         class="failure-container"
@@ -140,7 +118,7 @@
         <p class="failure-text">生成失败</p>
       </div>
 
-      <!-- 再次失败：有历史图片，显示图片+失败提示层 -->
+      <!-- 执行失败但有历史图片：显示图片+失败提示层 (taskStatus === 3 且有图片) -->
       <div
         v-else-if="taskStatus === 3 && materialInfoVoList && materialInfoVoList.length > 0"
         class="failure-with-image"
@@ -152,7 +130,7 @@
               :src="item.previewOssUrl || item.originOssUrl"
               :fit="fit"
               class="grid-image"
-              :preview-src-list="materialInfoVoList.map((i) => i.previewOssUrl || i.originOssUrl || '')"
+              :preview-src-list="materialInfoVoList.map((i) => i.originOssUrl || i.previewOssUrl || '')"
               :initial-index="index"
             />
           </div>
@@ -165,7 +143,28 @@
         </div>
       </div>
 
-      <!-- 其他状态/空状态 -->
+      <!-- 有图片数据：显示图片 (materialInfoVoList有数据，不管taskStatus是什么值) -->
+      <div
+        v-else-if="materialInfoVoList && materialInfoVoList.length > 0"
+        class="image-grid-container"
+        :class="{ 'single-image': materialInfoVoList.length === 1 }"
+      >
+        <div v-for="(item, index) in materialInfoVoList.slice(0, 4)" :key="index" class="grid-item">
+          <el-image
+            :src="item.previewOssUrl || item.originOssUrl"
+            :fit="fit"
+            class="grid-image"
+            :preview-src-list="materialInfoVoList.map((i) => i.originOssUrl || i.previewOssUrl || '')"
+            :initial-index="index"
+          />
+        </div>
+        <!-- 收藏标记 -->
+        <div v-if="isCollect" class="favorite-badge">
+          <svg-icon icon-class="fy-starfilled" />
+        </div>
+      </div>
+
+      <!-- 其他状态/空状态：没有图片数据 -->
       <div v-else class="placeholder-container">
         <img
           style="width: 80px; height: 80px"

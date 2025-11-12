@@ -268,7 +268,11 @@
       // 评论数
       commentCount: Number(scene.commentCount) || 0,
       // 最新一条评论信息（从后端返回的数据中获取）
-      commentInfo: scene.commentInfo,
+      // 确保 commentInfo 是有效对象或 undefined
+      commentInfo:
+        scene.commentInfo && typeof scene.commentInfo === 'object' && scene.commentInfo.id
+          ? scene.commentInfo
+          : undefined,
       // 图片状态 0-白色 1-橙色 2-绿色 3-红色
       imgStatus: scene.sceneStatus
     }));
@@ -289,8 +293,10 @@
       // 设置批量状态
       batchStatus.value = episodeData?.batchStatus;
 
-      if (episodeData && episodeData.episodeSceneItemInfoList) {
-        shots.value = convertToShots(episodeData.episodeSceneItemInfoList);
+      if (episodeData && episodeData.episodeSceneItemInfoList && Array.isArray(episodeData.episodeSceneItemInfoList)) {
+        // 过滤掉无效的场景数据
+        const validScenes = episodeData.episodeSceneItemInfoList.filter((scene) => scene && scene.basicId);
+        shots.value = convertToShots(validScenes);
       } else {
         shots.value = [];
       }
@@ -298,6 +304,7 @@
       console.error('加载分镜列表失败:', error);
       shots.value = [];
       episodeTaskStatus.value = undefined;
+      batchStatus.value = undefined;
     } finally {
       loading.value = false;
     }

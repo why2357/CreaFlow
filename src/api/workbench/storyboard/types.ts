@@ -297,6 +297,18 @@ export interface SceneCommentVo {
    * 启用状态 0-启用 1-禁用
    */
   status?: number;
+  /**
+   * 角色ID
+   */
+  roleId?: number;
+  /**
+   * 角色key
+   */
+  roleKey?: string;
+  /**
+   * 角色名称
+   */
+  roleName?: string;
 }
 
 /**

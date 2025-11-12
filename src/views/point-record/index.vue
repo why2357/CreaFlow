@@ -50,22 +50,28 @@
               </el-select>
             </el-form-item>
             <el-form-item label="流水名称" prop="transName">
-              <el-input
-                v-model="queryParams.transName"
-                placeholder="请输入流水名称"
-                clearable
-                style="width: 240px"
-                @keyup.enter="handleQuery"
-              />
+              <el-select v-model="queryParams.transName" placeholder="请选择流水名称" clearable style="width: 240px">
+                <el-option label="Gemini2.5pro文生文api" value="Gemini2.5pro文生文api" />
+                <el-option label="即梦4.0生成图片api" value="即梦4.0生成图片api" />
+                <el-option label="即梦3.0生成视频api" value="即梦3.0生成视频api" />
+                <el-option label="生成失败" value="生成失败" />
+              </el-select>
             </el-form-item>
-            <el-form-item label="使用场景" prop="projectName">
-              <el-input
-                v-model="queryParams.projectName"
-                placeholder="请输入使用场景"
+            <el-form-item label="使用场景" prop="selectedProjectId">
+              <el-select
+                v-model="selectedProjectId"
+                placeholder="请选择使用场景"
                 clearable
                 style="width: 240px"
-                @keyup.enter="handleQuery"
-              />
+                @change="handleProjectChange"
+              >
+                <el-option
+                  v-for="project in projectList"
+                  :key="project.id"
+                  :label="project.projectName"
+                  :value="project.id"
+                />
+              </el-select>
             </el-form-item>
             <el-form-item label="记录时间" style="width: 340px">
               <el-date-picker
@@ -132,6 +138,8 @@
 <script setup lang="ts" name="PointRecord">
   import { listTransaction } from '@/api/transaction';
   import { TransactionQuery, TransactionVO } from '@/api/transaction/types';
+  import { getAllProjects } from '@/api/workbench/project';
+  import { ProjectResponse } from '@/api/workbench/project/types';
   import { ElMessage } from 'element-plus';
   import { getCurrentInstance, onMounted, reactive, ref } from 'vue';
 
@@ -140,11 +148,15 @@
   const loading = ref(true);
   const showSearch = ref(true);
   const transactionList = ref<TransactionVO[]>([]);
+  const projectList = ref<ProjectResponse[]>([]);
   const total = ref(0);
   const dateRange = ref<[]>([]);
   const ids = ref<number[]>([]);
   const single = ref(true);
   const multiple = ref(true);
+
+  // 用于界面绑定的单选项目ID
+  const selectedProjectId = ref<number | undefined>(undefined);
 
   const queryParams = reactive<TransactionQuery>({
     pageNum: 1,
@@ -156,10 +168,21 @@
     transName: undefined,
     transType: undefined,
     projectIdList: undefined,
-    projectName: undefined,
     startTime: undefined,
     endTime: undefined
   });
+
+  const getProjectList = async () => {
+    try {
+      const res = await getAllProjects();
+      projectList.value = res.rows;
+      console.log('Project list loaded:', projectList.value.length);
+    } catch (error) {
+      console.error('Get project list failed:', error);
+      ElMessage.error('获取项目列表失败');
+      projectList.value = [];
+    }
+  };
 
   const getList = async () => {
     loading.value = true;
@@ -169,9 +192,17 @@
       total.value = res.total || 0;
     } catch (error) {
       console.error('Get transaction list failed:', error);
-      ElMessage.error('获取流水记录失败');
     } finally {
       loading.value = false;
+    }
+  };
+
+  const handleProjectChange = (value: number | undefined) => {
+    // 将单选的项目ID转换为数组格式
+    if (value !== undefined && value !== null) {
+      queryParams.projectIdList = [value];
+    } else {
+      queryParams.projectIdList = undefined;
     }
   };
 
@@ -182,6 +213,7 @@
 
   const resetQuery = () => {
     dateRange.value = [];
+    selectedProjectId.value = undefined;
     queryParams.walletTransactionId = undefined;
     queryParams.transUserId = undefined;
     queryParams.nickName = undefined;
@@ -189,7 +221,6 @@
     queryParams.transName = undefined;
     queryParams.transType = undefined;
     queryParams.projectIdList = undefined;
-    queryParams.projectName = undefined;
     queryParams.startTime = undefined;
     queryParams.endTime = undefined;
     handleQuery();
@@ -224,6 +255,7 @@
   };
 
   onMounted(() => {
+    getProjectList();
     getList();
   });
 </script>

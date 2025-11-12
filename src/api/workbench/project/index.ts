@@ -27,6 +27,16 @@ export const listProject = (query: ProjectQuery): AxiosPromise<ProjectPageInfoRe
 };
 
 /**
+ * 查询所有项目列表（不分页）
+ */
+export const getAllProjects = (): AxiosPromise<ProjectPageInfoResponseDto[]> => {
+  return request({
+    url: '/hivision/story/project/list',
+    method: 'get'
+  });
+};
+
+/**
  * 获取项目详细信息（含剧集、团队、素材统计）
  * @param projectId 项目ID
  */

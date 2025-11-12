@@ -30,7 +30,7 @@
               @click="toggleSelection(detail.detailId)"
             >
               <div class="costume-image-wrapper">
-                <el-image :src="detail.previewUrl || detail.originUrl" fit="cover" class="costume-image">
+                <el-image :src="detail.previewUrl || detail.originUrl" fit="contain" class="costume-image">
                   <template #error>
                     <div class="image-error">
                       <el-icon><Picture /></el-icon>
@@ -338,7 +338,6 @@
             .costume-item {
               position: relative;
               flex-shrink: 0;
-              width: 140px;
               cursor: pointer;
               border-radius: 8px;
               overflow: hidden;
@@ -367,12 +366,6 @@
                 width: 100%;
                 height: 100%;
                 display: block;
-
-                :deep(img) {
-                  width: 100%;
-                  height: 100%;
-                  object-fit: cover;
-                }
 
                 .image-error {
                   display: flex;

@@ -33,7 +33,7 @@
             :src="scene.previewOssUrl || scene.originOssUrl"
             fit="cover"
             class="shot-image"
-            :preview-src-list="[scene.previewOssUrl || scene.originOssUrl]"
+            :preview-src-list="[scene.originOssUrl || scene.previewOssUrl]"
             :preview-teleported="true"
           />
           <div v-else class="image-placeholder">

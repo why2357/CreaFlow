@@ -28,9 +28,11 @@ const ROLE_ID_TO_KEY_MAP: Record<number, string> = {
  */
 const ROLE_DISPLAY_MAP: Record<string, RoleDisplayInfo> = {
   [RoleKey.ADMIN]: {
-    name: '管理员',
-    shortName: '管',
-    color: '#667eea'
+    name: '项目经理',
+    shortName: '项',
+    color: 'linear-gradient(180deg, #FFF0D8 0%, #FFF8EA 100%)',
+    bgColor: 'linear-gradient(180deg, #FFF0D8 0%, #FFF8EA 100%)',
+    textColor: '#F54900'
   },
   [RoleKey.OPERATOR]: {
     name: '运营',

@@ -26,7 +26,7 @@
               <span class="shot-number-text">{{ row.shotNumber }}</span>
               <!-- 留言数量显示 -->
               <div
-                v-if="row.commentCount > 0"
+                v-if="row.commentCount && row.commentCount > 0"
                 class="comment-count-badge"
                 @click.stop="(event) => handleViewComments(row, event)"
               >
@@ -182,7 +182,7 @@
                   :src="row.envMaterialInfoVo.previewOssUrl || row.envMaterialInfoVo.originOssUrl"
                   fit="contain"
                   class="scene-location-image"
-                  :preview-src-list="[row.envMaterialInfoVo.previewOssUrl || row.envMaterialInfoVo.originOssUrl]"
+                  :preview-src-list="[row.envMaterialInfoVo.originOssUrl || row.envMaterialInfoVo.previewOssUrl]"
                 />
               </div>
               <div v-else class="scene-placeholder">
@@ -253,7 +253,11 @@
       :basic-id="currentShotForAction?.basicId || 0"
       :scene-type="1"
       :trigger-ref="commentListTriggerRef"
-      :comment-list="currentShotForAction?.commentInfo ? [currentShotForAction.commentInfo] : undefined"
+      :comment-list="
+        currentShotForAction?.commentInfo && typeof currentShotForAction.commentInfo === 'object'
+          ? [currentShotForAction.commentInfo]
+          : undefined
+      "
       @change="handleCommentChange"
     />
 
@@ -737,7 +741,12 @@
   // 查看留言列表
   const handleViewComments = (shot: Shot, event?: MouseEvent) => {
     if (!shot.basicId) {
-      ElMessage.warning('缺少场景基础信息ID');
+      ElMessage.warning('该镜头暂无基础信息，无法查看留言');
+      return;
+    }
+    // 检查是否有评论
+    if (!shot.commentCount || shot.commentCount <= 0) {
+      ElMessage.info('暂无留言');
       return;
     }
     // 如果有 commentInfo，直接展示，无需调用接口
