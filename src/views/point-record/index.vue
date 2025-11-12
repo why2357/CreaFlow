@@ -90,20 +90,27 @@
     <el-card shadow="hover">
       <el-table v-loading="loading" :data="transactionList" @selection-change="handleSelectionChange">
         <el-table-column type="selection" width="55" align="center" />
-        <el-table-column label="流水号" align="center" prop="walletTransactionId" width="120" fixed="left" />
-        <el-table-column label="用户ID" align="center" prop="transUserId" width="120" />
-        <el-table-column label="用户名称" align="center" prop="nickName" show-overflow-tooltip />
-        <el-table-column label="手机号码" align="center" prop="phoneNumber" width="130" />
+        <el-table-column
+          label="流水号"
+          align="center"
+          prop="walletTransactionId"
+          min-width="120"
+          fixed="left"
+          show-overflow-tooltip
+        />
+        <el-table-column label="用户ID" align="center" prop="transUserId" min-width="120" show-overflow-tooltip />
+        <el-table-column label="用户名称" align="center" prop="nickName" min-width="120" show-overflow-tooltip />
+        <el-table-column label="手机号码" align="center" prop="phoneNumber" min-width="120" show-overflow-tooltip />
         <el-table-column label="流水类型" align="center" prop="transType" width="100">
           <template #default="scope">
-            <el-tag v-if="scope.row.transType === 1" type="danger">支出</el-tag>
-            <el-tag v-else-if="scope.row.transType === 2" type="success">返还</el-tag>
+            <spam v-if="scope.row.transType === 1">支出</spam>
+            <span v-else-if="scope.row.transType === 2">返还</span>
             <span v-else>/</span>
           </template>
         </el-table-column>
-        <el-table-column label="流水名称" align="center" prop="transName" show-overflow-tooltip />
-        <el-table-column label="使用场景" align="center" prop="projectName" show-overflow-tooltip />
-        <el-table-column label="点数数额" align="center" prop="pointsCost" sortable width="120" />
+        <el-table-column label="流水名称" align="center" prop="transName" min-width="120" show-overflow-tooltip />
+        <el-table-column label="使用场景" align="center" prop="projectName" min-width="120" show-overflow-tooltip />
+        <el-table-column label="点数数额" align="center" prop="pointsCost" width="120" />
         <el-table-column label="消耗时间" align="center" prop="createTime" width="170">
           <template #default="scope">
             <span>{{ parseTime(scope.row.createTime) }}</span>
@@ -158,8 +165,8 @@
     loading.value = true;
     try {
       const res = await listTransaction(queryParams);
-      transactionList.value = res.data?.rows || [];
-      total.value = res.data?.total || 0;
+      transactionList.value = res.rows || [];
+      total.value = res.total || 0;
     } catch (error) {
       console.error('Get transaction list failed:', error);
       ElMessage.error('获取流水记录失败');

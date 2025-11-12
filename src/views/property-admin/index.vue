@@ -39,13 +39,7 @@
       </div>
 
       <!-- 资产网格 -->
-      <div
-        v-infinite-scroll="activeTab === 'image' ? loadMoreImages : loadMoreVideos"
-        :infinite-scroll-disabled="activeTab === 'image' ? imageScrollDisabled : videoScrollDisabled"
-        :infinite-scroll-distance="200"
-        class="asset-grid"
-        v-loading="activeTab === 'image' ? imageLoading : videoLoading"
-      >
+      <div class="asset-grid" v-loading="activeTab === 'image' ? imageLoading : videoLoading">
         <div
           v-for="(item, index) in activeTab === 'image' ? imageList : videoList"
           :key="`${item.id}-${index}`"
@@ -88,13 +82,6 @@
           <el-empty :description="`暂无${activeTab === 'image' ? '图片' : '视频'}资源`" />
         </div>
       </div>
-
-      <div
-        v-if="activeTab === 'image' ? imageHasMore && !imageLoading : videoHasMore && !videoLoading"
-        class="load-more-tip"
-      >
-        加载中...
-      </div>
     </div>
 
     <!-- 预览对话框 -->
@@ -121,7 +108,7 @@
   import type { ProjectPageInfoResponseDto } from '@/api/workbench/project/types';
   import { Picture as IconPicture, VideoPlay } from '@element-plus/icons-vue';
   import { ElMessage } from 'element-plus';
-  import { computed, onMounted, ref } from 'vue';
+  import { onMounted, ref } from 'vue';
 
   // 项目列表
   const projectList = ref<ProjectPageInfoResponseDto[]>([]);
@@ -140,16 +127,12 @@
   const imageLoading = ref(false);
   const imagePageNum = ref(1);
   const imageTotal = ref(0);
-  const imageHasMore = computed(() => imageList.value.length < imageTotal.value);
-  const imageScrollDisabled = computed(() => imageLoading.value || !imageHasMore.value);
 
   // 视频列表
   const videoList = ref<ProjectHistoryDetailVo[]>([]);
   const videoLoading = ref(false);
   const videoPageNum = ref(1);
   const videoTotal = ref(0);
-  const videoHasMore = computed(() => videoList.value.length < videoTotal.value);
-  const videoScrollDisabled = computed(() => videoLoading.value || !videoHasMore.value);
 
   // 预览
   const previewVisible = ref(false);
@@ -292,20 +275,6 @@
     }
   };
 
-  // 加载更多图片
-  const loadMoreImages = async () => {
-    if (imageScrollDisabled.value) return;
-    imagePageNum.value++;
-    await loadAssets();
-  };
-
-  // 加载更多视频
-  const loadMoreVideos = async () => {
-    if (videoScrollDisabled.value) return;
-    videoPageNum.value++;
-    await loadAssets();
-  };
-
   // 预览资源（预留功能，用于点击卡片查看详情）
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const handlePreview = (item: ProjectHistoryDetailVo, type: 'image' | 'video') => {
@@ -386,102 +355,111 @@
 
 <style scoped lang="scss">
   .property-admin-container {
+    display: flex;
+    flex-direction: column;
     padding: 0;
     background: #f3f5fb;
-    min-height: 100vh;
+    height: calc(100vh - 60px); // 减去顶部导航栏高度
+    overflow: hidden;
   }
 
   .header-section {
-    padding: 16px 24px;
+    flex-shrink: 0; // 防止头部被压缩
+    padding: 20px 24px;
     background: #fff;
-    border-bottom: 1px solid #e8eaed;
+    border-bottom: 0.5px solid #e8eaed;
 
     .project-list {
       display: flex;
-      gap: 12px;
+      gap: 16px;
       overflow-x: auto;
 
       &::-webkit-scrollbar {
-        height: 6px;
+        height: 4px;
       }
 
       &::-webkit-scrollbar-thumb {
         background: #dcdfe6;
-        border-radius: 3px;
+        border-radius: 2px;
       }
 
       &::-webkit-scrollbar-track {
-        background: #f5f7fa;
-        border-radius: 3px;
+        background: transparent;
+        border-radius: 2px;
       }
 
       .project-item {
         flex-shrink: 0;
-        padding: 10px 24px;
-        background: #f5f7fa;
+        padding: 8px 20px;
+        background: #fff;
         border-radius: 8px;
         font-size: 14px;
         font-weight: 500;
-        color: #606266;
+        color: #4e5969;
         cursor: pointer;
-        transition: all 0.3s;
-        border: 2px solid transparent;
+        transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+        border: 1px solid #e8eaed;
         white-space: nowrap;
 
         &:hover {
-          background: #e8eaed;
-          color: #303133;
+          background: #f7f8fa;
+          border-color: #c9cdd4;
         }
 
         &.active {
-          background: #f3f3ff;
-          color: #5252ff;
+          background: #5252ff;
+          color: #fff;
           border-color: #5252ff;
-          box-shadow: none;
+          box-shadow: 0 2px 8px 0 rgba(82, 82, 255, 0.2);
         }
       }
     }
   }
 
   .content-section {
+    display: flex;
+    flex-direction: column;
+    flex: 1; // 占据剩余空间
     padding: 0;
     background: transparent;
+    overflow: hidden; // 防止整体滚动
 
     .tabs-header {
+      flex-shrink: 0; // 防止标签页被压缩
       background: #fff;
       padding: 0 24px;
-      border-bottom: 1px solid #e8eaed;
+      border-bottom: 0.5px solid #e8eaed;
 
       .tabs-nav {
         display: flex;
-        gap: 32px;
+        gap: 40px;
 
         .tab-item {
-          padding: 16px 0;
-          font-size: 16px;
-          color: #606266;
+          padding: 14px 0;
+          font-size: 15px;
+          color: #86909c;
           cursor: pointer;
           position: relative;
-          transition: color 0.3s;
+          transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+          font-weight: 400;
 
           &:hover {
-            color: #409eff;
+            color: #4e5969;
           }
 
           &.active {
-            color: #333333;
-            font-weight: 500;
+            color: #1d2129;
+            font-weight: 600;
 
             &::after {
               content: '';
               position: absolute;
               bottom: 0;
-              left: 50%;
-              transform: translateX(-50%);
-              width: 45%;
-              height: 4px;
+              left: 0;
+              right: 0;
+              height: 2px;
               background: #5252ff;
-              border-radius: 19px;
+              border-radius: 1px;
             }
           }
         }
@@ -489,12 +467,13 @@
     }
 
     .episode-filter {
+      flex-shrink: 0; // 防止剧集筛选器被压缩
       display: flex;
       gap: 12px;
       padding: 16px 24px;
       background: #fff;
       overflow-x: auto;
-      border-bottom: 1px solid #e8eaed;
+      border-bottom: 0.5px solid #e8eaed;
 
       &::-webkit-scrollbar {
         height: 4px;
@@ -507,40 +486,64 @@
 
       .episode-tag {
         flex-shrink: 0;
-        padding: 6px 16px;
-        background: #f5f7fa;
-        border-radius: 16px;
-        font-size: 14px;
-        color: #606266;
+        padding: 5px 14px;
+        background: #f7f8fa;
+        border-radius: 6px;
+        font-size: 13px;
+        color: #4e5969;
         cursor: pointer;
-        transition: all 0.3s;
+        transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
         border: 1px solid transparent;
+        font-weight: 500;
 
         &:hover {
-          background: #e8eaed;
+          background: #e5e6eb;
+          color: #1d2129;
         }
 
         &.active {
           background: #5252ff;
           color: #fff;
           border-color: #5252ff;
+          box-shadow: 0 2px 6px 0 rgba(82, 82, 255, 0.15);
         }
       }
     }
 
     .asset-grid {
+      flex: 1; // 占据剩余空间
       display: grid;
-      grid-template-columns: repeat(4, 240px);
+      grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+      height: 226px;
       gap: 20px;
       padding: 24px;
-      min-height: 400px;
-      justify-content: start;
+      align-content: start;
+      overflow-y: auto; // 只在这里滚动
+      overflow-x: hidden;
 
-      @media (max-width: 1280px) {
-        grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+      // 自定义滚动条样式
+      &::-webkit-scrollbar {
+        width: 6px;
+      }
+
+      &::-webkit-scrollbar-track {
+        background: transparent;
+      }
+
+      &::-webkit-scrollbar-thumb {
+        border-radius: 3px;
+        background-color: rgba(144, 147, 153, 0.3);
+        transition: background-color 0.3s;
+
+        &:hover {
+          background-color: rgba(144, 147, 153, 0.5);
+        }
       }
 
       .asset-card {
+        display: flex;
+        flex-direction: column;
+        min-height: 226px;
         cursor: pointer;
         border-radius: 12px;
         overflow: hidden;
@@ -555,8 +558,9 @@
 
         .asset-thumbnail {
           position: relative;
-          width: 240px;
+          width: 100%;
           height: 226px;
+          flex-shrink: 0;
           overflow: hidden;
           background: #f3f5fb;
 
@@ -668,14 +672,6 @@
         align-items: center;
         min-height: 300px;
       }
-    }
-
-    .load-more-tip {
-      text-align: center;
-      padding: 16px;
-      color: #909399;
-      font-size: 14px;
-      background: transparent;
     }
   }
 
