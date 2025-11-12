@@ -24,7 +24,18 @@ export const updateUserCenterProfile = (data: UserProfileUpdateForm) => {
   });
 };
 
+/**
+ * 查询钱包积分
+ */
+export const getWalletPoints = (): AxiosPromise<number> => {
+  return request({
+    url: '/hivision/system/user-center/wallet-points',
+    method: 'get'
+  });
+};
+
 export default {
   getUserCenterProfile,
-  updateUserCenterProfile
+  updateUserCenterProfile,
+  getWalletPoints
 };

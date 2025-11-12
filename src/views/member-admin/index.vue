@@ -65,10 +65,10 @@
 
       <el-table v-loading="loading" :data="memberList" @selection-change="handleSelectionChange">
         <el-table-column type="selection" width="55" align="center" />
-        <el-table-column label="用户id" align="center" prop="userId" width="300" fixed="left" />
+        <el-table-column label="用户ID" align="center" prop="userId" width="300" fixed="left" />
         <el-table-column label="用户名称" align="center" prop="nickName" show-overflow-tooltip />
         <el-table-column label="手机号码" align="center" prop="phonenumber" width="120" />
-        <el-table-column label="累计消耗点数" align="center" prop="consumePoint" sortable />
+        <el-table-column label="累计消耗点数" align="center" prop="consumePoint" />
         <el-table-column label="注册时间" align="center" prop="createTime">
           <template #default="scope">
             <span>{{ parseTime(scope.row.createTime) }}</span>

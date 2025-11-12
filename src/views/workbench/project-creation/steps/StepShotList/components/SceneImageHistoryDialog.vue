@@ -108,7 +108,7 @@
                   <div class="action-top-right" :class="{ 'is-collected': detail.isCollected }">
                     <el-tooltip :content="detail.isCollected ? '取消收藏' : '收藏'" placement="top">
                       <div class="action-icon" @click.stop="handleToggleCollect(detail)">
-                        <svg-icon v-if="detail.isCollected" icon-class="fy-starfilled" />
+                        <svg-icon v-if="detail.isCollected" icon-class="fy-starfilled" style="color: #ff7d00" />
                         <svg-icon v-else icon-class="fy-star" />
                       </div>
                     </el-tooltip>
@@ -116,15 +116,16 @@
 
                   <!-- 右下角左侧：评论按钮 -->
                   <div class="action-bottom-left" @click.stop>
-                    <el-tooltip content="查看评论" placement="top">
-                      <div
-                        ref="commentTriggerRef"
-                        class="action-icon comment-btn"
-                        @click.stop="handleShowComments(detail, $event)"
-                      >
-                        <svg-icon icon-class="fy-comment" />
-                      </div>
-                    </el-tooltip>
+                    <div
+                      ref="commentTriggerRef"
+                      class="action-icon comment-btn"
+                      @click.stop="handleShowComments(detail, $event)"
+                    >
+                      <svg-icon icon-class="fy-comment" class="comment-icon" />
+                      <span v-if="detail.commentVoList && detail.commentVoList?.length > 0" class="count-text">{{
+                        detail.commentVoList?.length || 0
+                      }}</span>
+                    </div>
                   </div>
 
                   <!-- 右下角：更多操作 -->
@@ -195,6 +196,7 @@
     :basic-id="commentBasicId"
     :scene-type="1"
     :trigger-ref="commentTriggerElement"
+    :comment-list="currentCommentList"
     @change="handleCommentChange"
   />
 </template>
@@ -258,6 +260,7 @@
   const showCommentList = ref(false);
   const commentBasicId = ref(0);
   const commentTriggerElement = ref<HTMLElement>();
+  const currentCommentList = ref<any[]>([]);
 
   // 监听 modelValue 变化
   watch(
@@ -548,13 +551,15 @@
   const handleShowComments = (detail: HistoryDetail, event: MouseEvent) => {
     commentBasicId.value = detail.historyDetailId || 0;
     commentTriggerElement.value = event.currentTarget as HTMLElement;
+    // 直接使用 detail.commentVoList 中的数据，避免调用接口
+    currentCommentList.value = detail.commentVoList || [];
     showCommentList.value = true;
   };
 
-  // 评论变化回调
-  const handleCommentChange = () => {
-    // 评论变化后可以刷新数据或做其他处理
-    console.log('评论已更新');
+  // 评论变化回调（删除评论后更新本地数据）
+  const handleCommentChange = async () => {
+    // 重新加载历史记录以更新评论数量
+    await loadHistory();
   };
 </script>
 
@@ -907,10 +912,10 @@
                     display: flex;
                     justify-content: center;
                     align-items: center;
-                    width: 28px;
-                    height: 28px;
-                    border-radius: 50%;
-                    background: rgb(255 255 255 / 90%);
+                    width: 24px;
+                    height: 24px;
+                    border-radius: 5px;
+                    background: #fff;
                     cursor: pointer;
                     transition: all 0.3s;
 
@@ -919,10 +924,28 @@
                       transform: scale(1.1);
                     }
 
-                    .svg-icon {
-                      font-size: 14px;
-                      width: 14px;
-                      height: 14px;
+                    .comment-icon {
+                      font-size: 12px;
+                      width: 12px;
+                      height: 12px;
+                      color: #5252ff;
+                    }
+
+                    .count-text {
+                      position: absolute;
+                      left: 12px;
+                      top: -12px;
+                      display: flex;
+                      width: 20px;
+                      height: 20px;
+                      justify-content: center;
+                      align-items: center;
+                      flex-shrink: 0;
+                      border-radius: 50%;
+                      background: #5252ff;
+                      color: #fff;
+                      font-size: 12px;
+                      line-height: 20px; /* 133.333% */
                     }
                   }
                 }
@@ -1005,5 +1028,10 @@
         }
       }
     }
+  }
+  .loading-state {
+    width: 100%;
+    display: flex;
+    justify-content: c;
   }
 </style>

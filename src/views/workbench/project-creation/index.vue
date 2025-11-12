@@ -78,10 +78,8 @@
         </div>
       </div>
       <div class="header-right">
-        <!-- <div class="credits-badge">
-          <el-icon class="icon-flash"><Lightning /></el-icon>
-          <span class="credits-text">330 充值</span>
-        </div> -->
+        <!-- 充值按钮 -->
+        <RechargeButton ref="rechargeButtonRef" />
         <!-- <div class="notifications">
           <el-badge :value="3" class="notification-badge">
             <el-icon :size="20"><Bell /></el-icon>
@@ -118,10 +116,11 @@
 <script setup lang="ts" name="ProjectCreation">
   import { useProjectStore } from '@/store/modules/project';
   import { Loading } from '@element-plus/icons-vue';
-  import { ElMessage } from 'element-plus';
+  import { ElMessage, ElMessageBox } from 'element-plus';
   import { computed, defineAsyncComponent, onBeforeUnmount, onMounted, ref } from 'vue';
   import { useRoute, useRouter } from 'vue-router';
 
+  import RechargeButton from '@/components/RechargeButton/index.vue';
   import UserProfileDropdown from '@/components/UserProfileDropdown/index.vue';
   import AddEpisodeDialog from './components/AddEpisodeDialog.vue';
 
@@ -143,6 +142,9 @@
 
   // 新增剧集对话框
   const addEpisodeDialog = ref(false);
+
+  // 充值按钮引用
+  const rechargeButtonRef = ref<InstanceType<typeof RechargeButton>>();
 
   // 当前步骤组件
   const currentStepComponent = computed(() => {
@@ -282,6 +284,19 @@
       await projectStore.goToStep(targetStep);
     }
   };
+
+  /**
+   * 刷新充值按钮积分
+   * 在生成图片或扣点后调用此方法
+   */
+  const refreshWalletPoints = () => {
+    rechargeButtonRef.value?.refresh();
+  };
+
+  // 暴露方法供子组件调用
+  defineExpose({
+    refreshWalletPoints
+  });
 </script>
 
 <style scoped lang="scss">
@@ -387,38 +402,6 @@
       display: flex;
       align-items: center;
       gap: 20px;
-
-      .credits-badge {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        padding: 8px 20px;
-        border: 2px solid #ffdb99;
-        border-radius: 24px;
-        background: linear-gradient(135deg, #fff7e6 0%, #ffe8b3 100%);
-        box-shadow: 0 2px 8px rgb(255 193 7 / 20%);
-        cursor: pointer;
-        transition: all 0.3s;
-
-        &:hover {
-          border-color: #ffc107;
-          box-shadow: 0 4px 12px rgb(255 193 7 / 30%);
-          transform: translateY(-2px);
-        }
-
-        .icon-flash {
-          color: #ff9800;
-          font-size: 18px;
-          animation: flash 2s infinite;
-        }
-
-        .credits-text {
-          color: #e65100;
-          font-size: 15px;
-          font-weight: 700;
-          letter-spacing: 0.5px;
-        }
-      }
 
       .notifications {
         padding: 8px;

@@ -267,6 +267,8 @@
       taskStatus: scene.taskStatus,
       // 评论数
       commentCount: Number(scene.commentCount) || 0,
+      // 最新一条评论信息（从后端返回的数据中获取）
+      commentInfo: scene.commentInfo,
       // 图片状态 0-白色 1-橙色 2-绿色 3-红色
       imgStatus: scene.sceneStatus
     }));

@@ -253,6 +253,7 @@
       :basic-id="currentShotForAction?.basicId || 0"
       :scene-type="1"
       :trigger-ref="commentListTriggerRef"
+      :comment-list="currentShotForAction?.commentInfo ? [currentShotForAction.commentInfo] : undefined"
       @change="handleCommentChange"
     />
 
@@ -739,6 +740,7 @@
       ElMessage.warning('缺少场景基础信息ID');
       return;
     }
+    // 如果有 commentInfo，直接展示，无需调用接口
     currentShotForAction.value = shot;
     if (event) {
       commentListTriggerRef.value = event.currentTarget as HTMLElement;

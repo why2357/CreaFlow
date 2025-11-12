@@ -1,6 +1,7 @@
 import request from '@/utils/request';
 import { AxiosPromise } from 'axios';
 import { EpisodeCreateRequest, EpisodeTemplateUploadRequest, ShotForm } from '../project/types';
+import type { SceneCommentVo } from '../storyboard/types';
 import type { CharacterMatchResponse, HivisionProjectEpisodeVo, SceneEnvSetRequest } from './types';
 
 /**
@@ -363,6 +364,8 @@ export interface SceneItemHistoryInfo {
   sceneType?: number;
   /** 选中状态 0-未选中 1-选中 */
   selectStatus?: number;
+  /** 评论列表 */
+  commentVoList: SceneCommentVo[];
 }
 
 export interface HivisionProjectMaterialVo {

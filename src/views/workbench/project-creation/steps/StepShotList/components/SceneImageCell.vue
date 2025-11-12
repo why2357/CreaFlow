@@ -566,10 +566,10 @@
       return;
     }
 
-    if (props.taskStatus !== 2) {
-      ElMessage.warning('请先生成图片');
-      return;
-    }
+    // if (props.taskStatus !== 2) {
+    //   ElMessage.warning('请先生成图片');
+    //   return;
+    // }
 
     editDialogVisible.value = true;
   };

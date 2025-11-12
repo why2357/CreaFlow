@@ -133,6 +133,8 @@ export interface EpisodeSceneItemInfo {
   taskStatus?: number;
   isCollect: boolean;
   commentCount: number;
+  /** 最新一条评论信息 */
+  commentInfo?: any;
 }
 
 /**

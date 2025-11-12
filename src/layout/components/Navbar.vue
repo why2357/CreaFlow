@@ -3,10 +3,7 @@
     <div class="right-menu flex align-center">
       <template v-if="appStore.device !== 'mobile'">
         <!-- 充值按钮 -->
-        <!-- <el-button type="primary" class="recharge-btn">
-          <svg-icon icon-class="recharge" style="margin-right: 4px" />
-          330 充值
-        </el-button> -->
+        <RechargeButton ref="rechargeButtonRef" />
 
         <!-- 消息通知 -->
         <!-- <el-tooltip content="消息" effect="dark" placement="bottom">
@@ -32,13 +29,16 @@
 </template>
 
 <script setup lang="ts">
+  import RechargeButton from '@/components/RechargeButton/index.vue';
   import UserProfileDropdown from '@/components/UserProfileDropdown/index.vue';
   import useAppStore from '@/store/modules/app';
   import useNoticeStore from '@/store/modules/notice';
+  import { ref } from 'vue';
 
   const appStore = useAppStore();
   const noticeStore = storeToRefs(useNoticeStore());
   const newNotice = ref(<number>0);
+  const rechargeButtonRef = ref<InstanceType<typeof RechargeButton>>();
 
   // 监听消息数量
   watch(
@@ -49,9 +49,18 @@
     { deep: true }
   );
 
+  /**
+   * 刷新充值按钮积分
+   * 在生成图片或扣点后调用此方法
+   */
+  const refreshWalletPoints = () => {
+    rechargeButtonRef.value?.refresh();
+  };
+
   // 暴露方法供父组件调用
   defineExpose({
-    initTenantList: () => {} // 保留接口兼容性
+    initTenantList: () => {}, // 保留接口兼容性
+    refreshWalletPoints
   });
 </script>
 
@@ -86,15 +95,6 @@
 
       &:focus {
         outline: none;
-      }
-
-      .recharge-btn {
-        display: flex;
-        align-items: center;
-        height: 36px;
-        padding: 0 20px;
-        border-radius: 18px;
-        font-size: 14px;
       }
 
       .right-menu-item {

@@ -6,6 +6,12 @@
     :close-on-click-modal="false"
     @closed="handleClosed"
   >
+    <template #header>
+      <div class="dialog-header">
+        <span class="dialog-title">新建剧集</span>
+        <el-button class="download-template-btn" @click="handleDownloadTemplate"> 下载模版 </el-button>
+      </div>
+    </template>
     <el-form ref="formRef" :model="form" :rules="rules" label-width="0" @submit.prevent="handleSubmit">
       <!-- 剧集名称 -->
       <div class="form-section">
@@ -101,7 +107,7 @@
             <div class="upload-content">
               <svg-icon icon-class="fy-el-upload" style="width: 48px; height: 44px" />
               <div class="upload-text">将文件拖到此处，或<span class="upload-link">点击上传</span></div>
-              <div class="upload-tip">您可以上传制作好的剧本，支持：excel格式</div>
+              <div class="upload-tip">您可以上传制作好的剧集，支持：excel格式</div>
             </div>
           </el-upload>
         </el-form-item>
@@ -149,7 +155,7 @@
   // 加载状态
   const loading = ref(false);
 
-  // 动态获取模型选项（文生文模型用于剧本生成）
+  // 动态获取模型选项（文生文模型用于剧集生成）
   const modelOptions = computed(() => {
     return convertModelsToOptions(projectStore.t2tModelInfoList);
   });
@@ -198,7 +204,7 @@
               callback();
             }
           } else if (inputMode.value === 'upload' && !uploadedFile.value) {
-            callback(new Error('请上传剧本文件'));
+            callback(new Error('请上传剧集文件'));
           } else {
             callback();
           }
@@ -284,11 +290,23 @@
 
     // 如果超过5000字，提示用户
     if (totalLength > 5000) {
-      ElMessageBox.alert('剧本字数超出最大限制', '提示', {
+      ElMessageBox.alert('剧集字数超出最大限制', '提示', {
         confirmButtonText: '确认',
         type: 'info'
       });
     }
+  };
+
+  // 下载模板
+  const handleDownloadTemplate = () => {
+    const templateUrl =
+      'https://fc-1327887685.cos.ap-guangzhou.myqcloud.com/dev_forge_hivision/file/2025111212/d315102dc4a74203.xls';
+    const link = document.createElement('a');
+    link.href = templateUrl;
+    link.download = '剧集模板.xls';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   };
 
   // 提交表单
@@ -312,7 +330,7 @@
       }
 
       if (inputMode.value === 'upload' && !uploadedFile.value) {
-        ElMessage.warning('请上传剧本文件');
+        ElMessage.warning('请上传剧集文件');
         return;
       }
 
@@ -328,9 +346,9 @@
             modelCode: form.value.modelCode
           });
         } else {
-          // 上传拆分剧本模式：调用 /hivision/story/episode/template/upload
+          // 上传拆分剧集模式：调用 /hivision/story/episode/template/upload
           if (!uploadedFile.value) {
-            ElMessage.error('请上传剧本文件');
+            ElMessage.error('请上传剧集文件');
             return;
           }
           await createEpisodeByTemplate({
@@ -366,6 +384,43 @@
 </script>
 
 <style scoped lang="scss">
+  // 对话框头部
+  .dialog-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+    padding-right: 40px;
+
+    .dialog-title {
+      color: #1d2129;
+      font-size: 18px;
+      font-weight: 600;
+    }
+
+    .download-template-btn {
+      display: flex;
+      width: 92px;
+      height: 28px;
+      padding: 10px;
+      justify-content: center;
+      align-items: center;
+      gap: 10px;
+      flex-shrink: 0;
+      border-radius: 4px;
+      border: 1px solid #eee;
+      background: #fff;
+
+      &:hover {
+        color: #7375ff;
+      }
+
+      .el-icon {
+        font-size: 13px;
+      }
+    }
+  }
+
   .form-section {
     margin-bottom: 24px;
 

@@ -412,6 +412,7 @@ export interface Shot {
   reviewStatus?: number; // 评审状态 1-通过 2-待修改
   comment?: string; // 评论内容
   commentCount?: number; // 总评论数量
+  commentInfo?: any; // 最新一条评论信息（SceneCommentVo类型）
   imgStatus?: number; // 图片状态 0-白色 1-橙色 2-绿色 3-红色
   createTime?: string;
   updateTime?: string;

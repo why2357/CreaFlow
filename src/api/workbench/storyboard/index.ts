@@ -98,7 +98,7 @@ export function getSceneCommentList(data: SceneCommentListRequest) {
  */
 export function deleteSceneComment(ids: number[]) {
   return request({
-    url: `/hivision/projectSceneComment/${ids.join(',')}`,
+    url: `/hivision/story/comment/${ids.join(',')}`,
     method: 'delete'
   });
 }

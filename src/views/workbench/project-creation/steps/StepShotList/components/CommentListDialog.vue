@@ -56,6 +56,8 @@
     basicId: number;
     sceneType: number;
     triggerRef?: HTMLElement;
+    // 可选的评论列表，如果提供则直接使用，不调用接口
+    commentList?: SceneCommentVo[];
   }
 
   const props = defineProps<Props>();
@@ -74,8 +76,23 @@
   const loading = ref(false);
   const comments = ref<SceneCommentVo[]>([]);
 
-  // 加载留言列表（只显示最新的一条）
+  // 加载留言列表
   const loadComments = async () => {
+    // 如果传入了 commentList，则直接使用，不调用接口
+    if (props.commentList && props.commentList.length > 0) {
+      // 按创建时间降序排序，显示所有评论
+      const sortedComments = [...props.commentList].sort((a, b) => {
+        const timeA = new Date(a.createTime || 0).getTime();
+        const timeB = new Date(b.createTime || 0).getTime();
+        return timeB - timeA;
+      });
+      comments.value = sortedComments;
+      console.log('使用传入的 commentList，无需调用接口');
+      return;
+    }
+
+    // 否则调用接口获取（只显示最新的一条）
+    console.log('调用接口获取评论列表');
     try {
       loading.value = true;
       const res = await getSceneCommentList({
