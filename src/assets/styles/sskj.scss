@@ -371,3 +371,11 @@ h6 {
     border-radius: 8px;
   }
 }
+.dialog-footer {
+  display: flex;
+}
+
+/** Element Plus Message 全局样式 - 调整显示位置，避免遮挡顶部导航 **/
+.el-message {
+  top: 60px !important;
+}

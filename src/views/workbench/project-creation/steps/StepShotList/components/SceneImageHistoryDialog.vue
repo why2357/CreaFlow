@@ -114,17 +114,19 @@
                     </el-tooltip>
                   </div>
 
-                  <!-- 右下角左侧：评论按钮 -->
-                  <div class="action-bottom-left" @click.stop>
+                  <!-- 左下角：评论按钮 - 只在有留言时显示 -->
+                  <div
+                    v-if="detail.commentVoList && detail.commentVoList?.length > 0"
+                    class="action-bottom-left has-comments"
+                    @click.stop
+                  >
                     <div
                       ref="commentTriggerRef"
                       class="action-icon comment-btn"
                       @click.stop="handleShowComments(detail, $event)"
                     >
                       <svg-icon icon-class="fy-comment" class="comment-icon" />
-                      <span v-if="detail.commentVoList && detail.commentVoList?.length > 0" class="count-text">{{
-                        detail.commentVoList?.length || 0
-                      }}</span>
+                      <span class="count-text">{{ detail.commentVoList?.length || 0 }}</span>
                     </div>
                   </div>
 
@@ -892,9 +894,9 @@
                     display: flex;
                     justify-content: center;
                     align-items: center;
-                    width: 28px;
-                    height: 28px;
-                    border-radius: 50%;
+                    width: 24px;
+                    height: 24px;
+                    border-radius: 4px;
                     background: #f7f8fa;
                     cursor: pointer;
                     transition: all 0.3s;
@@ -918,14 +920,19 @@
                   opacity: 0;
                   transition: opacity 0.3s;
 
+                  // 有留言时始终显示
+                  &.has-comments {
+                    opacity: 1;
+                  }
+
                   .action-icon {
                     display: flex;
                     justify-content: center;
                     align-items: center;
                     width: 24px;
                     height: 24px;
-                    border-radius: 5px;
-                    background: #fff;
+                    border-radius: 4px;
+                    background: #f7f8fa;
                     cursor: pointer;
                     transition: all 0.3s;
 
@@ -972,10 +979,10 @@
                     display: flex;
                     justify-content: center;
                     align-items: center;
-                    width: 28px;
-                    height: 28px;
-                    border-radius: 50%;
-                    background: rgb(255 255 255 / 90%);
+                    width: 24px;
+                    height: 24px;
+                    border-radius: 5px;
+                    background: #fff;
                     cursor: pointer;
                     transition: all 0.3s;
 

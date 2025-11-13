@@ -205,7 +205,11 @@
   });
 
   // 初始化剧本内容
-  onMounted(() => {
+  onMounted(async () => {
+    // 刷新项目信息，确保获取最新的资源统计、进度等数据
+    if (projectStore.currentProjectId) {
+      await projectStore.loadProjectInfo(Number(projectStore.currentProjectId));
+    }
     loadScript();
   });
 

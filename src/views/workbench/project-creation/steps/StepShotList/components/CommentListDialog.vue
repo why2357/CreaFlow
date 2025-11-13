@@ -88,6 +88,9 @@
 
   // 加载留言列表
   const loadComments = async () => {
+    // 清除之前的缓存，防止显示旧数据
+    comments.value = [];
+
     // 如果传入了 commentList，则直接使用，不调用接口
     if (props.commentList && props.commentList.length > 0) {
       // 按创建时间降序排序，显示所有评论
@@ -153,13 +156,16 @@
     }
   };
 
-  // 格式化时间 - 只显示时:分
+  // 格式化时间 - 显示年月日 时:分
   const formatTime = (time?: Date) => {
     if (!time) return '';
     const date = new Date(time);
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
     const hour = String(date.getHours()).padStart(2, '0');
     const minute = String(date.getMinutes()).padStart(2, '0');
-    return `${hour}:${minute}`;
+    return `${year}-${month}-${day} ${hour}:${minute}`;
   };
 </script>
 

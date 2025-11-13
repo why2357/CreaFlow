@@ -104,7 +104,6 @@
         handleClose();
       } catch (error) {
         console.error('留言失败:', error);
-        ElMessage.error('留言失败，请重试');
       } finally {
         loading.value = false;
       }

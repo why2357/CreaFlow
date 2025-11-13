@@ -19,7 +19,7 @@
     <!-- 故事板网格 -->
     <div v-else class="grid-container">
       <div
-        v-for="scene in scenes"
+        v-for="(scene, index) in scenes"
         :key="scene.id"
         class="grid-card"
         :class="getCardClass(scene)"
@@ -47,6 +47,7 @@
             <SceneActions
               button-size="default"
               tooltip-placement="top"
+              :disable-comment="!scene.imgTaskId"
               @comment="(event) => handleComment(scene, event)"
               @insert="handleInsert(scene)"
               @review="(event) => handleReview(scene, event)"
@@ -60,7 +61,7 @@
           <!-- 镜号标签 -->
           <div class="card-number">
             <svg-icon icon-class="fy-juji" class="icon" />
-            <span>{{ String(scene.orderNo || 0).padStart(2, '0') }}</span>
+            <span>{{ String(index + 1).padStart(2, '0') }}</span>
           </div>
 
           <!-- 状态指示圆点 -->
@@ -258,35 +259,14 @@
     }
 
     .grid-container {
-      display: grid;
+      display: flex;
+      flex-wrap: wrap;
       align-content: start;
-      grid-template-columns: repeat(5, 1fr);
       gap: 20px;
       width: 100%;
       height: 100%;
       padding: 20px;
       overflow-y: auto;
-
-      // 响应式布局
-      @media (max-width: 1920px) {
-        grid-template-columns: repeat(5, 1fr);
-      }
-
-      @media (max-width: 1600px) {
-        grid-template-columns: repeat(4, 1fr);
-      }
-
-      @media (max-width: 1200px) {
-        grid-template-columns: repeat(3, 1fr);
-      }
-
-      @media (max-width: 768px) {
-        grid-template-columns: repeat(2, 1fr);
-      }
-
-      @media (max-width: 480px) {
-        grid-template-columns: repeat(1, 1fr);
-      }
 
       .grid-card {
         position: relative;
@@ -297,6 +277,9 @@
         box-shadow: 0 2px 8px rgb(0 0 0 / 8%);
         cursor: pointer;
         transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        height: 300px;
+        width: 400px;
+        flex-shrink: 0;
 
         &:hover {
           box-shadow: 0 4px 16px 0 rgba(0, 0, 0, 0.12);
@@ -453,15 +436,13 @@
           justify-content: center;
           align-items: center;
           width: 100%;
-          padding-bottom: 100%; // 1:1 比例
+          height: 100%;
           background: #f5f7fa;
 
           .shot-image {
-            position: absolute;
-            top: 0;
-            left: 0;
             width: 100%;
             height: 100%;
+            object-fit: contain;
           }
 
           .image-placeholder {

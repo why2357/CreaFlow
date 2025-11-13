@@ -55,6 +55,8 @@
     popperOptions?: any;
     /** z-index */
     zIndex?: number;
+    /** 是否禁用留言按钮 */
+    disableComment?: boolean;
   }
 
   const props = withDefaults(defineProps<Props>(), {
@@ -66,7 +68,8 @@
     commentTooltip: '留言',
     tooltipPlacement: 'bottom',
     popperOptions: () => ({ strategy: 'fixed' }),
-    zIndex: 2000
+    zIndex: 2000,
+    disableComment: false
   });
 
   const emit = defineEmits<{

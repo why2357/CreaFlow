@@ -20,7 +20,7 @@
     <div v-else class="waterfall-container">
       <!-- 每一列对应一个 WaterfallItem -->
       <div
-        v-for="item in waterfallData"
+        v-for="(item, index) in waterfallData"
         :key="item.id"
         :ref="(el) => setColumnRef(el, item.id)"
         class="waterfall-column"
@@ -28,7 +28,9 @@
       >
         <!-- 第一张图片（当前选中的图片） -->
         <div class="main-image-wrapper" @mouseenter="handleMainImageHover(item)" @mouseleave="handleMainImageLeave">
+          <!-- 有图片时显示 -->
           <el-image
+            v-if="item.selectImg?.previewOssUrl || item.selectImg?.originOssUrl"
             :src="item.selectImg?.previewOssUrl || item.selectImg?.originOssUrl"
             fit="contain"
             class="main-image"
@@ -38,12 +40,26 @@
             @load="(e: Event) => handleImageLoad(e, item.id)"
           />
 
+          <!-- 空图片占位符 -->
+          <div
+            v-else
+            class="empty-image-placeholder"
+            :style="{ height: emptyColumnHeights[item.id] ? `${emptyColumnHeights[item.id]}px` : '320px' }"
+          >
+            <div class="placeholder-content">
+              <svg-icon icon-class="fy-image" class="placeholder-icon" />
+              <p class="placeholder-text">暂无画面</p>
+              <p class="placeholder-hint">{{ item.sceneHint || item.dialogues || '等待生成分镜画面' }}</p>
+            </div>
+          </div>
+
           <!-- 悬浮操作按钮 -->
           <transition name="fade">
             <div v-if="hoveredMainImageId === item.id" class="hover-actions">
               <SceneActions
                 button-size="default"
                 tooltip-placement="top"
+                :disable-comment="!item.imgTaskId"
                 @comment="(event) => handleComment(item, event)"
                 @insert="handleInsert(item)"
                 @review="(event) => handleReview(item, event)"
@@ -57,7 +73,7 @@
             <!-- 镜号标签 -->
             <div class="card-number">
               <svg-icon icon-class="fy-juji" class="icon" />
-              <span>{{ String(item.orderNo || 0).padStart(2, '0') }}</span>
+              <span>{{ String(index + 1).padStart(2, '0') }}</span>
             </div>
 
             <!-- 状态指示圆点 -->
@@ -163,7 +179,7 @@
 <script setup lang="ts">
   import type { WaterfallItem } from '@/api/workbench/episode/waterfall';
   import { Loading } from '@element-plus/icons-vue';
-  import { ref } from 'vue';
+  import { onMounted, ref, watch } from 'vue';
   import SceneActions from '../../components/SceneActions.vue';
 
   interface Props {
@@ -191,6 +207,7 @@
   const hoveredHistoryImageId = ref<number | null>(null);
   const activeDropdownImageId = ref<number | null>(null); // 记录当前打开下拉菜单的图片ID
   const columnWidths = ref<Record<number, number>>({});
+  const emptyColumnHeights = ref<Record<number, number>>({}); // 存储空镜头的高度
   const columnRefs = new Map<number, HTMLElement>();
   const replaceDialogVisible = ref(false);
   const replaceInfo = ref<{ basicId: number; historyDetailId: number } | null>(null);
@@ -202,6 +219,41 @@
     }
   };
 
+  // 计算列宽的通用函数
+  const calculateColumnWidth = (aspectRatio: number) => {
+    const containerHeight = 320;
+    const calculatedWidth = Math.round(containerHeight * aspectRatio);
+    const minWidth = 280;
+    const maxWidth = 500;
+    return Math.max(minWidth, Math.min(maxWidth, calculatedWidth));
+  };
+
+  // 计算空镜头高度的通用函数（根据宽度反向计算）
+  const calculateEmptyColumnHeight = (width: number) => {
+    const defaultAspectRatio = 16 / 9; // 默认使用16:9比例
+    const calculatedHeight = Math.round(width / defaultAspectRatio);
+    const minHeight = 280;
+    const maxHeight = 320;
+    return Math.max(minHeight, Math.min(maxHeight, calculatedHeight));
+  };
+
+  // 为空镜头设置默认高度（根据宽度计算）
+  const initializeEmptyColumnHeight = (itemId: number, width: number) => {
+    emptyColumnHeights.value[itemId] = calculateEmptyColumnHeight(width);
+  };
+
+  // 获取已加载图片的平均宽度，用于空镜头
+  const getAverageColumnWidth = () => {
+    const widths = Object.values(columnWidths.value);
+    if (widths.length === 0) {
+      // 如果没有任何已加载的图片，使用16:9的默认宽度
+      return calculateColumnWidth(16 / 9);
+    }
+    // 返回平均宽度
+    const sum = widths.reduce((acc, width) => acc + width, 0);
+    return Math.round(sum / widths.length);
+  };
+
   // 处理图片加载完成，计算列宽
   const handleImageLoad = (event: Event, itemId: number) => {
     const img = event.target as HTMLImageElement;
@@ -211,21 +263,43 @@
     const naturalWidth = img.naturalWidth;
     const naturalHeight = img.naturalHeight;
 
-    // 主图片容器高度固定为 320px
-    const containerHeight = 320;
-
     // 根据图片宽高比计算实际显示宽度
     const aspectRatio = naturalWidth / naturalHeight;
-    const calculatedWidth = Math.round(containerHeight * aspectRatio);
-
-    // 设置最小和最大宽度限制
-    const minWidth = 280;
-    const maxWidth = 500;
-    const finalWidth = Math.max(minWidth, Math.min(maxWidth, calculatedWidth));
+    const finalWidth = calculateColumnWidth(aspectRatio);
 
     // 更新列宽
     columnWidths.value[itemId] = finalWidth;
+
+    // 更新所有空镜头的宽度
+    updateEmptyColumnWidths();
   };
+
+  // 更新所有空镜头的宽度和高度
+  const updateEmptyColumnWidths = () => {
+    const averageWidth = getAverageColumnWidth();
+    props.waterfallData.forEach((item) => {
+      // 如果没有图片，则使用平均宽度和计算的高度
+      if (!item.selectImg?.previewOssUrl && !item.selectImg?.originOssUrl) {
+        columnWidths.value[item.id] = averageWidth;
+        // 根据宽度计算对应的高度
+        initializeEmptyColumnHeight(item.id, averageWidth);
+      }
+    });
+  };
+
+  // 初始化空镜头宽度
+  onMounted(() => {
+    updateEmptyColumnWidths();
+  });
+
+  // 监听数据变化，更新空镜头宽度
+  watch(
+    () => props.waterfallData,
+    () => {
+      updateEmptyColumnWidths();
+    },
+    { deep: true }
+  );
 
   // 获取状态样式类（用于圆形徽章）
   const getStatusClass = (status: number) => {
@@ -480,6 +554,56 @@
             width: 100%;
             height: 100%;
             object-fit: contain;
+          }
+
+          // 空图片占位符
+          .empty-image-placeholder {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            background: linear-gradient(135deg, #f5f7fa 0%, #e8ecf1 100%);
+            border: 2px dashed #d1d5db;
+            border-radius: 4px;
+
+            .placeholder-content {
+              display: flex;
+              flex-direction: column;
+              align-items: center;
+              justify-content: center;
+              padding: 40px 20px;
+              text-align: center;
+
+              .placeholder-icon {
+                width: 64px;
+                height: 64px;
+                margin-bottom: 16px;
+                color: #c9cdd4;
+                opacity: 0.6;
+              }
+
+              .placeholder-text {
+                margin: 0 0 8px 0;
+                color: #86909c;
+                font-size: 16px;
+                font-weight: 500;
+              }
+
+              .placeholder-hint {
+                margin: 0;
+                max-width: 200px;
+                color: #a8adb5;
+                font-size: 12px;
+                line-height: 1.6;
+                word-break: break-word;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                display: -webkit-box;
+                -webkit-line-clamp: 3;
+                line-clamp: 3;
+                -webkit-box-orient: vertical;
+              }
+            }
           }
 
           // 悬浮操作按钮
