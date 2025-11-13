@@ -173,6 +173,11 @@
                       <svg-icon icon-class="fy-sence-upload" />
                     </div>
                   </el-tooltip>
+                  <el-tooltip v-if="row.envMaterialInfoVo" content="删除" placement="top">
+                    <div class="scene-action-btn scene-delete-btn" @click="handleDeleteScene(row)">
+                      <svg-icon icon-class="fy-del" style="width: 16px; height: 16px" />
+                    </div>
+                  </el-tooltip>
                 </div>
               </div>
 
@@ -274,7 +279,7 @@
 </template>
 
 <script setup lang="ts">
-  import { editSceneBasic, setSceneEnv } from '@/api/workbench/episode';
+  import { clearSceneEnv, editSceneBasic, setSceneEnv } from '@/api/workbench/episode';
   import type { CharacterClothingInfo } from '@/api/workbench/episode/types';
   import type { EpisodeInfo, LibrarySubInfo, Shot } from '@/api/workbench/project/types';
   import { addScene, deleteScene } from '@/api/workbench/storyboard';
@@ -542,6 +547,41 @@
       // 清空文件输入框
       if (sceneUploadInput.value) {
         sceneUploadInput.value.value = '';
+      }
+    }
+  };
+
+  // 删除场景
+  const handleDeleteScene = async (shot: Shot) => {
+    if (!shot.basicId) {
+      ElMessage.error('缺少场景基础信息ID');
+      return;
+    }
+
+    if (!shot.envMaterialInfoVo) {
+      ElMessage.warning('该镜头暂无场景图片');
+      return;
+    }
+
+    try {
+      await ElMessageBox.confirm('确定要删除该场景图片吗？', '删除场景', {
+        confirmButtonText: '确定删除',
+        cancelButtonText: '取消',
+        type: 'warning'
+      });
+
+      // 调用清除场景环境接口
+      await clearSceneEnv({
+        basicId: shot.basicId
+      });
+
+      ElMessage.success('场景删除成功');
+      // 刷新数据
+      emit('refresh');
+    } catch (error: any) {
+      if (error !== 'cancel') {
+        console.error('删除场景失败:', error);
+        ElMessage.error('删除场景失败，请重试');
       }
     }
   };
@@ -1347,6 +1387,16 @@
 
               .svg-icon {
                 font-size: 20px;
+              }
+
+              // 删除按钮特殊样式
+              &.scene-delete-btn {
+                &:hover {
+                  background: #fef0f0;
+                  .svg-icon {
+                    color: #f56c6c;
+                  }
+                }
               }
             }
           }

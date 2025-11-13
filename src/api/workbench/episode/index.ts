@@ -144,6 +144,18 @@ export const setSceneEnv = (data: SceneEnvSetRequest): AxiosPromise<void> => {
 };
 
 /**
+ * 清除场景环境
+ * @param data 场景环境清除请求数据
+ */
+export const clearSceneEnv = (data: { basicId: number }): AxiosPromise<void> => {
+  return request({
+    url: '/hivision/story/scene/env/clear',
+    method: 'put',
+    data
+  });
+};
+
+/**
  * 查询剧集角色列表
  * @param params 查询参数
  */

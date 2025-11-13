@@ -44,69 +44,37 @@
         <!-- 悬浮操作按钮 -->
         <transition name="fade">
           <div v-if="hoveredCardId === scene.id" class="hover-actions">
-            <el-tooltip content="评论" placement="bottom">
-              <el-button circle size="small" @click.stop="handleComment(scene)">
-                <svg-icon icon-class="fy-ping-lun" />
-              </el-button>
-            </el-tooltip>
-            <el-tooltip content="插入" placement="bottom">
-              <el-button circle size="small" @click.stop="handleInsert(scene)">
-                <svg-icon icon-class="fy-cha-ru" />
-              </el-button>
-            </el-tooltip>
-            <el-tooltip content="颜色" placement="bottom">
-              <el-button circle size="small" @click.stop="handleColor(scene)">
-                <svg-icon icon-class="fy-yan-se" />
-              </el-button>
-            </el-tooltip>
-            <el-tooltip content="删除" placement="bottom">
-              <el-button circle size="small" @click.stop="handleDelete(scene)">
-                <svg-icon icon-class="fy-shan-chu" />
-              </el-button>
-            </el-tooltip>
+            <SceneActions
+              button-size="default"
+              tooltip-placement="top"
+              @comment="(event) => handleComment(scene, event)"
+              @insert="handleInsert(scene)"
+              @review="(event) => handleReview(scene, event)"
+              @delete="handleDelete(scene)"
+            />
           </div>
         </transition>
 
-        <!-- 镜号标签 -->
-        <div class="card-number">
-          <svg-icon icon-class="fy-jing-hao" class="icon" />
-          <span>{{ String(scene.orderNo || 0).padStart(2, '0') }}</span>
-          <!-- 状态下拉菜单 -->
-          <el-dropdown trigger="click" @command="(status) => handleStatusChange(scene, status)" @click.stop>
-            <el-icon class="status-dropdown">
-              <ArrowDown />
-            </el-icon>
-            <template #dropdown>
-              <el-dropdown-menu>
-                <el-dropdown-item :command="2">
-                  <el-icon color="#67C23A">
-                    <CircleCheck />
-                  </el-icon>
-                  通过
-                </el-dropdown-item>
-                <el-dropdown-item :command="1">
-                  <el-icon color="#E6A23C">
-                    <Warning />
-                  </el-icon>
-                  待修改
-                </el-dropdown-item>
-              </el-dropdown-menu>
-            </template>
-          </el-dropdown>
+        <!-- 镜号区域 -->
+        <div class="card-number-wrapper">
+          <!-- 镜号标签 -->
+          <div class="card-number">
+            <svg-icon icon-class="fy-juji" class="icon" />
+            <span>{{ String(scene.orderNo || 0).padStart(2, '0') }}</span>
+          </div>
+
+          <!-- 状态指示圆点 -->
+          <div v-if="scene.imgStatus !== undefined" class="status-dot" :class="getDotClass(scene.imgStatus)"></div>
         </div>
 
-        <!-- 状态标签 -->
-        <div v-if="scene.imgStatus && scene.imgStatus !== 0" class="status-badge" :class="`status-${scene.imgStatus}`">
-          <el-icon v-if="scene.imgStatus === 2">
-            <CircleCheck />
-          </el-icon>
-          <el-icon v-else-if="scene.imgStatus === 1">
-            <Warning />
-          </el-icon>
-          <el-icon v-else-if="scene.imgStatus === 3">
-            <CircleClose />
-          </el-icon>
-          <span>{{ getStatusText(scene.imgStatus) }}</span>
+        <!-- 留言数量显示 -->
+        <div
+          v-if="scene.commentCnt && scene.commentCnt > 0"
+          class="comment-count-badge"
+          @click.stop="(event) => handleViewComments(scene, event)"
+        >
+          <svg-icon icon-class="fy-comment" class="comment-icon" />
+          <span class="count-text">{{ scene.commentCnt }}</span>
         </div>
       </div>
     </div>
@@ -115,9 +83,10 @@
 
 <script setup lang="ts">
   import type { StoryBoardSceneVo } from '@/api/workbench/storyboard/types';
-  import { ArrowDown, CircleCheck, CircleClose, Grid, Loading, Warning } from '@element-plus/icons-vue';
+  import { Grid, Loading } from '@element-plus/icons-vue';
   import { ElMessage } from 'element-plus';
   import { ref } from 'vue';
+  import SceneActions from '../../components/SceneActions.vue';
 
   interface Props {
     scenes: StoryBoardSceneVo[];
@@ -132,11 +101,12 @@
     (e: 'pass', scene: StoryBoardSceneVo): void;
     (e: 'edit', scene: StoryBoardSceneVo): void;
     (e: 'imageClick', scene: StoryBoardSceneVo): void;
-    (e: 'comment', scene: StoryBoardSceneVo): void;
+    (e: 'comment', scene: StoryBoardSceneVo, event: MouseEvent): void;
     (e: 'insert', scene: StoryBoardSceneVo): void;
-    (e: 'color', scene: StoryBoardSceneVo): void;
+    (e: 'review', scene: StoryBoardSceneVo, event: MouseEvent): void;
     (e: 'delete', scene: StoryBoardSceneVo): void;
     (e: 'statusChange', scene: StoryBoardSceneVo, status: number): void;
+    (e: 'viewComments', scene: StoryBoardSceneVo, event: MouseEvent): void;
   }>();
 
   // 悬浮的卡片ID
@@ -176,6 +146,22 @@
     }
   };
 
+  // 获取圆点颜色类名
+  // imgStatus: 0-未判定(灰色) 1-橙色(待修改) 2-绿色(通过) 3-红色(驳回)
+  const getDotClass = (status?: number) => {
+    switch (status) {
+      case 1:
+        return 'status-orange';
+      case 2:
+        return 'status-green';
+      case 3:
+        return 'status-red';
+      case 0:
+      default:
+        return 'status-gray';
+    }
+  };
+
   // 通过
   const handlePass = (scene: StoryBoardSceneVo) => {
     emit('pass', scene);
@@ -192,27 +178,23 @@
   };
 
   // 评论
-  const handleComment = (scene: StoryBoardSceneVo) => {
-    emit('comment', scene);
-    ElMessage.info(`评论功能待实现 - 镜号 ${scene.orderNo}`);
+  const handleComment = (scene: StoryBoardSceneVo, event: MouseEvent) => {
+    emit('comment', scene, event);
   };
 
   // 插入
   const handleInsert = (scene: StoryBoardSceneVo) => {
     emit('insert', scene);
-    ElMessage.info(`插入功能待实现 - 在镜号 ${scene.orderNo} 后插入`);
   };
 
-  // 修改颜色
-  const handleColor = (scene: StoryBoardSceneVo) => {
-    emit('color', scene);
-    ElMessage.info(`修改颜色功能待实现 - 镜号 ${scene.orderNo}`);
+  // 评审
+  const handleReview = (scene: StoryBoardSceneVo, event: MouseEvent) => {
+    emit('review', scene, event);
   };
 
   // 删除
   const handleDelete = (scene: StoryBoardSceneVo) => {
     emit('delete', scene);
-    ElMessage.info(`删除功能待实现 - 镜号 ${scene.orderNo}`);
   };
 
   // 状态变更
@@ -222,6 +204,11 @@
     scene.imgStatus = status;
     const statusText = getStatusText(status);
     ElMessage.success(`已将镜号 ${scene.orderNo} 标记为${statusText}`);
+  };
+
+  // 查看留言列表
+  const handleViewComments = (scene: StoryBoardSceneVo, event: MouseEvent) => {
+    emit('viewComments', scene, event);
   };
 </script>
 
@@ -326,35 +313,54 @@
           }
         }
 
-        .card-number {
+        .card-number-wrapper {
           position: absolute;
           top: 8px;
           left: 8px;
           z-index: 10;
           display: flex;
           align-items: center;
-          gap: 4px;
-          padding: 3px 8px;
-          border-radius: 13px;
-          background: rgba(91, 72, 251, 0.95);
-          color: white;
-          font-size: 12px;
-          font-weight: 500;
-          line-height: 1.5;
+          gap: 10px;
 
-          .icon {
-            width: 12px;
-            height: 12px;
+          .card-number {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            padding: 3px 8px;
+            border-radius: 46px;
+            background: rgba(255, 255, 255, 0.9);
+            color: #1d2129;
+            font-size: 12px;
+            font-weight: 500;
+            line-height: 1.5;
+
+            .icon {
+              width: 12px;
+              height: 12px;
+            }
           }
 
-          .status-dropdown {
-            margin-left: 4px;
-            cursor: pointer;
-            font-size: 12px;
-            transition: transform 0.2s;
+          .status-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            transition: all 0.3s;
 
-            &:hover {
-              transform: rotate(180deg);
+            // 状态颜色
+            &.status-gray {
+              background-color: #c9cdd4; // 未判定
+            }
+
+            &.status-orange {
+              background-color: #ff7d00; // 橙色 - 待修改
+            }
+
+            &.status-green {
+              background-color: #23c343; // 绿色 - 通过
+            }
+
+            &.status-red {
+              background-color: #f53f3f; // 红色 - 驳回
             }
           }
         }
@@ -394,6 +400,50 @@
 
           .el-icon {
             font-size: 14px;
+          }
+        }
+
+        .comment-count-badge {
+          position: absolute;
+          bottom: 8px;
+          left: 8px;
+          z-index: 10;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          width: 24px;
+          height: 24px;
+          border-radius: 5px;
+          background: #fff;
+          cursor: pointer;
+          transition: all 0.3s;
+
+          &:hover {
+            transform: scale(1.05);
+          }
+
+          .comment-icon {
+            width: 12px;
+            height: 12px;
+            font-size: 12px;
+            color: #5252ff;
+          }
+
+          .count-text {
+            position: absolute;
+            left: 12px;
+            top: -12px;
+            display: flex;
+            width: 20px;
+            height: 20px;
+            justify-content: center;
+            align-items: center;
+            flex-shrink: 0;
+            border-radius: 50%;
+            background: #5252ff;
+            color: #fff;
+            font-size: 12px;
+            line-height: 20px;
           }
         }
 
@@ -444,21 +494,30 @@
           opacity: 0;
           transition: opacity 0.3s;
 
-          .el-button {
-            width: 28px;
-            height: 28px;
-            padding: 0;
-            background: rgba(255, 255, 255, 0.95);
-            border: none;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+          :deep(.scene-actions) {
+            gap: 4px;
 
-            &:hover {
-              background: white;
-              transform: scale(1.05);
-            }
+            .el-button {
+              width: 32px;
+              height: 32px;
+              padding: 0;
+              border-radius: 6px;
+              background: #fff;
+              border: none;
+              box-shadow: none;
 
-            .svg-icon {
-              font-size: 14px;
+              &:hover {
+                background: #e8f3ff;
+
+                .svg-icon {
+                  color: #5468ff;
+                }
+              }
+
+              .svg-icon {
+                font-size: 14px;
+                color: #4e5969;
+              }
             }
           }
         }

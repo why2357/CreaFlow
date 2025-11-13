@@ -46,6 +46,7 @@
 
     /* 60 = navbar */
     min-height: calc(100vh - 60px);
+    max-height: calc(100vh - 60px);
     overflow: hidden;
   }
 

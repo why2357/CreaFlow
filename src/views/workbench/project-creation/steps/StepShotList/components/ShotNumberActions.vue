@@ -5,33 +5,25 @@
       <div class="dot-inner" :class="getDotColorClass()"></div>
     </div>
 
-    <!-- 功能菜单 -->
+    <!-- 功能菜单 - 使用统一的 SceneActions 组件 -->
     <div class="action-menu">
-      <el-tooltip content="留言" placement="top" :popper-options="{ strategy: 'fixed' }" :z-index="99999">
-        <div class="action-item" @click="handleComment">
-          <svg-icon icon-class="fy-ping-lun" class="action-icon" />
-        </div>
-      </el-tooltip>
-      <el-tooltip content="插入镜头" placement="top" :popper-options="{ strategy: 'fixed' }" :z-index="99999">
-        <div class="action-item" @click="handleInsert">
-          <svg-icon icon-class="fy-add-jing" class="action-icon" />
-        </div>
-      </el-tooltip>
-      <el-tooltip content="评审" placement="top" :popper-options="{ strategy: 'fixed' }" :z-index="99999">
-        <div class="action-item" @click="handleReview">
-          <svg-icon icon-class="fy-yan-se" class="action-icon" />
-        </div>
-      </el-tooltip>
-      <el-tooltip content="删除当前镜头" placement="top" :popper-options="{ strategy: 'fixed' }" :z-index="99999">
-        <div class="action-item delete" @click="handleDelete">
-          <svg-icon icon-class="fy-shan-chu" class="action-icon" />
-        </div>
-      </el-tooltip>
+      <SceneActions
+        button-size="default"
+        tooltip-placement="top"
+        :popper-options="{ strategy: 'fixed' }"
+        :z-index="99999"
+        @comment="handleComment"
+        @insert="handleInsert"
+        @review="handleReview"
+        @delete="handleDelete"
+      />
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
+  import SceneActions from '../../components/SceneActions.vue';
+
   interface Props {
     shotNumber: number;
     sceneStatus?: number; // 图片状态 0-未判定(灰色) 1-橙色 2-绿色 3-红色
@@ -124,8 +116,6 @@
       left: 60px;
       bottom: calc(100% + 16px);
       transform: translateX(-50%);
-      display: flex;
-      gap: 4px;
       padding: 8px;
       border-radius: 8px;
       z-index: 9999;
@@ -134,35 +124,31 @@
       transition: all 0.3s;
       white-space: nowrap;
 
-      .action-item {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        width: 32px;
-        height: 32px;
-        border-radius: 6px;
-        background: #fff;
-        cursor: pointer;
-        transition: all 0.3s;
+      // 使用 SceneActions 组件后，样式已在组件内部定义
+      // 这里只需要定位和显示控制
+      :deep(.scene-actions) {
+        gap: 4px;
 
-        .action-icon {
-          font-size: 14px;
-          color: #4e5969;
-        }
+        .el-button {
+          width: 32px;
+          height: 32px;
+          padding: 0;
+          border-radius: 6px;
+          background: #fff;
+          border: none;
+          box-shadow: none;
 
-        &:hover {
-          background: #e8f3ff;
+          &:hover {
+            background: #e8f3ff;
 
-          .action-icon {
-            color: #5468ff;
+            .svg-icon {
+              color: #5468ff;
+            }
           }
-        }
 
-        &.delete:hover {
-          background: #ffece8;
-
-          .action-icon {
-            color: #f53f3f;
+          .svg-icon {
+            font-size: 14px;
+            color: #4e5969;
           }
         }
       }
