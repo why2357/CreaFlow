@@ -1,5 +1,6 @@
 import { getInfo as getUserInfo, login as loginApi, logout as logoutApi } from '@/api/login';
 import { LoginData } from '@/api/types';
+import { getWalletPoints } from '@/api/system/userCenter';
 import defAva from '@/assets/images/profile.jpg';
 import store from '@/store';
 import { getToken, removeToken, setToken } from '@/utils/auth';
@@ -13,6 +14,7 @@ export const useUserStore = defineStore('user', () => {
   const avatar = ref('');
   const roles = ref<Array<string>>([]); // 用户角色编码集合 → 判断路由权限
   const permissions = ref<Array<string>>([]); // 用户权限编码集合 → 判断按钮权限
+  const walletPoints = ref<number>(0); // 用户钱包积分
 
   /**
    * 登录
@@ -79,6 +81,16 @@ export const useUserStore = defineStore('user', () => {
     avatar.value = value;
   };
 
+  // 更新钱包积分
+  const updateWalletPoints = async (): Promise<void> => {
+    try {
+      const res = await getWalletPoints();
+      walletPoints.value = res.data || 0;
+    } catch (error) {
+      console.error('获取钱包积分失败:', error);
+    }
+  };
+
   return {
     userId,
     token,
@@ -86,10 +98,12 @@ export const useUserStore = defineStore('user', () => {
     avatar,
     roles,
     permissions,
+    walletPoints,
     login,
     getInfo,
     logout,
-    setAvatar
+    setAvatar,
+    updateWalletPoints
   };
 });
 

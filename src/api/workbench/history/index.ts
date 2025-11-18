@@ -4,13 +4,13 @@ import type { AssetListRequest, ProjectHistoryDetailVo } from './types';
 
 /**
  * 查询资产列表
- * @param data 查询参数
- * @returns 项目历史明细列表
+ * @param params 查询参数
+ * @returns 项目历史明细列表（分页）
  */
-export const getAssetList = (data: AssetListRequest): AxiosPromise<ProjectHistoryDetailVo[]> => {
+export const getAssetList = (params: AssetListRequest): AxiosPromise<ProjectHistoryDetailVo[]> => {
   return request({
     url: '/hivision/story/history-detail/asset-list',
-    method: 'post',
-    data
+    method: 'get',
+    params
   });
 };

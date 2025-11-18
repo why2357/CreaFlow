@@ -39,7 +39,7 @@
       </div>
 
       <!-- 资产网格 -->
-      <div class="asset-grid" v-loading="activeTab === 'image' ? imageLoading : videoLoading">
+      <div class="asset-grid">
         <div
           v-for="(item, index) in activeTab === 'image' ? imageList : videoList"
           :key="`${item.id}-${index}`"
@@ -73,6 +73,28 @@
           </div>
         </div>
 
+        <!-- 加载更多提示 -->
+        <div
+          v-if="activeTab === 'image' ? imageLoading && imageList.length > 0 : videoLoading && videoList.length > 0"
+          class="loading-more"
+        >
+          <el-icon class="is-loading"><Loading /></el-icon>
+          <span>加载中...</span>
+        </div>
+
+        <!-- 没有更多数据提示 -->
+        <div
+          v-if="
+            activeTab === 'image'
+              ? !imageLoading && !imageHasMore && imageList.length > 0
+              : !videoLoading && !videoHasMore && videoList.length > 0
+          "
+          class="no-more"
+        >
+          已加载全部数据
+        </div>
+
+        <!-- 空状态 -->
         <div
           v-if="
             activeTab === 'image' ? !imageLoading && imageList.length === 0 : !videoLoading && videoList.length === 0
@@ -106,9 +128,9 @@
   import type { ProjectHistoryDetailVo } from '@/api/workbench/history/types';
   import { listProject } from '@/api/workbench/project';
   import type { ProjectPageInfoResponseDto } from '@/api/workbench/project/types';
-  import { Picture as IconPicture, VideoPlay } from '@element-plus/icons-vue';
+  import { Picture as IconPicture, Loading, VideoPlay } from '@element-plus/icons-vue';
   import { ElMessage } from 'element-plus';
-  import { onMounted, ref } from 'vue';
+  import { onMounted, onUnmounted, ref } from 'vue';
 
   // 项目列表
   const projectList = ref<ProjectPageInfoResponseDto[]>([]);
@@ -126,13 +148,17 @@
   const imageList = ref<ProjectHistoryDetailVo[]>([]);
   const imageLoading = ref(false);
   const imagePageNum = ref(1);
+  const imagePageSize = ref(40);
   const imageTotal = ref(0);
+  const imageHasMore = ref(true);
 
   // 视频列表
   const videoList = ref<ProjectHistoryDetailVo[]>([]);
   const videoLoading = ref(false);
   const videoPageNum = ref(1);
+  const videoPageSize = ref(40);
   const videoTotal = ref(0);
+  const videoHasMore = ref(true);
 
   // 预览
   const previewVisible = ref(false);
@@ -227,6 +253,8 @@
     videoPageNum.value = 1;
     imageTotal.value = 0;
     videoTotal.value = 0;
+    imageHasMore.value = true;
+    videoHasMore.value = true;
 
     // 只有当有剧集信息时才加载资源
     if (episodeList.value.length > 0) {
@@ -235,35 +263,69 @@
   };
 
   // 加载资源列表
-  const loadAssets = async () => {
-    // 如果没有选中项目或没有剧集信息，直接返回
-    if (!selectedProjectId.value || episodeList.value.length === 0) {
+  const loadAssets = async (isLoadMore = false) => {
+    // 如果没有选中项目或没有选中剧集，直接返回
+    if (!selectedProjectId.value || !selectedEpisodeId.value) {
+      return;
+    }
+
+    const isImage = activeTab.value === 'image';
+    const hasMore = isImage ? imageHasMore.value : videoHasMore.value;
+
+    // 如果是加载更多且已经没有更多数据，直接返回
+    if (isLoadMore && !hasMore) {
+      return;
+    }
+
+    // 如果正在加载中，避免重复请求
+    if (isImage ? imageLoading.value : videoLoading.value) {
       return;
     }
 
     try {
-      if (activeTab.value === 'image') {
+      if (isImage) {
         imageLoading.value = true;
       } else {
         videoLoading.value = true;
       }
 
+      const currentPageNum = isImage ? imagePageNum.value : videoPageNum.value;
+      const currentPageSize = isImage ? imagePageSize.value : videoPageSize.value;
+
       // 使用新的资产列表接口
       const requestData = {
         projectId: selectedProjectId.value,
-        episodeId: selectedEpisodeId.value ?? undefined,
-        sceneType: activeTab.value === 'image' ? 1 : 2 // 1-图片 2-视频
+        episodeId: selectedEpisodeId.value, // episodeId 必填
+        sceneType: isImage ? 1 : 2, // 1-图片 2-视频
+        pageNum: currentPageNum,
+        pageSize: currentPageSize
       };
 
       const res = await getAssetList(requestData);
+      console.log('res', res);
 
-      if (res.data && Array.isArray(res.data)) {
-        if (activeTab.value === 'image') {
-          imageList.value = res.data;
-          imageTotal.value = res.data.length;
+      if (res.rows) {
+        const { rows = [], total = 0 } = res;
+
+        if (isImage) {
+          if (isLoadMore) {
+            // 加载更多：追加数据
+            imageList.value = [...imageList.value, ...rows];
+          } else {
+            // 首次加载：替换数据
+            imageList.value = rows;
+          }
+          imageTotal.value = total;
+          // 判断是否还有更多数据
+          imageHasMore.value = imageList.value.length < total;
         } else {
-          videoList.value = res.data;
-          videoTotal.value = res.data.length;
+          if (isLoadMore) {
+            videoList.value = [...videoList.value, ...rows];
+          } else {
+            videoList.value = rows;
+          }
+          videoTotal.value = total;
+          videoHasMore.value = videoList.value.length < total;
         }
       }
     } catch (error) {
@@ -273,6 +335,17 @@
       imageLoading.value = false;
       videoLoading.value = false;
     }
+  };
+
+  // 加载更多
+  const loadMore = async () => {
+    const isImage = activeTab.value === 'image';
+    if (isImage) {
+      imagePageNum.value++;
+    } else {
+      videoPageNum.value++;
+    }
+    await loadAssets(true);
   };
 
   // 预览资源（预留功能，用于点击卡片查看详情）
@@ -348,8 +421,46 @@
     }
   };
 
+  // 滚动容器引用
+  const assetGridRef = ref<HTMLElement | null>(null);
+
+  // 处理滚动事件
+  const handleScroll = (event: Event) => {
+    const target = event.target as HTMLElement;
+    if (!target) return;
+
+    const { scrollTop, scrollHeight, clientHeight } = target;
+    // 当滚动到距离底部 100px 时触发加载
+    const threshold = 100;
+
+    if (scrollHeight - scrollTop - clientHeight < threshold) {
+      const isImage = activeTab.value === 'image';
+      const hasMore = isImage ? imageHasMore.value : videoHasMore.value;
+      const loading = isImage ? imageLoading.value : videoLoading.value;
+
+      // 如果还有更多数据且当前没有在加载中，则加载更多
+      if (hasMore && !loading) {
+        loadMore();
+      }
+    }
+  };
+
   onMounted(() => {
     getProjectList();
+
+    // 获取滚动容器并添加滚动监听
+    const assetGrid = document.querySelector('.asset-grid');
+    if (assetGrid) {
+      assetGridRef.value = assetGrid as HTMLElement;
+      assetGrid.addEventListener('scroll', handleScroll);
+    }
+  });
+
+  onUnmounted(() => {
+    // 移除滚动监听
+    if (assetGridRef.value) {
+      assetGridRef.value.removeEventListener('scroll', handleScroll);
+    }
   });
 </script>
 
@@ -514,7 +625,6 @@
       flex: 1; // 占据剩余空间
       display: grid;
       grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
-      height: 226px;
       gap: 20px;
       padding: 24px;
       align-content: start;
@@ -663,6 +773,29 @@
             }
           }
         }
+      }
+
+      .loading-more,
+      .no-more {
+        grid-column: 1 / -1;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        padding: 20px 0;
+        color: #86909c;
+        font-size: 14px;
+        gap: 8px;
+      }
+
+      .loading-more {
+        .el-icon {
+          font-size: 16px;
+        }
+      }
+
+      .no-more {
+        color: #c9cdd4;
+        font-size: 13px;
       }
 
       .empty-state {

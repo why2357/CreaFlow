@@ -1,7 +1,7 @@
 <template>
   <div class="shot-number-actions">
     <!-- 小圆点 -->
-    <div class="action-dot">
+    <div class="action-dot" @click.stop="handleDotClick">
       <div class="dot-inner" :class="getDotColorClass()"></div>
     </div>
 
@@ -71,6 +71,11 @@
   const handleDelete = () => {
     emit('delete');
   };
+
+  // 点击小圆点触发评审
+  const handleDotClick = (event: MouseEvent) => {
+    emit('review', event);
+  };
 </script>
 
 <style scoped lang="scss">
@@ -85,6 +90,20 @@
       cursor: pointer;
       transition: all 0.3s;
       z-index: 1;
+      padding: 2px;
+
+      &:hover {
+        .dot-inner {
+          transform: scale(1.2);
+          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+        }
+      }
+
+      &:active {
+        .dot-inner {
+          transform: scale(1.1);
+        }
+      }
 
       .dot-inner {
         width: 12px;

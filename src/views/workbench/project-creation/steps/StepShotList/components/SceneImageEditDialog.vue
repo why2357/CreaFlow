@@ -154,6 +154,7 @@
 <script setup lang="ts">
   import { editSceneImage } from '@/api/workbench/storyboard';
   import { useProjectStore } from '@/store/modules/project';
+  import { useUserStore } from '@/store/modules/user';
   import { uploadFile } from '@/utils/uploadFile';
   import { Close, Picture, Plus } from '@element-plus/icons-vue';
   import { ElMessage } from 'element-plus';
@@ -181,8 +182,9 @@
     (e: 'success'): void;
   }>();
 
-  // Get project store
+  // Get stores
   const projectStore = useProjectStore();
+  const userStore = useUserStore();
 
   // Dialog visibility
   const dialogVisible = computed({
@@ -495,6 +497,10 @@
       });
 
       ElMessage.success('生成成功');
+
+      // 更新钱包积分
+      await userStore.updateWalletPoints();
+
       emit('success');
       handleClose();
     } catch (error) {

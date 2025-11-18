@@ -125,6 +125,7 @@
   import type { EpisodeInfoResponseDto, EpisodeSceneItemInfo } from '@/api/workbench/episode/types';
   import type { Episode, Shot, ShotForm } from '@/api/workbench/project/types';
   import { useProjectStore } from '@/store/modules/project';
+  import { useUserStore } from '@/store/modules/user';
   import { convertModelsToOptions, getDefaultModel, getModelName } from '@/utils/projectUtils';
   import { ElMessage, ElMessageBox } from 'element-plus';
   import { computed, onMounted, ref, watch } from 'vue';
@@ -137,6 +138,7 @@
   import StoryboardTable from './components/StoryboardTable.vue';
 
   const projectStore = useProjectStore();
+  const userStore = useUserStore();
   console.log('projectStore.episodes', projectStore.episodes);
 
   // StoryboardTable 组件引用
@@ -515,6 +517,9 @@
 
       ElMessage.success('图片生成中，请稍候...');
 
+      // 更新钱包积分
+      await userStore.updateWalletPoints();
+
       // 重新加载分镜列表以获取最新状态
       await loadShots();
     } catch (error) {
@@ -627,6 +632,9 @@
       });
 
       ElMessage.success('批量生成中，请稍候...');
+
+      // 更新钱包积分
+      await userStore.updateWalletPoints();
 
       // 重新加载分镜列表以获取最新状态
       await loadShots();

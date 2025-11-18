@@ -43,7 +43,13 @@
                 <el-icon><Close /></el-icon>
               </div>
             </div>
-            <div class="member-name">{{ getMemberShortName(member.nickName || '') }}</div>
+            <el-tooltip
+              :content="member.nickName || ''"
+              placement="top"
+              :disabled="!member.nickName || member.nickName.length <= 6"
+            >
+              <div class="member-name">{{ getMemberDisplayName(member.nickName || '') }}</div>
+            </el-tooltip>
           </div>
         </div>
       </div>
@@ -109,9 +115,9 @@
   const inviteVisible = ref(false);
   const hoveredMemberId = ref<string | number | null>(null);
 
-  // 获取成员简称
-  const getMemberShortName = (name: string): string => {
-    // 如果名字过长，只显示前面几个字
+  // 获取成员显示名称（超过6个字符显示省略号）
+  const getMemberDisplayName = (name: string): string => {
+    if (!name) return '';
     return name.length > 6 ? name.substring(0, 6) + '...' : name;
   };
 

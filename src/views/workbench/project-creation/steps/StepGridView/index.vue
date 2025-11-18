@@ -1,5 +1,10 @@
 <template>
   <div class="step-grid-view">
+    <!-- 顶部操作栏 -->
+    <div class="top-action-bar">
+      <el-button type="primary" class="review-button" @click="handleOpenReviewDialog"> 审阅 </el-button>
+    </div>
+
     <!-- 主内容区 - 故事板网格视图 -->
     <div class="content-area">
       <GridView
@@ -42,6 +47,14 @@
       :trigger-ref="reviewTriggerRef"
       @success="handleReviewSuccess"
     />
+
+    <!-- 故事板审阅弹窗 -->
+    <StoryboardReviewDialog
+      v-model="storyboardReviewDialogVisible"
+      :scene-list="scenes"
+      :initial-index="0"
+      @refresh="loadStoryBoard"
+    />
   </div>
 </template>
 
@@ -57,6 +70,7 @@
   import CommentListDialog from '../StepShotList/components/CommentListDialog.vue';
   import ReviewDialog from '../StepShotList/components/ReviewDialog.vue';
   import GridView from './components/GridView.vue';
+  import StoryboardReviewDialog from './components/StoryboardReviewDialog.vue';
 
   const projectStore = useProjectStore();
 
@@ -84,6 +98,9 @@
   const reviewDialogVisible = ref(false);
   const reviewTriggerRef = ref<HTMLElement>();
 
+  // 故事板审阅弹窗
+  const storyboardReviewDialogVisible = ref(false);
+
   // 加载故事板数据
   const loadStoryBoard = async () => {
     if (!selectedEpisodeId.value) return;
@@ -96,7 +113,11 @@
       });
 
       if (res.data) {
-        scenes.value = res.data;
+        // 确保每个场景的 commentCnt 字段都有初始值
+        scenes.value = res.data.map((scene) => ({
+          ...scene,
+          commentCnt: scene.commentCnt ?? 0
+        }));
       } else {
         scenes.value = [];
       }
@@ -250,14 +271,40 @@
   const handleImageClick = (scene: StoryBoardSceneVo) => {
     console.log('点击图片:', scene);
   };
+
+  // 打开故事板审阅弹窗
+  const handleOpenReviewDialog = () => {
+    if (scenes.value.length === 0) {
+      ElMessage.warning('暂无分镜可供审阅');
+      return;
+    }
+    storyboardReviewDialogVisible.value = true;
+  };
 </script>
 
 <style scoped lang="scss">
   .step-grid-view {
     display: flex;
+    flex-direction: column;
     width: 100%;
     height: 100%;
     background: #f5f7fa;
+  }
+
+  .top-action-bar {
+    position: absolute;
+    top: 20px;
+    left: 20px;
+    z-index: 100;
+
+    .review-button {
+      height: 40px;
+      padding: 0 24px;
+      font-size: 14px;
+      font-weight: 500;
+      border-radius: 46px;
+      box-shadow: 0 2px 8px rgba(82, 82, 255, 0.2);
+    }
   }
 
   .content-area {

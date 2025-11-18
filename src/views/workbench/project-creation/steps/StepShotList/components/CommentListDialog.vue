@@ -1,6 +1,7 @@
 <template>
   <el-popover
     v-if="props.basicId && props.basicId > 0"
+    :key="`comment-popover-${props.basicId}`"
     v-model:visible="popoverVisible"
     :virtual-ref="triggerRef"
     trigger="manual"
@@ -10,6 +11,7 @@
     popper-class="comment-list-popover"
     :offset="8"
     @show="loadComments"
+    @hide="handleClose"
   >
     <div v-loading="loading" class="comment-list">
       <!-- 标题栏 -->
@@ -86,30 +88,55 @@
   const loading = ref(false);
   const comments = ref<SceneCommentVo[]>([]);
 
+  // 记录上次加载的 basicId，用于检测是否切换了场景
+  const lastLoadedBasicId = ref<number | null>(null);
+
+  // 关闭弹窗时清空评论列表
+  const handleClose = () => {
+    comments.value = [];
+    lastLoadedBasicId.value = null;
+  };
+
   // 加载留言列表
   const loadComments = async () => {
-    // 清除之前的缓存，防止显示旧数据
-    comments.value = [];
-
-    // 如果传入了 commentList，则直接使用，不调用接口
-    if (props.commentList && props.commentList.length > 0) {
-      // 按创建时间降序排序，显示所有评论
-      const sortedComments = [...props.commentList]
-        .filter((comment) => comment && comment.id) // 过滤无效评论
-        .sort((a, b) => {
-          const timeA = new Date(a.createTime || 0).getTime();
-          const timeB = new Date(b.createTime || 0).getTime();
-          return timeB - timeA;
-        });
-      comments.value = sortedComments;
-      console.log('使用传入的 commentList，无需调用接口');
-      return;
+    // 如果 basicId 发生变化，立即清空评论列表，防止显示旧数据
+    if (lastLoadedBasicId.value !== props.basicId) {
+      comments.value = [];
+      lastLoadedBasicId.value = props.basicId;
     }
 
-    // 否则调用接口获取（只显示最新的一条）
-    console.log('调用接口获取评论列表');
+    // 显示加载状态，提升用户体验
+    loading.value = true;
+
+    // 添加最小加载时间，确保用户看到加载状态
+    const minLoadingTime = 300; // 300ms
+    const startTime = Date.now();
+
     try {
-      loading.value = true;
+      // 如果传入了 commentList，则直接使用，不调用接口
+      if (props.commentList && props.commentList.length > 0) {
+        // 按创建时间降序排序，显示所有评论
+        const sortedComments = [...props.commentList]
+          .filter((comment) => comment && comment.id) // 过滤无效评论
+          .sort((a, b) => {
+            const timeA = new Date(a.createTime || 0).getTime();
+            const timeB = new Date(b.createTime || 0).getTime();
+            return timeB - timeA;
+          });
+
+        // 确保最小加载时间
+        const elapsed = Date.now() - startTime;
+        if (elapsed < minLoadingTime) {
+          await new Promise((resolve) => setTimeout(resolve, minLoadingTime - elapsed));
+        }
+
+        comments.value = sortedComments;
+        console.log('使用传入的 commentList，无需调用接口');
+        return;
+      }
+
+      // 否则调用接口获取（只显示最新的一条）
+      console.log('调用接口获取评论列表');
       const res = await getSceneCommentList({
         basicId: props.basicId,
         sceneType: props.sceneType
@@ -127,10 +154,22 @@
       } else {
         comments.value = [];
       }
+
+      // 确保最小加载时间
+      const elapsed = Date.now() - startTime;
+      if (elapsed < minLoadingTime) {
+        await new Promise((resolve) => setTimeout(resolve, minLoadingTime - elapsed));
+      }
     } catch (error) {
       console.error('加载留言列表失败:', error);
       ElMessage.error('加载留言列表失败');
       comments.value = [];
+
+      // 即使出错也确保最小加载时间
+      const elapsed = Date.now() - startTime;
+      if (elapsed < minLoadingTime) {
+        await new Promise((resolve) => setTimeout(resolve, minLoadingTime - elapsed));
+      }
     } finally {
       loading.value = false;
     }

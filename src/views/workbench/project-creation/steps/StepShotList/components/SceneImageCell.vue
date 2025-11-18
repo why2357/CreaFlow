@@ -284,25 +284,26 @@
     return !props.materialInfoVoList || props.materialInfoVoList.length === 0;
   });
 
-  // taskStatus 为 undefined 或 (taskStatus === 3 且没有历史图片) 时，查看历史、下载、剪裁、收藏、编辑操作禁用
+  // 没有图片时，查看历史、下载、剪裁、收藏、编辑操作禁用
+  // 或者 taskStatus === 3 且没有历史图片时，也禁用这些操作
   const isHistoryDisabled = computed(() => {
-    return props.taskStatus === null || (props.taskStatus === 3 && hasNoImages.value);
+    return hasNoImages.value || props.taskStatus === null || (props.taskStatus === 3 && hasNoImages.value);
   });
 
   const isDownloadDisabled = computed(() => {
-    return props.taskStatus === null || (props.taskStatus === 3 && hasNoImages.value);
+    return hasNoImages.value || props.taskStatus === null || (props.taskStatus === 3 && hasNoImages.value);
   });
 
   const isCropDisabled = computed(() => {
-    return props.taskStatus === null || (props.taskStatus === 3 && hasNoImages.value);
+    return hasNoImages.value || props.taskStatus === null || (props.taskStatus === 3 && hasNoImages.value);
   });
 
   const isFavoriteDisabled = computed(() => {
-    return props.taskStatus === null || (props.taskStatus === 3 && hasNoImages.value);
+    return hasNoImages.value || props.taskStatus === null || (props.taskStatus === 3 && hasNoImages.value);
   });
 
   const isEditDisabled = computed(() => {
-    return props.taskStatus === null || (props.taskStatus === 3 && hasNoImages.value);
+    return hasNoImages.value || props.taskStatus === null || (props.taskStatus === 3 && hasNoImages.value);
   });
 
   // 收藏功能是否可用（本地上传图片不能收藏，多张图片时也不能收藏）

@@ -27,7 +27,9 @@
               <div class="member-avatar" :style="{ background: member.bgColor, color: member.textColor }">
                 {{ member.icon }}
               </div>
-              <span class="member-name">{{ member.name }}</span>
+              <el-tooltip :content="member.name" placement="top" :disabled="!member.name || member.name.length <= 6">
+                <span class="member-name">{{ getMemberDisplayName(member.name) }}</span>
+              </el-tooltip>
             </div>
             <div class="col col-shot">
               <span class="total"> {{ member.imgTaskCount }}</span>
@@ -52,6 +54,12 @@
   import { computed } from 'vue';
 
   const projectStore = useProjectStore();
+
+  // 获取成员显示名称（超过6个字符显示省略号）
+  const getMemberDisplayName = (name: string): string => {
+    if (!name) return '';
+    return name.length > 6 ? name.substring(0, 6) + '...' : name;
+  };
 
   // 积分颜色
   const getScoreColor = (score: number): string => {

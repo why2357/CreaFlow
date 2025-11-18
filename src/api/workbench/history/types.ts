@@ -7,13 +7,29 @@
  */
 export interface AssetListRequest {
   /**
-   * 剧集id
+   * 剧集id（必填）
    */
-  episodeId?: number;
+  episodeId: number;
   /**
    * 历史id列表（无需传参）
    */
   historyIds?: number[];
+  /**
+   * 排序的方向desc或者asc
+   */
+  isAsc?: string;
+  /**
+   * 排序列
+   */
+  orderByColumn?: string;
+  /**
+   * 当前页数
+   */
+  pageNum?: number;
+  /**
+   * 分页大小
+   */
+  pageSize?: number;
   /**
    * 项目id
    */

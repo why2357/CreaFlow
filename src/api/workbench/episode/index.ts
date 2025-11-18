@@ -349,10 +349,16 @@ export interface SceneMainHistoryInfo {
   sceneDesc?: string;
   /** 镜头提示 */
   sceneHint?: string;
+  /** 提示词（用于视频生成）*/
+  prompt?: string;
   /** 镜头历史明细 */
   sceneItemHistoryInfoList?: SceneItemHistoryInfo[];
   /** 镜头类型 1-图片 2-视频 */
   sceneType?: number;
+  /** 视频时长（秒）*/
+  duration?: number;
+  /** 视频分辨率 */
+  resolution?: string;
 }
 
 export interface SceneItemHistoryInfo {
@@ -421,6 +427,103 @@ export interface ImageReplaceRequestDto {
 export const replaceSceneImage = (data: ImageReplaceRequestDto): AxiosPromise<void> => {
   return request({
     url: '/hivision/story/scene/replace-img',
+    method: 'post',
+    data
+  });
+};
+
+// ==================== 视频相关接口 ====================
+
+import type {
+  AiModelInfoDto,
+  ExportVideoPromptTemplateRequest,
+  GenVideoRequest,
+  VideoEpisodeInfoResponseDto
+} from './types';
+
+/**
+ * 获取视频镜头列表
+ * @param episodeId 剧集ID
+ */
+export const getVideoSceneList = (episodeId: number): AxiosPromise<VideoEpisodeInfoResponseDto> => {
+  return request({
+    url: '/hivision/story/episode/video-scene-list',
+    method: 'get',
+    params: { episodeId }
+  });
+};
+
+/**
+ * 查询视频模型配置
+ */
+export const getVideoModelConfig = (): AxiosPromise<AiModelInfoDto> => {
+  return request({
+    url: '/hivision/story/episode/video/model-config',
+    method: 'get'
+  });
+};
+
+/**
+ * 生成视频
+ * @param data 生成视频请求数据
+ */
+export const generateVideo = (data: GenVideoRequest): AxiosPromise<void> => {
+  return request({
+    url: '/hivision/story/episode/generate-video',
+    method: 'post',
+    data
+  });
+};
+
+/**
+ * 导入视频提示词模版
+ * @param file 文件
+ */
+export const importVideoPromptTemplate = (file: File): AxiosPromise<void> => {
+  const formData = new FormData();
+  formData.append('file', file);
+
+  return request({
+    url: '/hivision/story/episode/video/prompt-template/import',
+    method: 'post',
+    data: formData,
+    headers: {
+      'Content-Type': 'multipart/form-data'
+    }
+  });
+};
+
+/**
+ * 导出视频提示词模版
+ * @param data 导出请求数据
+ */
+export const exportVideoPromptTemplate = (data: ExportVideoPromptTemplateRequest): AxiosPromise<Blob> => {
+  return request({
+    url: '/hivision/story/episode/video/prompt-template/export',
+    method: 'post',
+    data,
+    responseType: 'blob'
+  });
+};
+
+/**
+ * 编辑视频提示词
+ * @param data 编辑请求数据
+ */
+export interface EditVideoPromptRequest {
+  /** 场景基础信息ID */
+  basicId: number;
+  /** 视频提示词 */
+  videoPrompt?: string;
+  /** 尾帧OSS ID */
+  endFrameOssId?: number;
+  /** 尾帧OSS URL */
+  endFrameOssUrl?: string;
+}
+
+export const editVideoPrompt = (data: EditVideoPromptRequest): AxiosPromise<void> => {
+  return request({
+    url: '/hivision/story/scene/edit',
     method: 'post',
     data
   });

@@ -239,3 +239,172 @@ export interface SceneRole {
   /** 角色ID */
   roleId: number;
 }
+
+// ==================== 视频相关类型 ====================
+
+/**
+ * 视频模型点数配置 VideoModelPointConfig (旧版，保留兼容)
+ */
+export interface VideoModelPointConfig {
+  /** 时长 */
+  duration?: number;
+  /** 单次扣费数量 */
+  points?: number;
+  /** 分辨率 */
+  resolution?: string;
+}
+
+/**
+ * 时长配置 DurationConfig
+ */
+export interface DurationConfig {
+  /** 时长 */
+  duration?: number;
+  /** 单次扣费数量 */
+  points?: number;
+}
+
+/**
+ * 分辨率配置 ResolutionConfig
+ */
+export interface ResolutionConfig {
+  /** 时长配置列表 */
+  durationConfigs?: DurationConfig[];
+  /** 分辨率 */
+  resolution?: string;
+}
+
+/**
+ * 视频模型配置 VideoModelConfigVo
+ */
+export interface VideoModelConfigVo {
+  /** 模型码 */
+  modelCode?: string;
+  /** 模型名称 */
+  modelName?: string;
+  /** 视频模型点数配置 */
+  resolutionConfigs?: ResolutionConfig[];
+}
+
+/**
+ * AI模型信息 AiModelInfoDto (旧版，保留兼容)
+ */
+export interface AiModelInfoDto {
+  /** 模型码 */
+  modelCode?: string;
+  /** 模型名称 */
+  modelName?: string;
+  /** 单次扣费数量 */
+  points?: number;
+  /** 视频模型点数配置 */
+  videoModelPointConfigs?: VideoModelPointConfig[];
+}
+
+/**
+ * 视频镜头场景项信息（扩展 EpisodeSceneItemInfo）
+ */
+export interface VideoSceneItemInfo extends EpisodeSceneItemInfo {
+  /** 视频提示词 */
+  videoPrompt?: string;
+  historyDetailId?: number;
+  imgUrl?: string;
+  /** 视频链接 */
+  videoUrl?: string;
+  /** 视频历史列表（最近2条记录） */
+  historyVos?: HivisionProjectHistoryVo[];
+  /** 选中的模型配置 (前端使用，格式：resolution-duration) */
+  selectedModelConfig?: string;
+  /** 视频生成中状态 (前端使用) */
+  videoGenerating?: boolean;
+  /** 尾帧OSS ID */
+  endFrameOssId?: number;
+  /** 尾帧OSS URL */
+  endFrameOssUrl?: string;
+}
+
+/**
+ * 项目历史视图对象 HivisionProjectHistoryVo
+ */
+export interface HivisionProjectHistoryVo {
+  /** 基础镜头id */
+  basicId?: number;
+  historyDetailId?: number;
+  /** 剧集id */
+  episodeId?: number;
+  /** 生成图片次数 */
+  genImgCnt?: number;
+  /** 生成视频次数 */
+  genVideoCnt?: number;
+  /** 主键 */
+  id?: number;
+  /** 媒体资源id */
+  materialId?: number;
+  /** 模型码 */
+  modelCode?: string;
+  /** 项目id */
+  projectId?: number;
+  /** 镜头描述 */
+  sceneDesc?: string;
+  /** 镜头提示 */
+  sceneHint?: string;
+  /** 镜头类型 1-图片 2-视频 */
+  sceneType?: number;
+  /** 启用状态 0-启用 1-禁用 */
+  status?: number;
+  /** 任务id */
+  taskId?: number;
+  /** 任务状态 0-待执行 1-执行中 2-执行成功 3-执行失败 */
+  taskStatus?: number;
+  /** 用户id */
+  userId?: number;
+  /** 视频URL */
+  videoUrl?: string;
+  /** 封面图URL */
+  imgUrl?: string;
+}
+
+/**
+ * 视频剧集信息响应 VideoEpisodeInfoResponseDto
+ */
+export interface VideoEpisodeInfoResponseDto {
+  /** 批量状态 0-未操作 1-已操作 */
+  batchStatus?: number;
+  /** 剧集id */
+  episodeId?: number;
+  /** 剧集名称 */
+  episodeName?: string;
+  /** 剧集场景信息 */
+  episodeSceneItemInfoList?: VideoSceneItemInfo[];
+  /** 模式码 */
+  modeCode?: string;
+  /** 项目id */
+  projectId?: number;
+  /** 文生文任务状态 0-待执行 1-执行中 2-执行成功 3-执行失败 */
+  taskStatus?: number;
+}
+
+/**
+ * 生成视频请求 GenVideoBo
+ */
+export interface GenVideoRequest {
+  /** 分镜id列表 */
+  basicIds: number[];
+  /** 时长 */
+  duration: number;
+  /** 模型码（jm-3.0：即梦3.0）*/
+  modelCode: string;
+  /** 单个视频扣除的点数（无需传参）*/
+  pointsPerVideo?: number;
+  /** 分辨率 */
+  resolution: string;
+  /** 尾帧OSS ID（可选）*/
+  tailFrameOssId?: number;
+}
+
+/**
+ * 导出视频提示词模板请求 VideoPromptTemplateBo
+ */
+export interface ExportVideoPromptTemplateRequest {
+  /** 剧集id */
+  episodeId: number;
+}

@@ -111,7 +111,7 @@
           </template>
         </el-table-column>
 
-        <el-table-column prop="dialogue" label="台词" min-width="150">
+        <el-table-column prop="dialogue" label="台词" min-width="280">
           <template #default="{ row }">
             <div v-if="!isEditing(row, 'dialogue')" class="editable-cell" @click="startEdit(row, 'dialogue')">
               <div
@@ -286,7 +286,7 @@
   import { uploadFile } from '@/utils/uploadFile';
   import { Edit, Loading } from '@element-plus/icons-vue';
   import { ElMessage, ElMessageBox } from 'element-plus';
-  import { ref } from 'vue';
+  import { nextTick, ref } from 'vue';
   import CommentDialog from './CommentDialog.vue';
   import CommentListDialog from './CommentListDialog.vue';
   import ImageCropDialog from './ImageCropDialog.vue';
@@ -789,12 +789,23 @@
       ElMessage.info('暂无留言');
       return;
     }
-    // 如果有 commentInfo，直接展示，无需调用接口
+
+    // 先更新当前操作的镜头和触发元素
     currentShotForAction.value = shot;
     if (event) {
       commentListTriggerRef.value = event.currentTarget as HTMLElement;
     }
-    commentListDialogVisible.value = true;
+
+    // 如果弹窗已经打开，先关闭再立即打开（触发重新加载）
+    if (commentListDialogVisible.value) {
+      commentListDialogVisible.value = false;
+      // 使用 nextTick 确保状态更新后再打开
+      nextTick(() => {
+        commentListDialogVisible.value = true;
+      });
+    } else {
+      commentListDialogVisible.value = true;
+    }
   };
 
   // 留言数量变化
@@ -1033,7 +1044,7 @@
         overflow: hidden;
         text-overflow: ellipsis;
         display: -webkit-box;
-        -webkit-line-clamp: 3; // 最多显示3行
+        -webkit-line-clamp: 7; // 最多显示3行
         -webkit-box-orient: vertical;
 
         &.empty-placeholder {
@@ -1145,8 +1156,17 @@
         min-height: 160px; // 确保高度充足
 
         .shot-number-text {
-          min-width: 24px;
-          text-align: center;
+          font-size: 14px;
+          color: #4e5969;
+          display: flex;
+          width: 40px;
+          height: 40px;
+          padding-right: 0.008px;
+          justify-content: center;
+          align-items: center;
+          flex-shrink: 0;
+          border-radius: 8px;
+          background: #f7f8fa;
         }
 
         // 留言数量徽标
