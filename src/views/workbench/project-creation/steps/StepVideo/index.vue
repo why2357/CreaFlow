@@ -414,7 +414,7 @@
     }
 
     // 方法1: 通过组件的 $refs.tableRef 查找
-    let wrapper = videoTableRef.value.$refs?.tableRef?.$el?.querySelector('.el-table__body-wrapper');
+    let wrapper = (videoTableRef.value as any)?.$refs?.tableRef?.$el?.querySelector('.el-table__body-wrapper');
     if (wrapper) {
       console.log('通过 $refs.tableRef 找到表格容器');
       return wrapper;

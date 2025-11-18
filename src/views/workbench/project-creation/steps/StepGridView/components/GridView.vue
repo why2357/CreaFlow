@@ -48,9 +48,9 @@
               button-size="default"
               tooltip-placement="top"
               :disable-comment="!scene.imgTaskId"
-              @comment="(event) => handleComment(scene, event)"
+              @comment="(event: MouseEvent) => handleComment(scene, event)"
               @insert="handleInsert(scene)"
-              @review="(event) => handleReview(scene, event)"
+              @review="(event: MouseEvent) => handleReview(scene, event)"
               @delete="handleDelete(scene)"
             />
           </div>
@@ -72,7 +72,7 @@
         <div
           v-if="scene.commentCnt && scene.commentCnt > 0"
           class="comment-count-badge"
-          @click.stop="(event) => handleViewComments(scene, event)"
+          @click.stop="(event: MouseEvent) => handleViewComments(scene, event)"
         >
           <svg-icon icon-class="fy-comment" class="comment-icon" />
           <span class="count-text">{{ scene.commentCnt }}</span>

@@ -17,9 +17,9 @@
               <ShotNumberActions
                 :shot-number="row.shotNumber"
                 :scene-status="row.imgStatus"
-                @comment="(event) => handleShotComment(row, event)"
+                @comment="(event: MouseEvent) => handleShotComment(row, event)"
                 @insert="handleShotInsert(row)"
-                @review="(event) => handleShotReview(row, event)"
+                @review="(event: MouseEvent) => handleShotReview(row, event)"
                 @delete="handleShotDelete(row)"
                 @view-comments="handleViewComments(row)"
               />
@@ -28,7 +28,7 @@
               <div
                 v-if="row.commentCount && row.commentCount > 0"
                 class="comment-count-badge"
-                @click.stop="(event) => handleViewComments(row, event)"
+                @click.stop="(event: MouseEvent) => handleViewComments(row, event)"
               >
                 <svg-icon icon-class="fy-comment" class="comment-icon" />
 

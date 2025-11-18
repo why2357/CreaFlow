@@ -60,9 +60,9 @@
                 button-size="default"
                 tooltip-placement="top"
                 :disable-comment="!item.imgTaskId"
-                @comment="(event) => handleComment(item, event)"
+                @comment="(event: MouseEvent) => handleComment(item, event)"
                 @insert="handleInsert(item)"
-                @review="(event) => handleReview(item, event)"
+                @review="(event: MouseEvent) => handleReview(item, event)"
                 @delete="handleDeleteScene(item)"
               />
             </div>
@@ -136,8 +136,8 @@
                 <div v-if="shouldShowActions(historyImg.id)" class="bottom-right-actions">
                   <el-dropdown
                     trigger="click"
-                    @command="(command) => handleMoreAction(command, item.id, historyImg)"
-                    @visible-change="(visible) => (visible ? handleDropdownShow(historyImg.id) : handleDropdownHide())"
+                    @command="(command: string) => handleMoreAction(command, item.id, historyImg)"
+                    @visible-change="(visible: boolean) => (visible ? handleDropdownShow(historyImg.id) : handleDropdownHide())"
                   >
                     <div class="action-btn more-btn" @click.stop>
                       <svg-icon icon-class="fy-more" />
