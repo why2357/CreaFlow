@@ -1,5 +1,21 @@
 <template>
   <div class="step-waterfall-view">
+    <!-- 顶部筛选区域 -->
+    <div class="filter-bar">
+      <el-tooltip :content="isCollectFilter ? '取消筛选' : '仅显示收藏'" placement="top">
+        <el-button class="collect-box" @click="toggleCollectFilter">
+          <template #icon>
+            <svg-icon
+              v-if="isCollectFilter"
+              icon-class="fy-starfilled"
+              style="width: 12px; height: 12px; color: #ff7d00"
+            />
+            <svg-icon v-else icon-class="fy-star" style="width: 16px; height: 16px" />
+          </template>
+        </el-button>
+      </el-tooltip>
+    </div>
+
     <!-- 主内容区 - 瀑布流视图 -->
     <div class="content-area">
       <WaterfallView
@@ -67,6 +83,9 @@
   // 加载状态
   const loading = ref(false);
 
+  // 收藏筛选状态
+  const isCollectFilter = ref(false);
+
   // 当前操作的项
   const currentItem = ref<WaterfallItem | null>(null);
 
@@ -78,15 +97,28 @@
   const reviewDialogVisible = ref(false);
   const reviewTriggerRef = ref<HTMLElement>();
 
+  // 切换收藏筛选
+  const toggleCollectFilter = () => {
+    isCollectFilter.value = !isCollectFilter.value;
+    loadWaterfallData();
+  };
+
   // 加载瀑布流数据
   const loadWaterfallData = async () => {
     if (!selectedEpisodeId.value) return;
 
     loading.value = true;
     try {
-      const res = await getWaterfallList({
+      const params: any = {
         episodeId: Number(selectedEpisodeId.value)
-      });
+      };
+
+      // 如果启用了收藏筛选，添加 isCollect 参数
+      if (isCollectFilter.value) {
+        params.isCollect = true;
+      }
+
+      const res = await getWaterfallList(params);
 
       if (res.data) {
         waterfallData.value = res.data;
@@ -301,9 +333,52 @@
 <style scoped lang="scss">
   .step-waterfall-view {
     display: flex;
+    flex-direction: column;
     width: 100%;
     height: 100%;
     // background: #f5f7fa;
+  }
+
+  .filter-bar {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 0px 0px 12px;
+    .collect-box {
+      display: flex;
+      width: 32px;
+      height: 32px;
+      justify-content: center;
+      align-items: center;
+      border-radius: 5px;
+      background: #f7f8fa;
+    }
+
+    :deep(.el-button--primary) {
+      background-color: #5468ff;
+      border-color: #5468ff;
+
+      .svg-icon {
+        color: #ffffff;
+      }
+
+      &:hover {
+        background-color: #4054e6;
+        border-color: #4054e6;
+      }
+    }
+
+    :deep(.el-button--default) {
+      .svg-icon {
+        color: #86909c;
+      }
+
+      &:hover {
+        .svg-icon {
+          color: #5468ff;
+        }
+      }
+    }
   }
 
   .content-area {

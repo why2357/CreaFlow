@@ -1,60 +1,63 @@
 <template>
-  <div class="step-grid-view">
+  <div>
     <!-- 顶部操作栏 -->
     <div class="top-action-bar">
       <el-button type="primary" class="review-button" @click="handleOpenReviewDialog"> 审阅 </el-button>
     </div>
+    <div class="step-grid-view">
+      <!-- 主内容区 - 故事板网格视图 -->
+      <div class="content-area">
+        <GridView
+          :scenes="scenes"
+          :loading="loading"
+          @comment="handleComment"
+          @insert="handleInsert"
+          @review="handleReview"
+          @delete="handleDelete"
+          @image-click="handleImageClick"
+          @status-change="handleStatusChange"
+          @view-comments="handleViewComments"
+        />
+      </div>
 
-    <!-- 主内容区 - 故事板网格视图 -->
-    <div class="content-area">
-      <GridView
-        :scenes="scenes"
-        :loading="loading"
-        @comment="handleComment"
-        @insert="handleInsert"
-        @review="handleReview"
-        @delete="handleDelete"
-        @image-click="handleImageClick"
-        @status-change="handleStatusChange"
-        @view-comments="handleViewComments"
+      <!-- 留言弹窗 -->
+      <CommentDialog
+        v-model="commentDialogVisible"
+        :basic-id="currentScene?.id || 0"
+        :scene-type="1"
+        :trigger-ref="commentTriggerRef"
+        @success="handleCommentSuccess"
+      />
+
+      <!-- 留言列表弹窗 -->
+      <CommentListDialog
+        v-model="commentListDialogVisible"
+        :basic-id="currentScene?.id || 0"
+        :scene-type="1"
+        :trigger-ref="commentListTriggerRef"
+        @change="handleCommentChange"
+      />
+
+      <!-- 评审弹窗 -->
+      <ReviewDialog
+        v-model="reviewDialogVisible"
+        :basic-id="currentScene?.id || 0"
+        :scene-type="1"
+        :current-status="currentScene?.imgStatus"
+        :trigger-ref="reviewTriggerRef"
+        @success="handleReviewSuccess"
+      />
+
+      <!-- 故事板审阅弹窗 -->
+      <StoryboardReviewDialog
+        v-model="storyboardReviewDialogVisible"
+        :episode-id="selectedEpisodeId ? Number(selectedEpisodeId) : undefined"
+        :scene-type="1"
+        :scene-status-list="[1]"
+        :initial-index="0"
+        @refresh="handleReviewDialogRefresh"
       />
     </div>
-
-    <!-- 留言弹窗 -->
-    <CommentDialog
-      v-model="commentDialogVisible"
-      :basic-id="currentScene?.id || 0"
-      :scene-type="1"
-      :trigger-ref="commentTriggerRef"
-      @success="handleCommentSuccess"
-    />
-
-    <!-- 留言列表弹窗 -->
-    <CommentListDialog
-      v-model="commentListDialogVisible"
-      :basic-id="currentScene?.id || 0"
-      :scene-type="1"
-      :trigger-ref="commentListTriggerRef"
-      @change="handleCommentChange"
-    />
-
-    <!-- 评审弹窗 -->
-    <ReviewDialog
-      v-model="reviewDialogVisible"
-      :basic-id="currentScene?.id || 0"
-      :scene-type="1"
-      :current-status="currentScene?.imgStatus"
-      :trigger-ref="reviewTriggerRef"
-      @success="handleReviewSuccess"
-    />
-
-    <!-- 故事板审阅弹窗 -->
-    <StoryboardReviewDialog
-      v-model="storyboardReviewDialogVisible"
-      :scene-list="scenes"
-      :initial-index="0"
-      @refresh="loadStoryBoard"
-    />
   </div>
 </template>
 
@@ -124,7 +127,6 @@
     } catch (error) {
       console.error('加载故事板失败:', error);
       scenes.value = [];
-      ElMessage.error('加载故事板失败');
     } finally {
       loading.value = false;
     }
@@ -272,44 +274,49 @@
     console.log('点击图片:', scene);
   };
 
-  // 打开故事板审阅弹窗
+  // 打开故事板审阅弹窗（只审阅橙色状态的场景）
   const handleOpenReviewDialog = () => {
-    if (scenes.value.length === 0) {
-      ElMessage.warning('暂无分镜可供审阅');
+    if (!selectedEpisodeId.value) {
+      ElMessage.warning('请先选择剧集');
       return;
     }
     storyboardReviewDialogVisible.value = true;
   };
+
+  // 审阅弹窗刷新回调
+  const handleReviewDialogRefresh = () => {
+    loadStoryBoard(); // 重新加载所有场景
+  };
 </script>
 
 <style scoped lang="scss">
+  .top-action-bar {
+    .review-button {
+      display: flex;
+      width: 80px;
+      height: 32px;
+      padding: 8px 16px;
+      justify-content: center;
+      align-items: center;
+      gap: 4px;
+      border-radius: 8px;
+      background: #5252ff;
+      color: #fff;
+      text-align: center;
+      font-size: 13px;
+      margin-bottom: 16px;
+    }
+  }
   .step-grid-view {
     display: flex;
     flex-direction: column;
     width: 100%;
     height: 100%;
-    background: #f5f7fa;
-  }
-
-  .top-action-bar {
-    position: absolute;
-    top: 20px;
-    left: 20px;
-    z-index: 100;
-
-    .review-button {
-      height: 40px;
-      padding: 0 24px;
-      font-size: 14px;
-      font-weight: 500;
-      border-radius: 46px;
-      box-shadow: 0 2px 8px rgba(82, 82, 255, 0.2);
-    }
   }
 
   .content-area {
     flex: 1;
     overflow: hidden;
-    background: white;
+    // background: white;
   }
 </style>

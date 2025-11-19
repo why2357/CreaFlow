@@ -124,6 +124,19 @@ export const constantRoutes: RouteOption[] = [
   {
     path: '',
     component: Layout,
+    redirect: 'projectData',
+    children: [
+      {
+        path: '/projectData',
+        component: () => import('@/views/project-data/index.vue'),
+        name: 'ProjectData',
+        meta: { title: '项目数据', icon: 'logo-project' }
+      }
+    ]
+  },
+  {
+    path: '',
+    component: Layout,
     redirect: 'pointRecord',
     children: [
       {

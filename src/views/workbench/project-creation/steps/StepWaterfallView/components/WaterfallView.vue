@@ -762,7 +762,7 @@
         .history-images {
           gap: 8px;
           padding: 12px;
-          max-height: calc(100vh - 550px);
+          max-height: calc(100vh - 600px);
 
           overflow-y: auto;
           .history-box {

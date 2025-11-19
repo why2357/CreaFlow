@@ -44,6 +44,38 @@ export function ratioToSize(ratio: number): string {
   return ratioMap[ratio] || '16:9';
 }
 
+/**
+ * 后端数字格式转换为实际宽高比数值
+ * @param ratio 尺寸数字 1-16:9;2-4:3;3-1:1;4-3:4;5-9:16
+ * @returns 实际宽高比数值 如: 1.7778 (16/9)
+ */
+export function ratioToValue(ratio: number): number {
+  const ratioValueMap: Record<number, number> = {
+    1: 16 / 9, // 16:9
+    2: 4 / 3, // 4:3
+    3: 1, // 1:1
+    4: 3 / 4, // 3:4
+    5: 9 / 16 // 9:16
+  };
+  return ratioValueMap[ratio] || 16 / 9;
+}
+
+/**
+ * 尺寸字符串转换为实际宽高比数值
+ * @param size 尺寸字符串 如: '16:9', '4:3', '1:1', '3:4', '9:16'
+ * @returns 实际宽高比数值 如: 1.7778 (16/9)
+ */
+export function sizeToValue(size: string): number {
+  const ratioMap: Record<string, number> = {
+    '16:9': 16 / 9,
+    '4:3': 4 / 3,
+    '1:1': 1,
+    '3:4': 3 / 4,
+    '9:16': 9 / 16
+  };
+  return ratioMap[size] || 16 / 9;
+}
+
 // ==================== AI模型相关工具函数 ====================
 
 /**

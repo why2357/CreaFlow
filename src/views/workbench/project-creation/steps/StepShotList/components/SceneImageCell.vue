@@ -198,6 +198,7 @@
 <script setup lang="ts">
   import { cancelCollectHistoryDetail, collectHistoryDetail, replaceSceneImage } from '@/api/workbench/episode';
   import { uploadFile } from '@/utils/uploadFile';
+  import { sizeToValue } from '@/utils/projectUtils';
   import { Edit } from '@element-plus/icons-vue';
   import { ElMessage } from 'element-plus';
   import { computed, ref } from 'vue';
@@ -425,16 +426,9 @@
     }
   };
 
-  // 获取期望的宽高比
+  // 获取期望的宽高比（使用统一的工具函数）
   const getExpectedRatio = (ratio: string): number => {
-    const ratioMap: Record<string, number> = {
-      '1:1': 1,
-      '16:9': 16 / 9,
-      '9:16': 9 / 16,
-      '4:3': 4 / 3,
-      '3:4': 3 / 4
-    };
-    return ratioMap[ratio] || 16 / 9;
+    return sizeToValue(ratio);
   };
 
   // 查看历史

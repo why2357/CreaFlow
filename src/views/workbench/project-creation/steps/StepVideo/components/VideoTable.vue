@@ -142,9 +142,9 @@
       points: number;
     } | null;
     allModelConfigs?: Array<{
-      resolution: string;
-      duration: number;
-      points: number;
+      resolution?: string;
+      duration?: number;
+      points?: number;
     }>;
     modelConfigs?: VideoModelConfigVo[];
     aspectRatio?: string; // '1:1' | '16:9' | '9:16' | '4:3' | '3:4'

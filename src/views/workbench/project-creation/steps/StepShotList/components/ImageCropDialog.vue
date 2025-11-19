@@ -30,6 +30,7 @@
 <script setup lang="ts">
   import { replaceSceneImage } from '@/api/workbench/episode';
   import { uploadFile } from '@/utils/uploadFile';
+  import { sizeToValue } from '@/utils/projectUtils';
   import Cropper from 'cropperjs';
   import 'cropperjs/dist/cropper.css';
   import { ElMessage } from 'element-plus';
@@ -116,16 +117,9 @@
     }
   };
 
-  // 获取宽高比数值
+  // 获取宽高比数值（使用统一的工具函数）
   const getAspectRatioValue = (ratio: string): number => {
-    const ratioMap: Record<string, number> = {
-      '1:1': 1,
-      '16:9': 16 / 9,
-      '9:16': 9 / 16,
-      '4:3': 4 / 3,
-      '3:4': 3 / 4
-    };
-    return ratioMap[ratio] || 16 / 9;
+    return sizeToValue(ratio);
   };
 
   // 关闭对话框

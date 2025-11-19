@@ -145,7 +145,7 @@
                 v-for="(character, index) in row.characters"
                 :key="index"
                 :src="character.materialInfoVo?.previewOssUrl || character.materialInfoVo?.originOssUrl"
-                fit="cover"
+                fit="contain"
                 class="character-avatar character-clickable"
                 @click="handleCharacterClick(row, character)"
               />
@@ -206,7 +206,7 @@
                 src="../../../../../../assets/images/no-image-light.png"
                 alt=""
               />
-              <p class="empty-text">暂无分镜头</p>
+              <!-- <p class="empty-text">暂无分镜头</p> -->
             </div>
           </div>
         </template>
@@ -1065,6 +1065,7 @@
           height: 40px;
           border-radius: 100%;
           cursor: pointer;
+          border: 0.5px solid #eee;
 
           &.character-clickable {
             transition: all 0.3s;

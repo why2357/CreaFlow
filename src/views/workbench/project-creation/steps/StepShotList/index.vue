@@ -126,7 +126,7 @@
   import type { Episode, Shot, ShotForm } from '@/api/workbench/project/types';
   import { useProjectStore } from '@/store/modules/project';
   import { useUserStore } from '@/store/modules/user';
-  import { convertModelsToOptions, getDefaultModel, getModelName } from '@/utils/projectUtils';
+  import { convertModelsToOptions, getDefaultModel, getModelName, ratioToSize } from '@/utils/projectUtils';
   import { ElMessage, ElMessageBox } from 'element-plus';
   import { computed, onMounted, ref, watch } from 'vue';
 
@@ -163,8 +163,10 @@
   // 分镜列表
   const shots = ref<Shot[]>([]);
 
-  // 图片比例（从项目设置中获取，这里默认16:9）
-  const aspectRatio = ref('16:9');
+  // 图片比例（从项目设置中获取 pictureRatio 并转换为字符串格式）
+  const aspectRatio = computed(() => {
+    return projectStore.pictureRatio ? ratioToSize(projectStore.pictureRatio) : '16:9';
+  });
 
   // 加载状态
   const loading = ref(false);

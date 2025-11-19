@@ -145,9 +145,9 @@
       points: number;
     } | null;
     allModelConfigs?: Array<{
-      resolution: string;
-      duration: number;
-      points: number;
+      resolution?: string;
+      duration?: number;
+      points?: number;
     }>;
     modelConfigs?: VideoModelConfigVo[];
   }

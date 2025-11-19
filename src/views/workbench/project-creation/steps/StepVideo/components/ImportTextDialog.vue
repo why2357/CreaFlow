@@ -6,6 +6,12 @@
     :close-on-click-modal="false"
     @close="handleClose"
   >
+    <template #header>
+      <div class="dialog-header">
+        <span class="dialog-title">批量导入文本</span>
+        <el-button class="download-template-btn" @click="handleDownloadTemplate"> 下载模版 </el-button>
+      </div>
+    </template>
     <el-upload
       ref="uploadRef"
       class="upload-area"
@@ -33,12 +39,14 @@
 </template>
 
 <script setup lang="ts">
+  import { exportVideoPromptTemplate } from '@/api/workbench/episode';
   import type { UploadInstance, UploadUserFile } from 'element-plus';
   import { ElMessage } from 'element-plus';
   import { ref, watch } from 'vue';
 
   interface Props {
     modelValue: boolean;
+    episodeId?: number;
   }
 
   const props = defineProps<Props>();
@@ -129,6 +137,46 @@
     dialogVisible.value = false;
   };
 
+  // 下载模板
+  const handleDownloadTemplate = async () => {
+    if (!props.episodeId) {
+      ElMessage.warning('缺少剧集信息，无法下载模板');
+      return;
+    }
+
+    try {
+      const response = await exportVideoPromptTemplate({ episodeId: props.episodeId });
+
+      // 根据控制台输出，response 本身就是 Blob 对象
+      let blob: Blob;
+      if (response instanceof Blob) {
+        blob = response;
+      } else if (response.data instanceof Blob) {
+        blob = response.data;
+      } else if (response.data) {
+        blob = new Blob([response.data], {
+          type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        });
+      } else {
+        throw new Error('无法获取文件数据');
+      }
+
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `视频提示词模板_${props.episodeId}.xlsx`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+
+      ElMessage.success('模板下载成功');
+    } catch (error) {
+      console.error('下载模板失败:', error);
+      ElMessage.error('下载模板失败，请稍后重试');
+    }
+  };
+
   // 暴露方法给父组件
   defineExpose({
     setUploading,
@@ -137,6 +185,40 @@
 </script>
 
 <style scoped lang="scss">
+  .dialog-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+    padding-right: 40px;
+
+    .dialog-title {
+      color: #1d2129;
+      font-size: 18px;
+    }
+
+    .download-template-btn {
+      display: flex;
+      width: 92px;
+      height: 28px;
+      padding: 10px;
+      justify-content: center;
+      align-items: center;
+      gap: 10px;
+      flex-shrink: 0;
+      border-radius: 4px;
+      border: 1px solid #eee;
+      background: #fff;
+
+      &:hover {
+        color: #7375ff;
+      }
+
+      .el-icon {
+        font-size: 13px;
+      }
+    }
+  }
   :deep(.el-dialog) {
     .el-dialog__header {
       padding: 20px 20px 16px;

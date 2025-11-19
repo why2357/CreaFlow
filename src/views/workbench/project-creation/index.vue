@@ -654,7 +654,7 @@
     .step-content {
       flex: 1;
       overflow: hidden;
-      border-radius: 12px;
+      // border-radius: 12px;
     }
 
     .bottom-actions {

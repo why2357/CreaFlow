@@ -7,7 +7,16 @@
     destroy-on-close
     @close="handleClose"
   >
-    <div class="">
+    <!-- 审阅状态标识 -->
+    <div
+      v-if="currentReviewStatus === 2 || currentReviewStatus === 3"
+      class="review-status-overlay"
+      :class="currentReviewStatus === 2 ? 'success' : 'rejected'"
+    >
+      <div class="status-bg"></div>
+      <svg-icon :icon-class="currentReviewStatus === 2 ? 'fy-success' : 'fy-refuse'" class="status-icon" />
+    </div>
+    <div class="dialog-wrapper">
       <div class="review-dialog-container">
         <!-- 左侧：图片展示区 -->
         <div class="left-section">
@@ -17,18 +26,28 @@
             <div class="image-container">
               <!-- 图片序号显示 -->
 
-              <!-- 图片主体 -->
+              <!-- 图片/视频主体 -->
               <div class="image-wrapper">
+                <!-- 视频审阅：显示视频播放器 -->
+                <video
+                  v-if="props.sceneType === 2 && currentScene?.originOssUrl"
+                  :src="currentScene.originOssUrl"
+                  :poster="currentScene.previewOssUrl"
+                  controls
+                  class="main-video"
+                />
+                <!-- 图片审阅：显示图片 -->
                 <el-image
-                  v-if="currentScene?.previewOssUrl || currentScene?.originOssUrl"
+                  v-else-if="props.sceneType === 1 && (currentScene?.previewOssUrl || currentScene?.originOssUrl)"
                   :src="currentScene.originOssUrl || currentScene.previewOssUrl"
                   fit="contain"
                   class="main-image"
                   :preview-src-list="[currentScene.originOssUrl || currentScene.previewOssUrl]"
                   preview-teleported
                 />
+                <!-- 空状态 -->
                 <div v-else class="empty-image">
-                  <img src="../../../../../../assets/images/no-sence.png" alt="暂无图片" class="placeholder-img" />
+                  <img src="../../../../../../assets/images/no-sence.png" alt="暂无内容" class="placeholder-img" />
                 </div>
               </div>
 
@@ -36,8 +55,8 @@
               <div class="navigation-arrows">
                 <div
                   class="arrow-button prev-button"
-                  :class="{ disabled: currentIndex === 0 }"
-                  @click="currentIndex > 0 && handlePrevious()"
+                  :class="{ disabled: currentIndex === 0 || loading }"
+                  @click="!loading && currentIndex > 0 && handlePrevious()"
                 >
                   <svg-icon icon-class="fy-arrow-left" />
                 </div>
@@ -45,8 +64,8 @@
 
                 <div
                   class="arrow-button next-button"
-                  :class="{ disabled: currentIndex === sceneList.length - 1 }"
-                  @click="currentIndex < sceneList.length - 1 && handleNext()"
+                  :class="{ disabled: currentIndex === sceneList.length - 1 || loading }"
+                  @click="!loading && currentIndex < sceneList.length - 1 && handleNext()"
                 >
                   <svg-icon icon-class="fy-arrow-right" />
                 </div>
@@ -135,7 +154,7 @@
     <CommentListDialog
       v-model="commentListDialogVisible"
       :basic-id="currentScene?.id || 0"
-      :scene-type="1"
+      :scene-type="props.sceneType"
       :trigger-ref="commentTriggerElement"
       :comment-list="commentList"
       @change="handleCommentListChange"
@@ -144,7 +163,7 @@
 </template>
 
 <script setup lang="ts">
-  import { addSceneComment, getSceneCommentList, reviewScene } from '@/api/workbench/storyboard';
+  import { addSceneComment, getSceneCommentList, queryStoryBoard, reviewScene } from '@/api/workbench/storyboard';
   import type { SceneCommentVo, StoryBoardSceneVo } from '@/api/workbench/storyboard/types';
   import { CircleCheck, CircleClose } from '@element-plus/icons-vue';
   import { ElMessage } from 'element-plus';
@@ -153,12 +172,16 @@
 
   interface Props {
     modelValue: boolean;
-    sceneList: StoryBoardSceneVo[];
+    episodeId?: number; // 剧集ID
+    sceneType?: 1 | 2; // 1-图片审阅, 2-视频审阅
+    sceneStatusList?: number[]; // 场景状态列表（0-白色 1-橙色 2-绿色 3-红色）
     initialIndex?: number;
   }
 
   const props = withDefaults(defineProps<Props>(), {
-    initialIndex: 0
+    initialIndex: 0,
+    sceneType: 1,
+    sceneStatusList: () => [1] // 默认只加载橙色状态
   });
 
   const emit = defineEmits<{
@@ -172,13 +195,24 @@
   const commentList = ref<SceneCommentVo[]>([]);
   const submittingComment = ref(false);
   const submittingReview = ref(false);
+  const loading = ref(false);
+
+  // 场景列表
+  const sceneList = ref<StoryBoardSceneVo[]>([]);
 
   // 留言列表弹窗
   const commentListDialogVisible = ref(false);
   const commentTriggerElement = ref<HTMLElement>();
 
   // 当前场景
-  const currentScene = computed(() => props.sceneList[currentIndex.value]);
+  const currentScene = computed(() => sceneList.value[currentIndex.value]);
+
+  // 当前审阅状态 - 支持图片(imgStatus)和视频(videoStatus)
+  const currentReviewStatus = computed(() => {
+    if (!currentScene.value) return undefined;
+    // 根据 sceneType 选择对应的状态：1-图片审阅使用 imgStatus，2-视频审阅使用 videoStatus
+    return props.sceneType === 2 ? currentScene.value.videoStatus : currentScene.value.imgStatus;
+  });
 
   // 评论数量 - 使用场景数据中的 commentCnt
   const commentCount = computed(() => currentScene.value?.commentCnt || 0);
@@ -186,9 +220,11 @@
   // 监听 modelValue 变化
   watch(
     () => props.modelValue,
-    (val) => {
+    async (val) => {
       visible.value = val;
       if (val) {
+        // 打开弹窗时加载场景数据
+        await loadScenes();
         currentIndex.value = props.initialIndex;
         loadComments();
       } else {
@@ -208,6 +244,40 @@
     commentText.value = '';
   });
 
+  // 加载场景列表
+  const loadScenes = async () => {
+    if (!props.episodeId) {
+      ElMessage.warning('请先选择剧集');
+      visible.value = false;
+      return;
+    }
+
+    loading.value = true;
+    try {
+      const res = await queryStoryBoard({
+        episodeId: Number(props.episodeId),
+        sceneType: props.sceneType,
+        sceneStatusList: props.sceneStatusList
+      });
+
+      if (res.data && res.data.length > 0) {
+        sceneList.value = res.data.map((scene) => ({
+          ...scene,
+          commentCnt: scene.commentCnt ?? 0
+        }));
+      } else {
+        ElMessage.warning('暂无待审阅的场景');
+        visible.value = false;
+      }
+    } catch (error) {
+      console.error('加载场景失败:', error);
+      ElMessage.error('加载待审阅场景失败');
+      visible.value = false;
+    } finally {
+      loading.value = false;
+    }
+  };
+
   // 加载评论列表
   const loadComments = async () => {
     if (!currentScene.value?.id) {
@@ -218,7 +288,7 @@
     try {
       const res = await getSceneCommentList({
         basicId: currentScene.value.id,
-        sceneType: 1 // 1-图片
+        sceneType: props.sceneType // 1-图片, 2-视频
       });
       commentList.value = res.data || [];
 
@@ -259,14 +329,14 @@
       await addSceneComment({
         basicId: currentScene.value.id,
         comment: commentText.value.trim(),
-        sceneType: 1 // 1-图片
+        sceneType: props.sceneType // 1-图片, 2-视频
       });
 
       ElMessage.success('留言提交成功');
       commentText.value = '';
 
       // 立即更新评论数量，提供即时反馈
-      const scene = props.sceneList[currentIndex.value];
+      const scene = sceneList.value[currentIndex.value];
       if (scene) {
         scene.commentCnt = (scene.commentCnt || 0) + 1;
       }
@@ -293,24 +363,32 @@
       await reviewScene({
         id: currentScene.value.id,
         reviewType: 1, // 1-通过
-        sceneType: 1 // 1-图片
+        sceneType: props.sceneType // 1-图片, 2-视频
       });
 
       ElMessage.success('审阅通过');
 
       // 更新本地状态
-      const scene = props.sceneList[currentIndex.value];
+      const scene = sceneList.value[currentIndex.value];
       if (scene) {
-        scene.imgStatus = 2; // 2-绿色(通过)
+        if (props.sceneType === 2) {
+          scene.videoStatus = 2; // 2-绿色(通过)
+        } else {
+          scene.imgStatus = 2; // 2-绿色(通过)
+        }
       }
+      console.log('sceneList.value', sceneList.value);
+
+      // 延迟展示状态，让用户看到审阅结果
+      await new Promise((resolve) => setTimeout(resolve, 800));
 
       // 如果还有下一个，自动切换到下一个
-      if (currentIndex.value < props.sceneList.length - 1) {
+      if (currentIndex.value < sceneList.value.length - 1) {
         handleNext();
       } else {
         // 最后一个，关闭对话框
-        handleClose();
-        emit('refresh');
+        // handleClose();
+        // emit('refresh');
       }
     } catch (error) {
       console.error('审阅失败:', error);
@@ -331,24 +409,31 @@
       await reviewScene({
         id: currentScene.value.id,
         reviewType: 2, // 2-驳回
-        sceneType: 1 // 1-图片
+        sceneType: props.sceneType // 1-图片, 2-视频
       });
 
       ElMessage.success('已驳回');
 
       // 更新本地状态
-      const scene = props.sceneList[currentIndex.value];
+      const scene = sceneList.value[currentIndex.value];
       if (scene) {
-        scene.imgStatus = 3; // 3-红色(驳回)
+        if (props.sceneType === 2) {
+          scene.videoStatus = 3; // 3-红色(驳回)
+        } else {
+          scene.imgStatus = 3; // 3-红色(驳回)
+        }
       }
 
+      // 延迟展示状态，让用户看到审阅结果
+      await new Promise((resolve) => setTimeout(resolve, 800));
+
       // 如果还有下一个，自动切换到下一个
-      if (currentIndex.value < props.sceneList.length - 1) {
+      if (currentIndex.value < sceneList.value.length - 1) {
         handleNext();
       } else {
-        // 最后一个，关闭对话框
-        handleClose();
-        emit('refresh');
+        // // 最后一个，关闭对话框
+        // handleClose();
+        // emit('refresh');
       }
     } catch (error) {
       console.error('审阅失败:', error);
@@ -366,7 +451,7 @@
 
   // 下一张
   const handleNext = () => {
-    if (currentIndex.value < props.sceneList.length - 1) {
+    if (currentIndex.value < sceneList.value.length - 1) {
       currentIndex.value++;
     }
   };
@@ -386,6 +471,53 @@
 </script>
 
 <style scoped lang="scss">
+  .dialog-wrapper {
+    position: relative;
+    overflow: hidden;
+  }
+
+  // 审阅状态覆盖层（整个弹窗右上角）
+  .review-status-overlay {
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 292px;
+    height: 292px;
+    pointer-events: none;
+    display: flex;
+    align-items: center;
+    border-radius: 50%;
+    z-index: 100;
+
+    .status-bg {
+      position: absolute;
+      top: 0;
+      right: 0;
+      width: 292px;
+      height: 292px;
+      flex-shrink: 0;
+      border-radius: 292px;
+      filter: blur(48.05px);
+    }
+
+    .status-icon {
+      position: absolute;
+      top: 40px;
+      right: 40px;
+      width: 98px;
+      height: 98px;
+      z-index: 1;
+    }
+
+    &.success .status-bg {
+      background: linear-gradient(242deg, rgba(35, 195, 67, 0.12) 12.17%, rgba(255, 255, 255, 0.2) 107.39%);
+    }
+
+    &.rejected .status-bg {
+      background: linear-gradient(242deg, rgba(255, 77, 79, 0.12) 12.17%, rgba(255, 255, 255, 0.2) 107.39%);
+    }
+  }
+
   .review-dialog-container {
     display: flex;
     height: 700px;
@@ -441,6 +573,15 @@
                 max-height: 100%;
                 object-fit: contain;
               }
+            }
+
+            .main-video {
+              max-width: 100%;
+              max-height: 100%;
+              border-radius: 4px;
+              box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+              background: #000;
+              object-fit: contain;
             }
 
             .empty-image {

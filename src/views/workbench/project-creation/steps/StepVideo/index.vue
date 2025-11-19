@@ -94,12 +94,18 @@
     </div>
 
     <!-- 批量导入文本弹窗 -->
-    <ImportTextDialog ref="importDialogRef" v-model="importDialogVisible" @confirm="handleConfirmUpload" />
+    <ImportTextDialog
+      ref="importDialogRef"
+      v-model="importDialogVisible"
+      :episode-id="selectedEpisodeId ? Number(selectedEpisodeId) : undefined"
+      @confirm="handleConfirmUpload"
+    />
 
     <!-- 故事板审阅弹窗 -->
     <StoryboardReviewDialog
       v-model="storyboardReviewDialogVisible"
-      :scene-list="reviewSceneList"
+      :episode-id="selectedEpisodeId ? Number(selectedEpisodeId) : undefined"
+      :scene-type="2"
       :initial-index="0"
       @refresh="loadVideos"
     />
@@ -271,22 +277,6 @@
       return 0;
     }
     return currentModelConfigObj.value.points * selectedIds.value.length;
-  });
-
-  // 转换为审阅弹窗需要的数据格式
-  const reviewSceneList = computed(() => {
-    return videos.value.map((video) => ({
-      id: video.basicId,
-      orderNo: video.basicId,
-      sceneDesc: video.sceneDesc,
-      sceneHint: video.sceneHint,
-      dialogues: video.dialogues,
-      imgStatus: video.sceneStatus,
-      commentCnt: video.commentCount || 0,
-      // 使用视频URL作为图片URL（审阅弹窗会显示视频封面或视频本身）
-      originOssUrl: video.materialInfoVoList?.[0]?.originOssUrl || video.materialInfoVoList?.[0]?.previewOssUrl || '',
-      previewOssUrl: video.materialInfoVoList?.[0]?.previewOssUrl || video.materialInfoVoList?.[0]?.originOssUrl || ''
-    }));
   });
 
   // 添加滚动监听的函数
@@ -586,7 +576,6 @@
       await loadVideos();
     } catch (error) {
       console.error('导入失败:', error);
-      ElMessage.error('导入失败');
     } finally {
       importDialogRef.value.setUploading(false);
     }
@@ -594,8 +583,8 @@
 
   // 打开故事板审阅弹窗
   const handleOpenReviewDialog = () => {
-    if (videos.value.length === 0) {
-      ElMessage.warning('暂无视频可供审阅');
+    if (!selectedEpisodeId.value) {
+      ElMessage.warning('请先选择剧集');
       return;
     }
     storyboardReviewDialogVisible.value = true;

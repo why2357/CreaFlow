@@ -15,9 +15,9 @@
           <div @click="handleTabChange('sms')" :class="`tab-box-item ${loginType === 'sms' ? 'active' : ''}`">
             <span class="tab-text">验证码登录</span>
           </div>
-          <div @click="handleTabChange('qrcode')" :class="`tab-box-item ${loginType === 'qrcode' ? 'active' : ''}`">
+          <!-- <div @click="handleTabChange('qrcode')" :class="`tab-box-item ${loginType === 'qrcode' ? 'active' : ''}`">
             <span class="tab-text">扫码登录</span>
-          </div>
+          </div> -->
         </div>
 
         <div class="loginContent">
@@ -103,12 +103,12 @@
               <span>微信扫码登录</span>
             </div>
           </div>
-          <div class="switch-login-tip">
+          <!-- <div class="switch-login-tip">
             <span style="color: #333">您可以切换使用 </span>
             <span @click="handleTabChange(loginType === 'sms' ? 'qrcode' : 'sms')" class="link-text">
               {{ loginType === 'sms' ? '扫码登录' : '验证码登录' }}
             </span>
-          </div>
+          </div> -->
           <div v-if="loginType === 'sms'" style="width: 86%; font-size: 13px; color: #333">
             <el-checkbox v-model="privacyChecked" style="margin-right: 5px; transform: translate(0, 3px)" />
             <span style="color: #333">我已阅读并同意网站的</span>

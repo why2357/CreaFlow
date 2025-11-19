@@ -265,14 +265,13 @@
       gap: 20px;
       width: 100%;
       height: 100%;
-      padding: 20px;
       overflow-y: auto;
 
       .grid-card {
         position: relative;
         overflow: hidden;
         border-radius: 8px;
-        background: white;
+        // background: white;
         border: 1px solid #e4e7ed;
         box-shadow: 0 2px 8px rgb(0 0 0 / 8%);
         cursor: pointer;
