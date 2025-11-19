@@ -55,6 +55,7 @@
         :scene-type="1"
         :scene-status-list="[1]"
         :initial-index="0"
+        :picture-ratio="projectStore.pictureRatio || 1"
         @refresh="handleReviewDialogRefresh"
       />
     </div>
@@ -291,6 +292,7 @@
 
 <style scoped lang="scss">
   .top-action-bar {
+    padding-top: 2px;
     .review-button {
       display: flex;
       width: 80px;

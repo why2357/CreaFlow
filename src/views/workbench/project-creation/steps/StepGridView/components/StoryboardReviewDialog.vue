@@ -35,9 +35,11 @@
                   :poster="currentScene.previewOssUrl"
                   controls
                   class="main-video"
+                  :style="{ width: `${imageWrapperSize.width}px`, height: `${imageWrapperSize.height}px` }"
                 />
                 <!-- 图片审阅：显示图片 -->
                 <el-image
+                  :style="{ width: `${imageWrapperSize.width}px`, height: `${imageWrapperSize.height}px` }"
                   v-else-if="props.sceneType === 1 && (currentScene?.previewOssUrl || currentScene?.originOssUrl)"
                   :src="currentScene.originOssUrl || currentScene.previewOssUrl"
                   fit="contain"
@@ -176,12 +178,14 @@
     sceneType?: 1 | 2; // 1-图片审阅, 2-视频审阅
     sceneStatusList?: number[]; // 场景状态列表（0-白色 1-橙色 2-绿色 3-红色）
     initialIndex?: number;
+    pictureRatio?: number; // 尺寸比例 1-16:9;2-4:3;3-1:1;4-3:4;5-9:16
   }
 
   const props = withDefaults(defineProps<Props>(), {
     initialIndex: 0,
     sceneType: 1,
-    sceneStatusList: () => [1] // 默认只加载橙色状态
+    sceneStatusList: () => [1], // 默认只加载橙色状态
+    pictureRatio: 1 // 默认16:9
   });
 
   const emit = defineEmits<{
@@ -216,6 +220,43 @@
 
   // 评论数量 - 使用场景数据中的 commentCnt
   const commentCount = computed(() => currentScene.value?.commentCnt || 0);
+
+  // 根据比例计算图片容器尺寸（限定高度，计算宽度）
+  const imageWrapperSize = computed(() => {
+    const maxHeight = 396; // 固定高度
+    let width = maxHeight;
+    let height = maxHeight;
+
+    // 根据 pictureRatio 计算实际宽度
+    switch (props.pictureRatio) {
+      case 1: // 16:9
+        height = maxHeight;
+        width = Math.round((maxHeight * 16) / 9);
+        break;
+      case 2: // 4:3
+        height = maxHeight;
+        width = Math.round((maxHeight * 4) / 3);
+        break;
+      case 3: // 1:1
+        height = maxHeight;
+        width = maxHeight;
+        break;
+      case 4: // 3:4
+        height = maxHeight;
+        width = Math.round((maxHeight * 3) / 4);
+        break;
+      case 5: // 9:16
+        height = maxHeight;
+        width = Math.round((maxHeight * 9) / 16);
+        break;
+      default:
+        // 默认使用 1:1
+        height = maxHeight;
+        width = maxHeight;
+    }
+
+    return { width, height };
+  });
 
   // 监听 modelValue 变化
   watch(
@@ -520,7 +561,6 @@
 
   .review-dialog-container {
     display: flex;
-    height: 700px;
 
     // 左侧图片区域
     .left-section {
@@ -553,14 +593,14 @@
           }
 
           .image-wrapper {
-            flex: 1;
             display: flex;
             justify-content: center;
             align-items: center;
             background: #f5f7fa;
             border-radius: 8px;
             padding: 20px;
-            min-height: 400px;
+            overflow: hidden;
+            flex-shrink: 0;
 
             .main-image {
               max-width: 100%;

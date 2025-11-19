@@ -181,21 +181,29 @@
 
   // 计算每个视频项的宽度 - 根据宽高比动态计算
   const getVideoItemWidth = () => {
-    // 固定高度为 190px (表格行高)
+    // 竖版比例固定宽度为 260px
+    const verticalWidth = 260;
+    // 横版比例固定高度为 190px (表格行高)
     const videoHeight = 190;
 
     // 根据宽高比计算宽度
-    const ratioMap: Record<string, number> = {
-      '1:1': 1,
-      '16:9': 16 / 9,
-      '9:16': 9 / 16,
-      '4:3': 4 / 3,
-      '3:4': 3 / 4
+    const ratioMap: Record<string, { ratio: number; fixedWidth?: number }> = {
+      '1:1': { ratio: 1 },
+      '16:9': { ratio: 16 / 9 },
+      '9:16': { ratio: 9 / 16, fixedWidth: verticalWidth }, // 竖版，固定宽度
+      '4:3': { ratio: 4 / 3 },
+      '3:4': { ratio: 3 / 4, fixedWidth: verticalWidth } // 竖版，固定宽度
     };
 
-    const ratio = ratioMap[props.aspectRatio] || 16 / 9;
-    const videoWidth = videoHeight * ratio;
+    const config = ratioMap[props.aspectRatio] || { ratio: 16 / 9 };
 
+    // 如果是竖版比例，使用固定宽度
+    if (config.fixedWidth) {
+      return config.fixedWidth;
+    }
+
+    // 横版比例根据高度计算宽度
+    const videoWidth = videoHeight * config.ratio;
     return Math.ceil(videoWidth);
   };
 
@@ -487,13 +495,15 @@
         margin-right: 12px;
 
         // 根据宽高比设置每个视频项的最小宽度
+        // 竖版比例固定宽度为260px，高度自适应
         .video-list-cell[data-aspect-ratio='16:9'] & {
           min-width: 338px; // 190 * (16/9) ≈ 338
           width: 338px;
         }
         .video-list-cell[data-aspect-ratio='9:16'] & {
-          min-width: 107px; // 190 * (9/16) ≈ 107
-          width: 107px;
+          min-width: 260px; // 竖版固定宽度
+          width: 260px;
+          min-height: 462px; // 260 * (16/9) ≈ 462px，保持最小高度
         }
         .video-list-cell[data-aspect-ratio='1:1'] & {
           min-width: 190px; // 190 * 1 = 190
@@ -504,8 +514,9 @@
           width: 253px;
         }
         .video-list-cell[data-aspect-ratio='3:4'] & {
-          min-width: 143px; // 190 * (3/4) ≈ 143
-          width: 143px;
+          min-width: 260px; // 竖版固定宽度
+          width: 260px;
+          min-height: 347px; // 260 * (4/3) ≈ 347px，保持最小高度
         }
 
         .video-card {

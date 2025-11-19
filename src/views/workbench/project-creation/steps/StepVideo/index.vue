@@ -87,6 +87,7 @@
         :model-config="currentModelConfigObj"
         :all-model-configs="videoModelPointConfigs"
         :model-configs="modelConfigs"
+        :aspect-ratio="aspectRatio"
         @selection-change="handleSelectionChange"
         @generate-video="handleGenerateVideo"
         @refresh="loadVideos"
@@ -107,6 +108,7 @@
       :episode-id="selectedEpisodeId ? Number(selectedEpisodeId) : undefined"
       :scene-type="2"
       :initial-index="0"
+      :picture-ratio="projectStore.pictureRatio || 1"
       @refresh="loadVideos"
     />
 
@@ -149,6 +151,19 @@
 
   // 视频表格引用
   const videoTableRef = ref<InstanceType<typeof VideoTable>>();
+
+  // 根据 projectStore.pictureRatio 计算 aspectRatio
+  // pictureRatio: 1-16:9;2-4:3;3-1:1;4-3:4;5-9:16
+  const aspectRatio = computed(() => {
+    const ratioMap: Record<number, string> = {
+      1: '16:9',
+      2: '4:3',
+      3: '1:1',
+      4: '3:4',
+      5: '9:16'
+    };
+    return ratioMap[projectStore.pictureRatio || 1] || '16:9';
+  });
 
   // 导入弹窗引用
   const importDialogRef = ref<InstanceType<typeof ImportTextDialog>>();

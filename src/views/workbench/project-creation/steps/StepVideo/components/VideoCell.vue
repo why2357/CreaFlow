@@ -19,7 +19,7 @@
     </div>
     <!-- 图片显示区域（当没有视频但有图片时） -->
     <div v-else-if="hasImage" class="image-container">
-      <el-image :src="imageUrl" fit="contain" class="scene-image" :preview-src-list="[imageUrl]" />
+      <el-image :src="imageUrl" fit="contain" class="scene-image" :preview-src-list="[imageUrl]" preview-teleported />
     </div>
     <!-- 空状态（既没有视频也没有图片） -->
     <div v-else class="empty-video">
@@ -167,20 +167,27 @@
     // background: #f5f7fa;
 
     // 根据宽高比设置宽度,高度由父容器决定(190px)
+    // 竖版比例固定宽度为260px,高度自适应
     &[data-aspect-ratio='16:9'] {
       width: 338px; // 190 * (16/9) ≈ 338
     }
     &[data-aspect-ratio='9:16'] {
-      width: 107px; // 190 * (9/16) ≈ 107
+      width: 260px; // 竖版固定宽度
+      min-height: 462px; // 260 * (16/9) ≈ 462px，保持最小高度
+      height: auto; // 高度自适应
     }
     &[data-aspect-ratio='1:1'] {
-      width: 190px; // 190 * 1 = 190
+      width: 260px; // 1:1 固定宽度
+      min-height: 260px; // 1:1 保持正方形
+      height: auto; // 高度自适应
     }
     &[data-aspect-ratio='4:3'] {
       width: 253px; // 190 * (4/3) ≈ 253
     }
     &[data-aspect-ratio='3:4'] {
-      width: 143px; // 190 * (3/4) ≈ 143
+      width: 260px; // 竖版固定宽度
+      min-height: 347px; // 260 * (4/3) ≈ 347px，保持最小高度
+      height: auto; // 高度自适应
     }
 
     .video-container {

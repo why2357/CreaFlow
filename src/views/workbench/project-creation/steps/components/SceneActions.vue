@@ -13,7 +13,7 @@
     </el-tooltip>
 
     <!-- 插入镜头 -->
-    <el-tooltip content="插入" :placement="tooltipPlacement" :popper-options="popperOptions" :z-index="zIndex">
+    <el-tooltip content="插镜" :placement="tooltipPlacement" :popper-options="popperOptions" :z-index="zIndex">
       <el-button :size="buttonSize" @click.stop="handleInsert">
         <svg-icon :icon-class="insertIcon" />
       </el-button>

@@ -21,6 +21,7 @@
       <WaterfallView
         :waterfall-data="waterfallData"
         :loading="loading"
+        :aspect-ratio="aspectRatio"
         @replace="handleReplace"
         @collect="handleCollect"
         @download="handleDownload"
@@ -65,7 +66,7 @@
   import { addScene, deleteScene } from '@/api/workbench/storyboard';
   import { useProjectStore } from '@/store/modules/project';
   import { ElMessage, ElMessageBox } from 'element-plus';
-  import { ref, watch } from 'vue';
+  import { computed, ref, watch } from 'vue';
 
   // 导入组件
   import CommentDialog from '../StepShotList/components/CommentDialog.vue';
@@ -73,6 +74,18 @@
   import WaterfallView from './components/WaterfallView.vue';
 
   const projectStore = useProjectStore();
+
+  // 根据项目配置计算宽高比
+  const aspectRatio = computed(() => {
+    const ratioMap: Record<number, string> = {
+      1: '16:9',
+      2: '4:3',
+      3: '1:1',
+      4: '3:4',
+      5: '9:16'
+    };
+    return ratioMap[projectStore.pictureRatio || 1] || '16:9';
+  });
 
   // 选中的剧集
   const selectedEpisodeId = ref<string | number | null>(null);

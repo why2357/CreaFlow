@@ -610,6 +610,7 @@
       .empty-state {
         display: flex;
         flex: 1;
+        width: 100%;
         flex-direction: column;
         justify-content: center;
         align-items: center;

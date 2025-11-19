@@ -739,22 +739,29 @@
 
   // 计算画面列宽度 - 根据宽高比动态计算
   const getImageColumnWidth = () => {
-    // 固定高度为 190px (表格行高)
+    // 固定宽度为 260px（用于竖版和正方形）
+    const fixedWidth = 260;
+    // 横版比例固定高度为 190px (表格行高)
     const imageHeight = 190;
 
     // 根据宽高比计算宽度
-    const ratioMap: Record<string, number> = {
-      '1:1': 1,
-      '16:9': 16 / 9,
-      '9:16': 9 / 16,
-      '4:3': 4 / 3,
-      '3:4': 3 / 4
+    const ratioMap: Record<string, { ratio: number; fixedWidth?: number }> = {
+      '1:1': { ratio: 1, fixedWidth }, // 正方形，固定宽度
+      '16:9': { ratio: 16 / 9 },
+      '9:16': { ratio: 9 / 16, fixedWidth }, // 竖版，固定宽度
+      '4:3': { ratio: 4 / 3 },
+      '3:4': { ratio: 3 / 4, fixedWidth } // 竖版，固定宽度
     };
 
-    const ratio = ratioMap[props.aspectRatio] || 16 / 9;
-    const imageWidth = imageHeight * ratio;
+    const config = ratioMap[props.aspectRatio] || { ratio: 16 / 9 };
 
-    // 列宽 = 图片宽度 (不加padding，完全铺满)
+    // 如果设置了固定宽度，使用固定宽度
+    if (config.fixedWidth) {
+      return config.fixedWidth;
+    }
+
+    // 横版比例根据高度计算宽度
+    const imageWidth = imageHeight * config.ratio;
     return Math.ceil(imageWidth);
   };
 

@@ -41,11 +41,7 @@
           />
 
           <!-- 空图片占位符 -->
-          <div
-            v-else
-            class="empty-image-placeholder"
-            :style="{ height: emptyColumnHeights[item.id] ? `${emptyColumnHeights[item.id]}px` : '320px' }"
-          >
+          <div v-else class="empty-image-placeholder" :style="{ height: `${mainImageHeight}px`, width: '100%' }">
             <div class="placeholder-content">
               <svg-icon icon-class="fy-image" class="placeholder-icon" />
               <p class="placeholder-text">暂无画面</p>
@@ -94,7 +90,11 @@
         </div>
 
         <!-- 历史图片列表 -->
-        <div v-if="item.historyImgs && item.historyImgs.length > 0" class="history-images">
+        <div
+          v-if="item.historyImgs && item.historyImgs.length > 0"
+          class="history-images"
+          :style="{ maxHeight: `calc(100vh - ${mainImageHeight + 330}px)` }"
+        >
           <div class="history-box">
             <div
               v-for="historyImg in item.historyImgs"
@@ -179,16 +179,18 @@
 <script setup lang="ts">
   import type { WaterfallItem } from '@/api/workbench/episode/waterfall';
   import { Loading } from '@element-plus/icons-vue';
-  import { onMounted, ref, watch } from 'vue';
+  import { computed, onMounted, ref, watch } from 'vue';
   import SceneActions from '../../components/SceneActions.vue';
 
   interface Props {
     waterfallData: WaterfallItem[];
     loading?: boolean;
+    aspectRatio?: string; // '1:1' | '16:9' | '9:16' | '4:3' | '3:4'
   }
 
   const props = withDefaults(defineProps<Props>(), {
-    loading: false
+    loading: false,
+    aspectRatio: '16:9'
   });
 
   const emit = defineEmits<{
@@ -219,19 +221,80 @@
     }
   };
 
+  // 根据宽高比计算主图片的固定高度
+  const mainImageHeight = computed(() => {
+    // 竖版和正方形比例使用固定高度
+    const squareHeight = 260; // 1:1 的高度
+    const verticalHeight = 462; // 9:16 的高度
+    const defaultHeight = 320; // 横版默认高度
+
+    const heightMap: Record<string, number> = {
+      '1:1': squareHeight, // 正方形固定高度 260px
+      '16:9': defaultHeight,
+      '9:16': verticalHeight,
+      '4:3': defaultHeight,
+      '3:4': 347 // 3:4 的高度
+    };
+
+    return heightMap[props.aspectRatio] || defaultHeight;
+  });
+
   // 计算列宽的通用函数
-  const calculateColumnWidth = (aspectRatio: number) => {
+  const calculateColumnWidth = (imageAspectRatio: number) => {
+    // 固定宽度为 260px（用于竖版和正方形）
+    const fixedWidth = 260;
     const containerHeight = 320;
-    const calculatedWidth = Math.round(containerHeight * aspectRatio);
+
+    // 根据项目配置的宽高比判断是否使用固定宽度
+    const ratioMap: Record<string, { useFixedWidth: boolean; ratio: number }> = {
+      '1:1': { useFixedWidth: true, ratio: 1 }, // 正方形使用固定宽度
+      '16:9': { useFixedWidth: false, ratio: 16 / 9 },
+      '9:16': { useFixedWidth: true, ratio: 9 / 16 }, // 竖版使用固定宽度
+      '4:3': { useFixedWidth: false, ratio: 4 / 3 },
+      '3:4': { useFixedWidth: true, ratio: 3 / 4 } // 竖版使用固定宽度
+    };
+
+    const config = ratioMap[props.aspectRatio] || { useFixedWidth: false, ratio: 16 / 9 };
+
+    // 如果使用固定宽度（竖版或正方形），返回固定宽度
+    if (config.useFixedWidth) {
+      return fixedWidth;
+    }
+
+    // 横版比例根据实际图片宽高比计算宽度
+    const calculatedWidth = Math.round(containerHeight * imageAspectRatio);
     const minWidth = 280;
     const maxWidth = 500;
     return Math.max(minWidth, Math.min(maxWidth, calculatedWidth));
   };
 
-  // 计算空镜头高度的通用函数（根据宽度反向计算）
+  // 计算空镜头高度的通用函数（根据项目配置的宽高比）
   const calculateEmptyColumnHeight = (width: number) => {
-    const defaultAspectRatio = 16 / 9; // 默认使用16:9比例
-    const calculatedHeight = Math.round(width / defaultAspectRatio);
+    // 根据项目配置的宽高比计算高度
+    const ratioMap: Record<string, number> = {
+      '1:1': 1,
+      '16:9': 16 / 9,
+      '9:16': 9 / 16,
+      '4:3': 4 / 3,
+      '3:4': 3 / 4
+    };
+
+    const aspectRatioValue = ratioMap[props.aspectRatio] || 16 / 9;
+    const calculatedHeight = Math.round(width / aspectRatioValue);
+
+    // 正方形比例使用固定高度 260px
+    if (props.aspectRatio === '1:1') {
+      return 260;
+    }
+
+    // 竖版比例使用更大的高度范围
+    const isVertical = props.aspectRatio === '9:16' || props.aspectRatio === '3:4';
+    if (isVertical) {
+      const minHeight = props.aspectRatio === '9:16' ? 462 : 347;
+      return Math.max(minHeight, calculatedHeight);
+    }
+
+    // 横版比例使用默认高度范围
     const minHeight = 280;
     const maxHeight = 320;
     return Math.max(minHeight, Math.min(maxHeight, calculatedHeight));
@@ -246,8 +309,16 @@
   const getAverageColumnWidth = () => {
     const widths = Object.values(columnWidths.value);
     if (widths.length === 0) {
-      // 如果没有任何已加载的图片，使用16:9的默认宽度
-      return calculateColumnWidth(16 / 9);
+      // 如果没有任何已加载的图片，根据项目配置的宽高比返回默认宽度
+      const ratioMap: Record<string, number> = {
+        '1:1': 1,
+        '16:9': 16 / 9,
+        '9:16': 9 / 16,
+        '4:3': 4 / 3,
+        '3:4': 3 / 4
+      };
+      const defaultRatio = ratioMap[props.aspectRatio] || 16 / 9;
+      return calculateColumnWidth(defaultRatio);
     }
     // 返回平均宽度
     const sum = widths.reduce((acc, width) => acc + width, 0);
@@ -496,8 +567,8 @@
     .waterfall-container {
       display: flex;
       gap: 20px;
-      // padding: 20px;
-      min-height: 100%;
+      padding-bottom: 20px;
+      // min-height: 100%;
       overflow-x: auto;
 
       // 水平滚动条样式
@@ -762,8 +833,6 @@
         .history-images {
           gap: 8px;
           padding: 12px;
-          max-height: calc(100vh - 600px);
-
           overflow-y: auto;
           .history-box {
             display: flex;
