@@ -637,6 +637,7 @@
         flex: 1;
         flex-direction: column;
         gap: 16px;
+        width: 100%;
         position: relative;
 
         // 图片容器 - 固定高度180px

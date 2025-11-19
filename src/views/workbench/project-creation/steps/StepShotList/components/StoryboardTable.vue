@@ -199,14 +199,14 @@
 
         <!-- 空状态 -->
         <template #empty>
-          <div class="empty-state">
+          <div v-if="episodeTaskStatus !== 1" class="empty-state">
             <div class="empty-content">
               <img
                 style="width: 200px; height: 200px"
                 src="../../../../../../assets/images/no-image-light.png"
                 alt=""
               />
-              <!-- <p class="empty-text">暂无分镜头</p> -->
+              <p class="empty-text">暂无分镜头</p>
             </div>
           </div>
         </template>
@@ -303,6 +303,7 @@
     projectId: number;
     episodes: EpisodeInfo[];
     modelPoints?: number; // 当前模型的点数
+    episodeTaskStatus?: number; // 剧集任务状态
   }
 
   const props = withDefaults(defineProps<Props>(), {

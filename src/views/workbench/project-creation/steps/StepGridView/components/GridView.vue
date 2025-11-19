@@ -215,11 +215,9 @@
 
 <style scoped lang="scss">
   .grid-view-container {
-    display: flex;
-    justify-content: center;
-    align-items: center;
     width: 100%;
     height: 100%;
+    overflow: hidden;
 
     .loading-container {
       display: flex;
@@ -264,8 +262,29 @@
       align-content: start;
       gap: 20px;
       width: 100%;
-      height: 100%;
+      height: calc(100vh - 180px);
       overflow-y: auto;
+      padding: 4px;
+
+      // 滚动条样式
+      &::-webkit-scrollbar {
+        width: 8px;
+      }
+
+      &::-webkit-scrollbar-track {
+        background: #f5f7fa;
+        border-radius: 4px;
+      }
+
+      &::-webkit-scrollbar-thumb {
+        background: #c0c4cc;
+        border-radius: 4px;
+        transition: all 0.3s;
+
+        &:hover {
+          background: #909399;
+        }
+      }
 
       .grid-card {
         position: relative;

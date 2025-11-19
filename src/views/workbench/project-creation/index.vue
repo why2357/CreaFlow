@@ -515,6 +515,9 @@
   }
 
   .step-tabs {
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
     display: flex;
     align-items: center;
     gap: 0;

@@ -64,6 +64,7 @@
           :project-id="Number(projectStore.currentProjectId) || 0"
           :episodes="projectStore.episodeInfoList"
           :model-points="getCurrentModelPoints"
+          :episode-task-status="episodeTaskStatus"
           @image-upload="handleImageUpload"
           @image-regenerate="handleImageRegenerate"
           @toggle-favorite="handleToggleFavorite"

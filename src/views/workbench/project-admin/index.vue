@@ -291,6 +291,7 @@
   // 头部样式 - 固定不滚动
   .project-header {
     display: flex;
+    padding-top: 2px;
     flex-shrink: 0; // 防止头部被压缩
     justify-content: space-between;
     align-items: flex-start;

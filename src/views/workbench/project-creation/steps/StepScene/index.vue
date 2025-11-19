@@ -305,8 +305,8 @@
       scrollWrappers.forEach((wrapper) => {
         const handleWheel = (e: Event) => {
           const wheelEvent = e as WheelEvent;
-          // 只处理垂直滚动
-          if (wheelEvent.deltaY !== 0) {
+          // 只有按住Ctrl键时才处理滚动
+          if (wheelEvent.ctrlKey && wheelEvent.deltaY !== 0) {
             wheelEvent.preventDefault();
             // 将垂直滚动转换为横向滚动
             const element = wrapper as HTMLElement;

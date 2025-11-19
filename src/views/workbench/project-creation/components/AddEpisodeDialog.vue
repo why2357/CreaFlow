@@ -482,7 +482,7 @@
 
     .story-textarea {
       :deep(.el-textarea__inner) {
-        padding-bottom: 48px;
+        padding-bottom: 64px;
         background: #f7f8fa;
         border: 1px solid #e5e6eb;
         border-radius: 8px;

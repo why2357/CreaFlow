@@ -105,7 +105,14 @@
       <template v-else>
         <el-table v-loading="loading" :data="projectDataList" @selection-change="handleSelectionChange">
           <el-table-column type="selection" width="55" align="center" />
-          <el-table-column label="用户ID" align="center" prop="userId" min-width="100" show-overflow-tooltip />
+          <el-table-column
+            label="用户ID"
+            align="center"
+            prop="userId"
+            min-width="160"
+            show-overflow-tooltip
+            fixed="left"
+          />
           <el-table-column label="用户名称" align="center" prop="nickName" min-width="120" show-overflow-tooltip />
           <el-table-column label="手机号码" align="center" prop="phonenumber" min-width="130" show-overflow-tooltip />
           <el-table-column label="有效生图/生产图片次数" align="center" min-width="180" show-overflow-tooltip>
@@ -119,11 +126,7 @@
             </template>
           </el-table-column>
           <el-table-column label="累计消耗点数" align="center" prop="consumePoint" min-width="120" />
-          <el-table-column label="消耗时间" align="center" prop="consumeTime" min-width="170">
-            <template #default="scope">
-              <span>{{ parseTime(scope.row.consumeTime) }}</span>
-            </template>
-          </el-table-column>
+          <el-table-column label="消耗时间" align="center" prop="consumeTime" min-width="300"> </el-table-column>
         </el-table>
 
         <pagination
@@ -257,7 +260,7 @@
     loading.value = true;
     try {
       const res = await listProjectData(queryParams);
-      projectDataList.value = res.rows || [];
+      projectDataList.value = res.data || [];
       total.value = res.total || 0;
     } catch (error) {
       console.error('Get project data list failed:', error);
