@@ -149,7 +149,7 @@
   import { getProjectDataProgress, listProjectData } from '@/api/workbench/projectData';
   import { ProjectDataProgressVO, ProjectDataQuery, ProjectDataVO } from '@/api/workbench/projectData/types';
   import { ElMessage } from 'element-plus';
-  import { getCurrentInstance, onMounted, reactive, ref, watch } from 'vue';
+  import { getCurrentInstance, onMounted, reactive, ref } from 'vue';
 
   const { proxy } = getCurrentInstance() as any;
 
@@ -198,14 +198,12 @@
       episodeList.value = res.data || [];
       console.log('Episode list loaded:', episodeList.value.length);
 
-      // Auto-select first episode
+      // Auto-select first episode (但不自动查询数据)
       if (episodeList.value.length > 0) {
         const firstEpisode = episodeList.value[0];
         queryParams.episodeId = firstEpisode.id as number;
-        // Fetch progress data only if episode exists
-        await getProgress();
       } else {
-        // No episodes available - clear data and stop loading
+        // No episodes available - clear data
         queryParams.episodeId = undefined as any;
         progressData.value = null;
         projectDataList.value = [];
@@ -283,18 +281,19 @@
     }
   };
 
-  const handleEpisodeChange = async (value: number | undefined) => {
-    // Fetch progress data when episode changes
-    if (value && queryParams.projectId) {
-      await getProgress();
-    } else {
+  const handleEpisodeChange = (value: number | undefined) => {
+    // 剧集变化时只清空进度数据，不自动查询
+    if (!value) {
       progressData.value = null;
+      projectDataList.value = [];
+      total.value = 0;
     }
   };
 
-  const handleQuery = () => {
+  const handleQuery = async () => {
     queryParams.pageNum = 1;
-    getList();
+    // 同时更新项目进度和数据列表
+    await Promise.all([getProgress(), getList()]);
   };
 
   const resetQuery = async () => {
@@ -326,15 +325,7 @@
     return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
   };
 
-  // Watch for both projectId and episodeId changes to auto-fetch data
-  watch(
-    () => [queryParams.projectId, queryParams.episodeId],
-    ([newProjectId, newEpisodeId]) => {
-      if (newProjectId && newEpisodeId) {
-        handleQuery();
-      }
-    }
-  );
+  // 移除自动查询逻辑，只有用户点击"查询"按钮时才调用接口
 
   onMounted(() => {
     getProjectList();

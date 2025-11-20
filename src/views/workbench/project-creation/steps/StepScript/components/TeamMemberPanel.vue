@@ -35,7 +35,9 @@
             >
               <span class="avatar-text">{{ member.icon }}</span>
               <!-- 删除按钮 -->
+
               <div
+                v-if="canDeleteMember"
                 v-show="hoveredMemberId === member.memberId"
                 class="delete-btn"
                 @click.stop="confirmRemoveMember(member)"
@@ -63,7 +65,7 @@
         popper-class="invite-member-popover"
       >
         <template #reference>
-          <div class="add-member-btn" @click="inviteVisible = !inviteVisible">
+          <div v-has-project-permi="['member-add']" class="add-member-btn" @click="inviteVisible = !inviteVisible">
             <el-icon class="add-icon"><Plus /></el-icon>
             <span>添加协作者</span>
           </div>
@@ -114,6 +116,21 @@
   const members = ref<MemberDisplay[]>([]);
   const inviteVisible = ref(false);
   const hoveredMemberId = ref<string | number | null>(null);
+
+  // 项目权限检查
+  const hasProjectPermission = (permissions: string[]): boolean => {
+    return projectStore.projectPermissions.some((permi) => permissions.includes(permi));
+  };
+
+  // 是否有添加成员权限
+  const canAddMember = computed(() => {
+    return hasProjectPermission(['member-add']);
+  });
+
+  // 是否有删除成员权限
+  const canDeleteMember = computed(() => {
+    return hasProjectPermission(['member-delete']);
+  });
 
   // 获取成员显示名称（超过6个字符显示省略号）
   const getMemberDisplayName = (name: string): string => {

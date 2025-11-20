@@ -103,7 +103,9 @@
 
       <!-- 执行中状态 (taskStatus === 1) -->
       <div v-else-if="taskStatus === 1" class="loading-overlay">
-        <svg-icon icon-class="fy-gen-genering" class="loading-icon" />
+        <div class="loading-animation-wrapper">
+          <Vue3Lottie :animation-data="generatingAnimation" :height="80" :width="80" class="loading-icon" />
+        </div>
         <p class="loading-text">生成中，请稍等...</p>
       </div>
 
@@ -197,11 +199,13 @@
 
 <script setup lang="ts">
   import { cancelCollectHistoryDetail, collectHistoryDetail, replaceSceneImage } from '@/api/workbench/episode';
-  import { uploadFile } from '@/utils/uploadFile';
+  import generatingAnimation from '@/assets/lottie/video-generating.json';
   import { sizeToValue } from '@/utils/projectUtils';
+  import { uploadFile } from '@/utils/uploadFile';
   import { Edit } from '@element-plus/icons-vue';
   import { ElMessage } from 'element-plus';
   import { computed, ref } from 'vue';
+  import { Vue3Lottie } from 'vue3-lottie';
   import SceneImageEditDialog from './SceneImageEditDialog.vue';
   import SceneImageHistoryDialog from './SceneImageHistoryDialog.vue';
 
@@ -814,11 +818,12 @@
       width: 100%;
       height: 100%;
       // background: linear-gradient(180deg, #f0ebff 0%, #fef5ff 100%);
-
+      .loading-animation-wrapper {
+        animation: fadeInScale 0.4s ease-out;
+      }
       .loading-icon {
         width: 80px;
         height: 80px;
-        animation: rotate 1.5s linear infinite;
       }
 
       .loading-text {

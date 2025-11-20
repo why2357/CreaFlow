@@ -517,6 +517,7 @@ export interface EditVideoPromptRequest {
   videoPrompt?: string;
   /** 尾帧OSS ID */
   endFrameOssId?: number;
+  endFrameMaterialId?: number;
   /** 尾帧OSS URL */
   endFrameOssUrl?: string;
 }

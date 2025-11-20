@@ -138,9 +138,28 @@
       return;
     }
 
-    cropper.getCroppedCanvas().toBlob(async (blob) => {
+    // 获取裁剪后的画布
+    const canvas = cropper.getCroppedCanvas();
+
+    // 验证裁剪尺寸
+    const width = canvas.width;
+    const height = canvas.height;
+
+    if (width < 320 || height < 320) {
+      ElMessage.error(`裁剪尺寸不能小于320×320，当前尺寸为${width}×${height}`);
+      return;
+    }
+
+    canvas.toBlob(async (blob) => {
       if (!blob) {
         ElMessage.error('裁剪失败');
+        return;
+      }
+
+      // 验证文件大小（不能超过10M）
+      const maxSize = 10 * 1024 * 1024; // 10MB
+      if (blob.size > maxSize) {
+        ElMessage.error(`图片大小不能超过10M，当前大小为${(blob.size / 1024 / 1024).toFixed(2)}M`);
         return;
       }
 
@@ -219,7 +238,7 @@
     left: 0;
     right: 0;
     bottom: 0;
-    z-index: 3000;
+    z-index: 2000;
 
     .crop-overlay {
       position: absolute;

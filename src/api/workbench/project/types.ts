@@ -250,6 +250,8 @@ export interface ProjectInfoResponse {
   t2iModelInfoList?: AiModelInfoDto[];
   /** 文生文模型 */
   t2tModelInfoList?: AiModelInfoDto[];
+  /** 项目权限列表 */
+  permissions?: string[];
 }
 
 /**
@@ -619,4 +621,29 @@ export interface LibraryBindEpisodeRequest {
   libraryType: number;
   /** 服装关联剧集时给libraryDetailId，场景关联剧集时给libraryId */
   relationId: number;
+}
+
+// ==================== 项目路由权限相关类型 ====================
+
+/**
+ * MetaVo，路由显示信息
+ */
+export interface MetaVo {
+  /**
+   * 设置该路由的图标，对应路径src/assets/icons/svg
+   */
+  icon?: string;
+  /**
+   * 内链地址（http(s)://开头）
+   */
+  link?: string;
+  /**
+   * 设置为true，则不会被 <keep-alive>缓存
+   */
+  noCache?: boolean;
+  /**
+   * 设置该路由在侧边栏和面包屑中展示的名字
+   */
+  title?: string;
+  [property: string]: any;
 }

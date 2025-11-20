@@ -55,8 +55,8 @@ export const useUserStore = defineStore('user', () => {
       if (data.permissions && data.permissions.length > 0) {
         permissions.value = data.permissions;
       } else {
-        // 设置默认权限，允许基本访问
-        permissions.value = ['*:*:*'];
+        // 如果没有权限，设置为空数组
+        permissions.value = [];
       }
 
       name.value = user.userName;

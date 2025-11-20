@@ -223,6 +223,37 @@
       return;
     }
 
+    // 验证图片尺寸
+    try {
+      const img = new Image();
+      const imageUrl = URL.createObjectURL(file);
+
+      await new Promise((resolve, reject) => {
+        img.onload = () => {
+          URL.revokeObjectURL(imageUrl);
+
+          // 检查图片尺寸，长宽都必须大于320px
+          if (img.width <= 320 || img.height <= 320) {
+            reject(new Error(`图片尺寸过小，当前尺寸为 ${img.width}×${img.height}，长宽都必须大于320px`));
+            return;
+          }
+
+          resolve(true);
+        };
+
+        img.onerror = () => {
+          URL.revokeObjectURL(imageUrl);
+          reject(new Error('图片加载失败，请检查文件是否损坏'));
+        };
+
+        img.src = imageUrl;
+      });
+    } catch (error: any) {
+      ElMessage.error(error.message || '图片验证失败');
+      target.value = '';
+      return;
+    }
+
     try {
       ElMessage.info('正在上传尾帧图片...');
 
@@ -268,7 +299,7 @@
       if (props.video.basicId) {
         await editVideoPrompt({
           basicId: props.video.basicId,
-          endFrameOssId: undefined,
+          endFrameMaterialId: 0,
           endFrameOssUrl: ''
         });
       }

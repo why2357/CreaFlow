@@ -58,6 +58,9 @@ interface ProjectState {
   progress: ProjectProgress | null;
   stats: ProductionStats | null;
 
+  // 项目权限
+  projectPermissions: string[];
+
   // 加载状态
   loading: boolean;
   // 初始化状态（用于优化首次加载体验）
@@ -94,6 +97,7 @@ export const useProjectStore = defineStore('project', {
     t2tModelInfoList: [],
     progress: null,
     stats: null,
+    projectPermissions: [],
     loading: false,
     isInitializing: false
   }),
@@ -203,8 +207,8 @@ export const useProjectStore = defineStore('project', {
      */
     async loadProjectInfo(projectId: number) {
       try {
-        const res = await getProjectInfo(projectId);
-        const data: ProjectInfoResponse = res.data;
+        const projectInfoRes = await getProjectInfo(projectId);
+        const data: ProjectInfoResponse = projectInfoRes.data;
 
         // 更新项目基础信息
         this.projectName = data.projectName;
@@ -224,6 +228,9 @@ export const useProjectStore = defineStore('project', {
         this.i2vModelInfoList = data.i2vModelInfoList || [];
         this.t2iModelInfoList = data.t2iModelInfoList || [];
         this.t2tModelInfoList = data.t2tModelInfoList || [];
+
+        // 更新项目权限
+        this.projectPermissions = data.permissions || [];
 
         // 转换剧集信息为旧格式（兼容现有逻辑）
         this.episodes = this.episodeInfoList
@@ -256,6 +263,7 @@ export const useProjectStore = defineStore('project', {
       this.scenes = [];
       this.progress = null;
       this.stats = null;
+      this.projectPermissions = [];
     },
 
     // ==================== 剧集管理 ====================

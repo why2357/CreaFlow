@@ -39,9 +39,8 @@
       <template #header>
         <el-row :gutter="10">
           <el-col :span="1.5">
-            <el-button type="primary" plain icon="Plus" @click="handleAdd()" v-hasPermi="['system:menu:add']"
-              >新增
-            </el-button>
+            <!-- v-hasPermi="['system:menu:add']" -->
+            <el-button type="primary" plain icon="Plus" @click="handleAdd()">新增 </el-button>
           </el-col>
           <el-col :span="1.5">
             <el-button type="info" plain icon="Sort" @click="handleToggleExpandAll">展开/折叠</el-button>
@@ -79,23 +78,15 @@
         </el-table-column>
         <el-table-column fixed="right" label="操作" width="180">
           <template #default="scope">
+            <!-- v-hasPermi="['system:menu:edit']" -->
+
             <el-tooltip content="修改" placement="top">
-              <el-button
-                link
-                type="primary"
-                icon="Edit"
-                @click="handleUpdate(scope.row)"
-                v-hasPermi="['system:menu:edit']"
-              />
+              <el-button link type="primary" icon="Edit" @click="handleUpdate(scope.row)" />
             </el-tooltip>
+            <!-- v-hasPermi="['system:menu:add']" -->
+
             <el-tooltip content="新增" placement="top">
-              <el-button
-                link
-                type="primary"
-                icon="Plus"
-                @click="handleAdd(scope.row)"
-                v-hasPermi="['system:menu:add']"
-              />
+              <el-button link type="primary" icon="Plus" @click="handleAdd(scope.row)" />
             </el-tooltip>
             <el-tooltip content="删除" placement="top">
               <el-button

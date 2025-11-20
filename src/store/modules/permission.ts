@@ -54,16 +54,30 @@ export const usePermissionStore = defineStore('permission', () => {
   const generateRoutes = async (): Promise<RouteOption[]> => {
     const res = await getRouters();
     const { data } = res;
+    console.log('[generateRoutes] 原始路由数据:', data);
+
     const sdata = JSON.parse(JSON.stringify(data));
     const rdata = JSON.parse(JSON.stringify(data));
     const defaultData = JSON.parse(JSON.stringify(data));
+
     const sidebarRoutes = filterAsyncRouter(sdata);
+    console.log('[generateRoutes] 处理后的侧边栏路由:', sidebarRoutes);
+
     const rewriteRoutes = filterAsyncRouter(rdata, undefined, true);
+    console.log('[generateRoutes] 重写路由:', rewriteRoutes);
+
     const defaultRoutes = filterAsyncRouter(defaultData);
     const asyncRoutes = filterDynamicRoutes(dynamicRoutes);
     asyncRoutes.forEach((route) => {
       router.addRoute(route);
     });
+
+    // 将处理后的路由添加到 router
+    rewriteRoutes.forEach((route) => {
+      console.log('[generateRoutes] 添加路由到 router:', route.path, route);
+      router.addRoute(route);
+    });
+
     setRoutes(rewriteRoutes);
     // 合并静态菜单、常量路由和动态路由
     setSidebarRouters(constantRoutes.concat(sidebarRoutes));
@@ -84,6 +98,7 @@ export const usePermissionStore = defineStore('permission', () => {
         route.children = filterChildren(route.children, undefined);
       }
       if (route.component) {
+        const originalComponent = route.component;
         // Layout ParentView 组件特殊处理
         if (route.component === 'Layout') {
           route.component = Layout;
@@ -93,7 +108,12 @@ export const usePermissionStore = defineStore('permission', () => {
           route.component = InnerLink;
         } else {
           route.component = loadView(route.component);
+          if (!route.component) {
+            console.error(`[filterAsyncRouter] 路由 ${route.path} 的组件 ${originalComponent} 加载失败`);
+          }
         }
+      } else {
+        console.warn(`[filterAsyncRouter] 路由 ${route.path} 缺少 component 属性`);
       }
       if (route.children != null && route.children && route.children.length) {
         route.children = filterAsyncRouter(route.children, route, type);
@@ -170,12 +190,36 @@ export const filterDynamicRoutes = (routes: RouteOption[]) => {
 
 export const loadView = (view: any) => {
   let res;
+
+  // 标准化视图路径：移除开头的 'views/' 和结尾的 '.vue'
+  let normalizedView = view;
+  if (normalizedView.startsWith('views/')) {
+    normalizedView = normalizedView.replace('views/', '');
+  }
+  if (normalizedView.endsWith('.vue')) {
+    normalizedView = normalizedView.replace('.vue', '');
+  }
+
   for (const path in modules) {
-    const dir = path.split('views/')[1].split('.vue')[0];
-    if (dir === view) {
+    // 从模块路径中提取相对于 views 目录的路径
+    const dir = path.split('views/')[1]?.split('.vue')[0];
+    if (dir === normalizedView) {
       res = () => modules[path]();
+      break;
     }
   }
+
+  // 如果找不到对应的组件，输出警告信息
+  if (!res) {
+    console.warn(`[loadView] 无法找到组件: ${view} (标准化后: ${normalizedView})`);
+    console.log(
+      '[loadView] 可用的组件路径:',
+      Object.keys(modules)
+        .map((p) => p.split('views/')[1]?.split('.vue')[0])
+        .filter(Boolean)
+    );
+  }
+
   return res;
 };
 

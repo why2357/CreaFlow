@@ -276,12 +276,32 @@
   };
 
   // 打开故事板审阅弹窗（只审阅橙色状态的场景）
-  const handleOpenReviewDialog = () => {
+  const handleOpenReviewDialog = async () => {
     if (!selectedEpisodeId.value) {
       ElMessage.warning('请先选择剧集');
       return;
     }
-    storyboardReviewDialogVisible.value = true;
+
+    try {
+      // 先调用接口检查是否有分镜数据
+      const response = await queryStoryBoard({
+        episodeId: Number(selectedEpisodeId.value),
+        sceneStatusList: [1],
+        sceneType: 1 // 图片类型
+      });
+
+      // 如果返回空数组，提示用户并不打开弹窗
+      if (!response.data || response.data.length === 0) {
+        ElMessage.warning('暂无可审阅的分镜数据');
+        return;
+      }
+
+      // 有数据则打开弹窗
+      storyboardReviewDialogVisible.value = true;
+    } catch (error) {
+      console.error('查询分镜数据失败:', error);
+      ElMessage.error('查询分镜数据失败');
+    }
   };
 
   // 审阅弹窗刷新回调

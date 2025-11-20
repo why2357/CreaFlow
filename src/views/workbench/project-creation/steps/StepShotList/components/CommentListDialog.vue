@@ -111,6 +111,7 @@
     // 添加最小加载时间，确保用户看到加载状态
     const minLoadingTime = 300; // 300ms
     const startTime = Date.now();
+    console.log('props.commentList', props.commentList);
 
     try {
       // 如果传入了 commentList，则直接使用，不调用接口
@@ -352,5 +353,6 @@
     border-radius: 8px !important;
     overflow: hidden;
     box-shadow: 0 4px 6px rgba(224, 231, 255, 0.25), 0 10px 15px rgba(224, 231, 255, 0.5) !important;
+    z-index: 10000 !important;
   }
 </style>

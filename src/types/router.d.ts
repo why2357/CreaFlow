@@ -9,6 +9,7 @@ declare module 'vue-router' {
     children?: RouteOption[];
     alwaysShow?: boolean;
     parentPath?: string;
+    perms?: string; // 权限标识，用于按钮级权限控制
     meta?: {
       title: string;
       icon: string;

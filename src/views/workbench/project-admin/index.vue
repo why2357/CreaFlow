@@ -7,7 +7,13 @@
         <p class="sub-title">共 {{ projects.length }} 个项目</p>
       </div>
       <!-- 有数据时显示新建按钮 -->
-      <el-button class="add-btn" v-if="projects.length > 0" type="primary" @click="addProjectRef?.open()">
+      <el-button
+        v-if="projects.length > 0"
+        v-hasPermi="['project-add']"
+        class="add-btn"
+        type="primary"
+        @click="addProjectRef?.open()"
+      >
         <el-icon style="margin-right: 4px"><Plus /></el-icon>
         新建项目
       </el-button>
@@ -35,6 +41,7 @@
 
           <!-- 操作菜单按钮 -->
           <div
+            v-hasPermi="['project-rename', 'project-delete']"
             class="card-actions"
             :class="{ 'dropdown-active': activeDropdownId === String(item.projectId) }"
             @click.stop
@@ -50,11 +57,11 @@
               </div>
               <template #dropdown>
                 <el-dropdown-menu>
-                  <el-dropdown-item command="rename">
+                  <el-dropdown-item command="rename" v-hasPermi="['project-rename']">
                     <svg-icon icon-class="fy-pen" style="width: 16px; height: 16px; margin-right: 16px" />
                     重命名
                   </el-dropdown-item>
-                  <el-dropdown-item command="delete" divided class="delete-item">
+                  <el-dropdown-item command="delete" divided class="delete-item" v-hasPermi="['project-delete']">
                     <svg-icon icon-class="fy-del" style="width: 16px; height: 16px; margin-right: 16px" />
                     删除
                   </el-dropdown-item>
@@ -89,8 +96,8 @@
       <div class="empty-image">
         <img style="width: 200px" src="../../../assets/images/no-project.png" alt="" />
       </div>
-      <p class="empty-text">暂无项目，赶快点击下方按钮创建吧～</p>
-      <el-button type="primary" class="add-btn" @click="addProjectRef?.open()">
+      <p class="empty-text">暂无项目 <span v-hasPermi="['project-add']"> ，赶快点击下方按钮创建吧～</span></p>
+      <el-button v-hasPermi="['project-add']" type="primary" class="add-btn" @click="addProjectRef?.open()">
         <el-icon style="margin-right: 4px"><Plus /></el-icon>
         新建
       </el-button>
@@ -107,6 +114,7 @@
 <script setup name="Index" lang="ts">
   import { addProject as createProject, delProject, listProject, renameProject } from '@/api/workbench/project';
   import type { Project, ProjectCreateRequest } from '@/api/workbench/project/types';
+  import useUserStore from '@/store/modules/user';
   import { Clock, Loading, Plus } from '@element-plus/icons-vue';
   import dayjs from 'dayjs';
   import { ElMessage, ElMessageBox } from 'element-plus';
@@ -116,6 +124,7 @@
   import RenameProject from './components/rename-project.vue';
 
   const router = useRouter();
+  const userStore = useUserStore();
 
   // ------- refs --------
   const addProjectRef = ref();
@@ -128,6 +137,12 @@
 
   // 下拉菜单状态
   const activeDropdownId = ref<string | null>(null);
+
+  // 权限检查辅助函数
+  const hasPermission = (permission: string): boolean => {
+    const { permissions } = userStore;
+    return permissions.some((perm) => perm === '*:*:*' || perm === permission);
+  };
 
   // ------- 生命周期 --------
   onMounted(() => {

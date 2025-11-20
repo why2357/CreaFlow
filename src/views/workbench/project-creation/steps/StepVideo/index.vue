@@ -17,7 +17,7 @@
         </el-button>
 
         <!-- 审批按钮 -->
-        <el-button type="primary" class="review-button" @click="handleOpenReviewDialog"> 审批 </el-button>
+        <el-button type="primary" class="review-button" @click="handleOpenReviewDialog"> 审阅 </el-button>
         <!-- 生成按钮 -->
         <el-button v-if="selectedIds.length > 0" type="primary" class="review-button" @click="handleBatchGenerate">
           生成
@@ -137,6 +137,7 @@
     VideoModelPointConfig,
     VideoSceneItemInfo
   } from '@/api/workbench/episode/types';
+  import { queryStoryBoard } from '@/api/workbench/storyboard';
   import { useProjectStore } from '@/store/modules/project';
   import { useUserStore } from '@/store/modules/user';
   import { ElMessage, ElMessageBox } from 'element-plus';
@@ -485,8 +486,24 @@
         // 过滤掉无效的场景数据
         const validScenes = episodeData.episodeSceneItemInfoList.filter((scene) => scene && scene.basicId);
         videos.value = validScenes;
+
+        // 过滤 selectedIds，移除已删除镜头的 ID
+        const validBasicIds = new Set(validScenes.map((scene) => scene.basicId));
+        const filteredSelectedIds = selectedIds.value.filter((id) => validBasicIds.has(id));
+
+        // 只有在选中的 ID 发生变化时才更新（避免不必要的状态更新）
+        if (filteredSelectedIds.length !== selectedIds.value.length) {
+          selectedIds.value = filteredSelectedIds;
+          // 更新全选状态
+          selectAll.value = filteredSelectedIds.length === validScenes.length && validScenes.length > 0;
+          isIndeterminate.value = filteredSelectedIds.length > 0 && filteredSelectedIds.length < validScenes.length;
+        }
       } else {
         videos.value = [];
+        // 清空选中状态
+        selectedIds.value = [];
+        selectAll.value = false;
+        isIndeterminate.value = false;
       }
 
       // 恢复滚动位置
@@ -597,12 +614,32 @@
   };
 
   // 打开故事板审阅弹窗
-  const handleOpenReviewDialog = () => {
+  const handleOpenReviewDialog = async () => {
     if (!selectedEpisodeId.value) {
       ElMessage.warning('请先选择剧集');
       return;
     }
-    storyboardReviewDialogVisible.value = true;
+
+    try {
+      // 先调用接口检查是否有分镜数据
+      const response = await queryStoryBoard({
+        episodeId: Number(selectedEpisodeId.value),
+        sceneStatusList: [1],
+        sceneType: 2 // 视频类型
+      });
+
+      // 如果返回空数组，提示用户并不打开弹窗
+      if (!response.data || response.data.length === 0) {
+        ElMessage.warning('暂无可审阅的分镜数据');
+        return;
+      }
+
+      // 有数据则打开弹窗
+      storyboardReviewDialogVisible.value = true;
+    } catch (error) {
+      console.error('查询分镜数据失败:', error);
+      ElMessage.error('查询分镜数据失败');
+    }
   };
 
   // 批量生成 - 打开点数确认弹窗

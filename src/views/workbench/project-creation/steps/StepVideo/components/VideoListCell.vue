@@ -73,7 +73,7 @@
                   <el-dropdown-menu>
                     <el-dropdown-item command="replace" :disabled="isOperating">
                       <el-icon><RefreshRight /></el-icon>
-                      替换
+                      选中
                     </el-dropdown-item>
                     <el-dropdown-item command="download" :disabled="isOperating">
                       <el-icon><Download /></el-icon>
