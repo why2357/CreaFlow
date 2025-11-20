@@ -527,7 +527,6 @@
       await loadShots();
     } catch (error) {
       console.error('生成图片失败:', error);
-      ElMessage.error('生成图片失败，请重试');
       shot.imageLoading = false;
     } finally {
       currentRegenerateShot.value = null;

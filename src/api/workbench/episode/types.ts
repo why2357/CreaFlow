@@ -407,4 +407,6 @@ export interface GenVideoRequest {
 export interface ExportVideoPromptTemplateRequest {
   /** 剧集id */
   episodeId: number;
+  /** 项目id */
+  projectId: number;
 }

@@ -99,6 +99,7 @@
       ref="importDialogRef"
       v-model="importDialogVisible"
       :episode-id="selectedEpisodeId ? Number(selectedEpisodeId) : undefined"
+      :project-id="projectStore.currentProjectId ? Number(projectStore.currentProjectId) : undefined"
       @confirm="handleConfirmUpload"
     />
 

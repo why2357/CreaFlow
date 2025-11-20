@@ -61,8 +61,9 @@
                 </div>
               </template>
             </el-image>
-            <div v-else class="video-wrapper">
-              <video :src="item.previewOssUrl || item.originOssUrl" class="thumbnail-video" />
+            <div v-else class="video-wrapper" @click="handleVideoPreview(item)">
+              <img v-if="item.previewOssUrl" :src="item.previewOssUrl" class="thumbnail-image" alt="视频封面" />
+              <video v-else :src="item.originOssUrl" class="thumbnail-video" />
               <div class="video-overlay">
                 <el-icon class="play-icon"><video-play /></el-icon>
               </div>
@@ -106,18 +107,8 @@
       </div>
     </div>
 
-    <!-- 预览对话框 -->
-    <el-dialog v-model="previewVisible" :title="previewTitle" width="80%" center>
-      <div class="preview-content">
-        <el-image
-          v-if="previewType === 'image'"
-          :src="previewUrl"
-          fit="contain"
-          style="width: 100%; max-height: 70vh"
-        />
-        <video v-else-if="previewType === 'video'" :src="previewUrl" controls style="width: 100%; max-height: 70vh" />
-      </div>
-    </el-dialog>
+    <!-- 视频预览对话框 -->
+    <VideoPreviewDialog v-model="videoPreviewVisible" :video-url="currentVideoUrl" />
   </div>
 </template>
 
@@ -128,6 +119,7 @@
   import type { ProjectHistoryDetailVo } from '@/api/workbench/history/types';
   import { listProject } from '@/api/workbench/project';
   import type { ProjectPageInfoResponseDto } from '@/api/workbench/project/types';
+  import VideoPreviewDialog from '@/views/workbench/project-creation/steps/StepVideo/components/VideoPreviewDialog.vue';
   import { Picture as IconPicture, Loading, VideoPlay } from '@element-plus/icons-vue';
   import { ElMessage } from 'element-plus';
   import { onMounted, onUnmounted, ref } from 'vue';
@@ -160,11 +152,9 @@
   const videoTotal = ref(0);
   const videoHasMore = ref(true);
 
-  // 预览
-  const previewVisible = ref(false);
-  const previewUrl = ref('');
-  const previewTitle = ref('');
-  const previewType = ref<'image' | 'video'>('image');
+  // 视频预览
+  const videoPreviewVisible = ref(false);
+  const currentVideoUrl = ref('');
 
   // 获取项目列表
   const getProjectList = async () => {
@@ -304,29 +294,30 @@
       const res = await getAssetList(requestData);
       console.log('res', res);
 
-      if (res.rows) {
-        const { rows = [], total = 0 } = res;
+      // 处理返回数据，rows 可能为 null、undefined 或空数组
+      const rows = res.rows || [];
+      const total = res.total || 0;
 
-        if (isImage) {
-          if (isLoadMore) {
-            // 加载更多：追加数据
-            imageList.value = [...imageList.value, ...rows];
-          } else {
-            // 首次加载：替换数据
-            imageList.value = rows;
-          }
-          imageTotal.value = total;
-          // 判断是否还有更多数据
-          imageHasMore.value = imageList.value.length < total;
+      if (isImage) {
+        if (isLoadMore) {
+          // 加载更多：追加数据
+          imageList.value = [...imageList.value, ...rows];
         } else {
-          if (isLoadMore) {
-            videoList.value = [...videoList.value, ...rows];
-          } else {
-            videoList.value = rows;
-          }
-          videoTotal.value = total;
-          videoHasMore.value = videoList.value.length < total;
+          // 首次加载：替换数据（即使是空数组也要更新）
+          imageList.value = rows;
         }
+        imageTotal.value = total;
+        // 判断是否还有更多数据
+        imageHasMore.value = imageList.value.length < total;
+      } else {
+        if (isLoadMore) {
+          videoList.value = [...videoList.value, ...rows];
+        } else {
+          // 首次加载：替换数据（即使是空数组也要更新）
+          videoList.value = rows;
+        }
+        videoTotal.value = total;
+        videoHasMore.value = videoList.value.length < total;
       }
     } catch (error) {
       console.error('加载资源失败:', error);
@@ -348,13 +339,14 @@
     await loadAssets(true);
   };
 
-  // 预览资源（预留功能，用于点击卡片查看详情）
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const handlePreview = (item: ProjectHistoryDetailVo, type: 'image' | 'video') => {
-    previewUrl.value = item.originOssUrl || item.previewOssUrl || '';
-    previewTitle.value = `资产 ID: ${item.id}`;
-    previewType.value = type;
-    previewVisible.value = true;
+  // 预览视频
+  const handleVideoPreview = (item: ProjectHistoryDetailVo) => {
+    currentVideoUrl.value = item.originOssUrl || '';
+    if (!currentVideoUrl.value) {
+      ElMessage.warning('视频地址无效');
+      return;
+    }
+    videoPreviewVisible.value = true;
   };
 
   // 下载资源
@@ -699,7 +691,9 @@
 
           .video-wrapper {
             background: #000;
+            cursor: pointer;
 
+            .thumbnail-image,
             .thumbnail-video {
               width: 100%;
               height: 100%;

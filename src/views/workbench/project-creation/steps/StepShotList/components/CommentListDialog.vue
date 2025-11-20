@@ -61,7 +61,7 @@
   import type { SceneCommentVo } from '@/api/workbench/storyboard/types';
   import { getRoleBgColor, getRoleShortName, getRoleTextColor } from '@/utils/roleUtils';
   import { ElMessage, ElMessageBox } from 'element-plus';
-  import { computed, ref } from 'vue';
+  import { computed, ref, watch } from 'vue';
 
   interface Props {
     modelValue: boolean;
@@ -91,6 +91,15 @@
   // 记录上次加载的 basicId，用于检测是否切换了场景
   const lastLoadedBasicId = ref<number | null>(null);
 
+  // 监听弹窗打开状态和 basicId 变化，在弹窗显示前立即清空旧数据
+  watch([() => props.modelValue, () => props.basicId], ([newVisible, newBasicId], [oldVisible, oldBasicId]) => {
+    // 当弹窗即将打开，且 basicId 发生变化时，立即清空数据，防止旧数据闪现
+    if (newVisible && (!oldVisible || newBasicId !== oldBasicId)) {
+      comments.value = [];
+      lastLoadedBasicId.value = null;
+    }
+  });
+
   // 关闭弹窗时清空评论列表
   const handleClose = () => {
     comments.value = [];
@@ -111,7 +120,6 @@
     // 添加最小加载时间，确保用户看到加载状态
     const minLoadingTime = 300; // 300ms
     const startTime = Date.now();
-    console.log('props.commentList', props.commentList);
 
     try {
       // 如果传入了 commentList，则直接使用，不调用接口
@@ -132,12 +140,10 @@
         }
 
         comments.value = sortedComments;
-        console.log('使用传入的 commentList，无需调用接口');
         return;
       }
 
       // 否则调用接口获取（只显示最新的一条）
-      console.log('调用接口获取评论列表');
       const res = await getSceneCommentList({
         basicId: props.basicId,
         sceneType: props.sceneType

@@ -47,6 +47,7 @@
   interface Props {
     modelValue: boolean;
     episodeId?: number;
+    projectId?: number;
   }
 
   const props = defineProps<Props>();
@@ -144,8 +145,16 @@
       return;
     }
 
+    if (!props.projectId) {
+      ElMessage.warning('缺少项目信息，无法下载模板');
+      return;
+    }
+
     try {
-      const response = await exportVideoPromptTemplate({ episodeId: props.episodeId });
+      const response = await exportVideoPromptTemplate({
+        episodeId: props.episodeId,
+        projectId: props.projectId
+      });
 
       // 根据控制台输出，response 本身就是 Blob 对象
       let blob: Blob;
