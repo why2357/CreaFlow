@@ -199,6 +199,15 @@
     // 初始化默认模型
     currentModelCode.value = getDefaultModel(projectStore.t2iModelInfoList);
 
+    // 检查剧集列表是否为空
+    if (projectStore.episodes.length === 0) {
+      selectedEpisodeId.value = null;
+      shots.value = [];
+      episodeTaskStatus.value = undefined;
+      batchStatus.value = undefined;
+      return;
+    }
+
     // 如果有当前剧集ID，直接加载分镜数据
     if (projectStore.currentEpisodeId) {
       selectedEpisodeId.value = projectStore.currentEpisodeId;
@@ -215,10 +224,40 @@
     () => projectStore.currentEpisodeId,
     (newVal) => {
       if (newVal) {
-        selectedEpisodeId.value = newVal;
-        loadShots();
+        // 验证剧集是否存在
+        const episodeExists = projectStore.episodes.some((ep) => ep.id === newVal);
+        if (episodeExists) {
+          selectedEpisodeId.value = newVal;
+          loadShots();
+        } else {
+          console.warn('监听到的剧集ID不存在，清除选中状态');
+          selectedEpisodeId.value = null;
+          shots.value = [];
+          episodeTaskStatus.value = undefined;
+          batchStatus.value = undefined;
+        }
+      } else {
+        // 如果 currentEpisodeId 被清除，也清除本地状态
+        selectedEpisodeId.value = null;
+        shots.value = [];
+        episodeTaskStatus.value = undefined;
+        batchStatus.value = undefined;
       }
     }
+  );
+
+  // 监听剧集列表变化，当列表为空时清除选中的剧集ID
+  watch(
+    () => projectStore.episodes,
+    (newEpisodes) => {
+      if (newEpisodes.length === 0) {
+        selectedEpisodeId.value = null;
+        shots.value = [];
+        episodeTaskStatus.value = undefined;
+        batchStatus.value = undefined;
+      }
+    },
+    { deep: true }
   );
 
   // 将后端数据转换为 Shot 类型
@@ -286,6 +325,17 @@
   // 加载分镜列表
   const loadShots = async () => {
     if (!selectedEpisodeId.value) return;
+
+    // 验证当前选中的剧集是否还存在于剧集列表中
+    const episodeExists = projectStore.episodes.some((ep) => ep.id === selectedEpisodeId.value);
+    if (!episodeExists) {
+      console.warn('选中的剧集不存在，清除缓存的剧集ID');
+      selectedEpisodeId.value = null;
+      shots.value = [];
+      episodeTaskStatus.value = undefined;
+      batchStatus.value = undefined;
+      return;
+    }
 
     loading.value = true;
     try {

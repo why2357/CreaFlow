@@ -5,7 +5,7 @@
       <span>剧集列表</span>
     </div>
 
-    <div class="add-box">
+    <div class="add-box" v-has-project-permi="['episode-create']">
       <div class="add-episode-btn" @click="handleAdd">
         <span>新增剧集</span>
         <svg-icon icon-class="fy-add" />
@@ -42,6 +42,7 @@
           </div>
           <el-dropdown
             trigger="click"
+            v-has-project-permi="['episode-rename', 'episode-delete']"
             @command="handleCommand"
             @visible-change="(visible: boolean) => visible && setCurrentEpisode(episode)"
           >
@@ -50,14 +51,18 @@
             </el-icon>
             <template #dropdown>
               <el-dropdown-menu>
-                <el-dropdown-item command="rename">
-                  <svg-icon icon-class="fy-pen" style="width: 16px; height: 16px; margin-right: 16px" />
-                  重命名
-                </el-dropdown-item>
-                <el-dropdown-item command="delete" class="delete-item">
-                  <svg-icon icon-class="fy-del" style="width: 16px; height: 16px; margin-right: 16px" />
-                  删除
-                </el-dropdown-item>
+                <div v-has-project-permi="['episode-rename']">
+                  <el-dropdown-item command="rename">
+                    <svg-icon icon-class="fy-pen" style="width: 16px; height: 16px; margin-right: 16px" />
+                    重命名
+                  </el-dropdown-item>
+                </div>
+                <div v-has-project-permi="['episode-delete']">
+                  <el-dropdown-item command="delete" class="delete-item">
+                    <svg-icon icon-class="fy-del" style="width: 16px; height: 16px; margin-right: 16px" />
+                    删除
+                  </el-dropdown-item>
+                </div>
               </el-dropdown-menu>
             </template>
           </el-dropdown>

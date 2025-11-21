@@ -57,14 +57,18 @@
               </div>
               <template #dropdown>
                 <el-dropdown-menu>
-                  <el-dropdown-item command="rename" v-hasPermi="['project-rename']">
-                    <svg-icon icon-class="fy-pen" style="width: 16px; height: 16px; margin-right: 16px" />
-                    重命名
-                  </el-dropdown-item>
-                  <el-dropdown-item command="delete" divided class="delete-item" v-hasPermi="['project-delete']">
-                    <svg-icon icon-class="fy-del" style="width: 16px; height: 16px; margin-right: 16px" />
-                    删除
-                  </el-dropdown-item>
+                  <div v-hasPermi="['project-rename']">
+                    <el-dropdown-item command="rename">
+                      <svg-icon icon-class="fy-pen" style="width: 16px; height: 16px; margin-right: 16px" />
+                      重命名
+                    </el-dropdown-item>
+                  </div>
+                  <div v-hasPermi="['project-delete']">
+                    <el-dropdown-item command="delete" divided class="delete-item">
+                      <svg-icon icon-class="fy-del" style="width: 16px; height: 16px; margin-right: 16px" />
+                      删除
+                    </el-dropdown-item>
+                  </div>
                 </el-dropdown-menu>
               </template>
             </el-dropdown>

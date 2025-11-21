@@ -17,7 +17,14 @@
         </el-button>
 
         <!-- 审批按钮 -->
-        <el-button type="primary" class="review-button" @click="handleOpenReviewDialog"> 审阅 </el-button>
+        <el-button
+          type="primary"
+          class="review-button"
+          @click="handleOpenReviewDialog"
+          v-has-project-permi="['scene-approval']"
+        >
+          审阅
+        </el-button>
         <!-- 生成按钮 -->
         <el-button v-if="selectedIds.length > 0" type="primary" class="review-button" @click="handleBatchGenerate">
           生成
@@ -602,7 +609,7 @@
     importDialogRef.value.setUploading(true);
 
     try {
-      await importVideoPromptTemplate(file);
+      await importVideoPromptTemplate({ file, projectId: projectStore.currentProjectId || '' });
       ElMessage.success('导入成功');
       // 关闭弹窗
       importDialogRef.value.close();

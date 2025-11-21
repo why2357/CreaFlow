@@ -133,3 +133,43 @@ export interface MemberVO {
 export interface MemberAddBo {
   phoneNumber: string;
 }
+
+/**
+ * 成员点数使用统计请求参数
+ */
+export interface MemberPointsStatBo {
+  /** 结束统计时间 */
+  endStatTime: string;
+  /** 开始统计时间 */
+  startStatTime: string;
+  /** 统计类型（1.时间 2.模型）*/
+  statType: number;
+  /** 时间类型（1.日统计 2.周统计 3.月统计）*/
+  timeType?: number;
+  /** 用户id */
+  userId: number;
+}
+
+/**
+ * 点数使用报表视图对象
+ */
+export interface HivisionPointsReportVo {
+  /** 维度名称 */
+  dimensionName?: string;
+  /** 展示日期 */
+  displayDate?: string;
+  /** 主键 */
+  id?: number;
+  /** 月 */
+  month?: number;
+  /** 使用的点数 */
+  points?: number;
+  /** 租户id */
+  tenantId?: string;
+  /** 时间类型（1.日 2.周 3.月）*/
+  timeType?: number;
+  /** 用户id */
+  userId?: number;
+  /** 年 */
+  year?: number;
+}

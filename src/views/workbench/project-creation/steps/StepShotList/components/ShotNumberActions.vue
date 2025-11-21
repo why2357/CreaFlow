@@ -1,7 +1,7 @@
 <template>
   <div class="shot-number-actions">
     <!-- 小圆点 -->
-    <div class="action-dot" @click.stop="handleDotClick">
+    <div class="action-dot" :class="{ disabled: !canApproveScene }" @click.stop="handleDotClick">
       <div class="dot-inner" :class="getDotColorClass()"></div>
     </div>
 
@@ -23,6 +23,8 @@
 
 <script setup lang="ts">
   import SceneActions from '../../components/SceneActions.vue';
+  import { computed } from 'vue';
+  import { hasProjectPermission } from '@/utils/projectPermission';
 
   interface Props {
     shotNumber: number;
@@ -40,6 +42,9 @@
     (e: 'delete'): void;
     (e: 'viewComments'): void;
   }>();
+
+  // 权限检查
+  const canApproveScene = computed(() => hasProjectPermission(['scene-approval']));
 
   // 根据状态获取小圆点颜色类名
   const getDotColorClass = () => {
@@ -74,6 +79,10 @@
 
   // 点击小圆点触发评审
   const handleDotClick = (event: MouseEvent) => {
+    // 检查权限，没有权限则不触发事件
+    if (!canApproveScene.value) {
+      return;
+    }
     emit('review', event);
   };
 </script>
@@ -92,17 +101,22 @@
       z-index: 1;
       padding: 2px;
 
-      &:hover {
+      &:hover:not(.disabled) {
         .dot-inner {
           transform: scale(1.2);
           box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
         }
       }
 
-      &:active {
+      &:active:not(.disabled) {
         .dot-inner {
           transform: scale(1.1);
         }
+      }
+
+      &.disabled {
+        cursor: not-allowed;
+        opacity: 0.6;
       }
 
       .dot-inner {

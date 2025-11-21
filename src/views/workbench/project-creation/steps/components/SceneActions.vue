@@ -1,5 +1,5 @@
 <template>
-  <div class="scene-actions">
+  <div class="scene-actions" v-has-project-permi="['scene-comment', 'scene-insert', 'scene-approval', 'scene-delete']">
     <!-- 留言 -->
     <el-tooltip
       :content="commentTooltip"
@@ -7,28 +7,28 @@
       :popper-options="popperOptions"
       :z-index="zIndex"
     >
-      <el-button :size="buttonSize" @click.stop="handleComment">
+      <el-button :size="buttonSize" @click.stop="handleComment" v-has-project-permi="['scene-comment']">
         <svg-icon :icon-class="commentIcon" />
       </el-button>
     </el-tooltip>
 
     <!-- 插入镜头 -->
     <el-tooltip content="插镜" :placement="tooltipPlacement" :popper-options="popperOptions" :z-index="zIndex">
-      <el-button :size="buttonSize" @click.stop="handleInsert">
+      <el-button :size="buttonSize" @click.stop="handleInsert" v-has-project-permi="['scene-insert']">
         <svg-icon :icon-class="insertIcon" />
       </el-button>
     </el-tooltip>
 
     <!-- 评审 -->
     <el-tooltip content="评审" :placement="tooltipPlacement" :popper-options="popperOptions" :z-index="zIndex">
-      <el-button :size="buttonSize" @click.stop="handleReview">
+      <el-button :size="buttonSize" @click.stop="handleReview" v-has-project-permi="['scene-approval']">
         <svg-icon :icon-class="reviewIcon" />
       </el-button>
     </el-tooltip>
 
     <!-- 删除 -->
     <el-tooltip content="删除" :placement="tooltipPlacement" :popper-options="popperOptions" :z-index="zIndex">
-      <el-button :size="buttonSize" @click.stop="handleDelete">
+      <el-button :size="buttonSize" @click.stop="handleDelete" v-has-project-permi="['scene-delete']">
         <svg-icon :icon-class="deleteIcon" />
       </el-button>
     </el-tooltip>

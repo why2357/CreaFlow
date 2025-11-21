@@ -74,17 +74,11 @@
             <span>{{ parseTime(scope.row.createTime) }}</span>
           </template>
         </el-table-column>
-        <el-table-column label="操作" align="center" width="250" class-name="small-padding fixed-width" fixed="right">
+        <el-table-column label="操作" align="center" width="300" class-name="small-padding fixed-width" fixed="right">
           <template #default="scope">
-            <!-- <el-tooltip content="用量统计" placement="top">
-              <el-button link type="success" @click="handleUsageStats(scope.row)"> 用量统计 </el-button>
-            </el-tooltip>
-            <el-tooltip content="模型统计" placement="top">
-              <el-button link type="primary" @click="handleModelStats(scope.row)"> 模型统计 </el-button>
-            </el-tooltip> -->
-            <el-tooltip content="删除账号" placement="top">
-              <el-button class="btn-op" @click="handleDelete(scope.row)"> 删除账号 </el-button>
-            </el-tooltip>
+            <el-button class="btn-op" @click="handleUsageStats(scope.row)"> 用量统计 </el-button>
+            <el-button class="btn-op" @click="handleModelStats(scope.row)"> 模型统计 </el-button>
+            <el-button class="btn-op" @click="handleDelete(scope.row)"> 删除账号 </el-button>
           </template>
         </el-table-column>
       </el-table>
@@ -99,6 +93,7 @@
     </el-card>
 
     <add-member ref="addMemberRef" @success="getList" />
+    <usage-stats-drawer ref="usageStatsDrawerRef" />
   </div>
 </template>
 
@@ -108,6 +103,7 @@
   import { ElMessage, ElMessageBox } from 'element-plus';
   import { getCurrentInstance, onMounted, reactive, ref } from 'vue';
   import AddMember from './components/AddMember.vue';
+  import UsageStatsDrawer from './components/UsageStatsDrawer.vue';
 
   const { proxy } = getCurrentInstance() as any;
 
@@ -117,6 +113,7 @@
   const total = ref(0);
   const dateRange = ref<[]>([]);
   const addMemberRef = ref();
+  const usageStatsDrawerRef = ref();
   const ids = ref<number[]>([]);
   const single = ref(true);
   const multiple = ref(true);
@@ -180,11 +177,19 @@
   };
 
   const handleUsageStats = (row: MemberVO) => {
-    ElMessage.info(`View usage stats for user: ${row.userName}`);
+    if (!row.userId) {
+      ElMessage.error('用户ID不存在');
+      return;
+    }
+    usageStatsDrawerRef.value?.open(row.userId);
   };
 
   const handleModelStats = (row: MemberVO) => {
-    ElMessage.info(`View model stats for user: ${row.userName}`);
+    if (!row.userId) {
+      ElMessage.error('用户ID不存在');
+      return;
+    }
+    usageStatsDrawerRef.value?.open(row.userId, 2);
   };
 
   const handleDelete = async (row: MemberVO) => {

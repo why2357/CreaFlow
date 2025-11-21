@@ -231,6 +231,24 @@ export const delMember = (id: number) => {
   });
 };
 
+/**
+ * 成员点数统计
+ * @param data 统计请求参数
+ */
+export const getMemberPointsStat = (data: {
+  userId: number;
+  statType: number;
+  timeType?: number;
+  startStatTime: string;
+  endStatTime: string;
+}): AxiosPromise<any[]> => {
+  return request({
+    url: '/hivision/story/report/member/points-stat',
+    method: 'post',
+    data
+  });
+};
+
 export default {
   listUser,
   getUser,
@@ -249,5 +267,6 @@ export default {
   listUserByDeptId,
   listMember,
   addMember,
-  delMember
+  delMember,
+  getMemberPointsStat
 };

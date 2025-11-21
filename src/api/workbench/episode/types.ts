@@ -1,5 +1,9 @@
 export * from '../project/types';
 
+export interface VideoPromptTQuery {
+  file: File;
+  projectId: number | string;
+}
 /**
  * 剧集重命名请求 (EpisodeRenameRequestDto)
  */
@@ -407,6 +411,4 @@ export interface GenVideoRequest {
 export interface ExportVideoPromptTemplateRequest {
   /** 剧集id */
   episodeId: number;
-  /** 项目id */
-  projectId: number;
 }

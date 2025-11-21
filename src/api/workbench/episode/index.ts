@@ -2,7 +2,7 @@ import request from '@/utils/request';
 import { AxiosPromise } from 'axios';
 import { EpisodeCreateRequest, EpisodeTemplateUploadRequest, ShotForm } from '../project/types';
 import type { SceneCommentVo } from '../storyboard/types';
-import type { CharacterMatchResponse, HivisionProjectEpisodeVo, SceneEnvSetRequest } from './types';
+import type { CharacterMatchResponse, HivisionProjectEpisodeVo, SceneEnvSetRequest, VideoPromptTQuery } from './types';
 
 /**
  * 查询剧集列表
@@ -478,15 +478,13 @@ export const generateVideo = (data: GenVideoRequest): AxiosPromise<void> => {
 /**
  * 导入视频提示词模版
  * @param file 文件
+ * @param projectId 项目ID（可选）
  */
-export const importVideoPromptTemplate = (file: File): AxiosPromise<void> => {
-  const formData = new FormData();
-  formData.append('file', file);
-
+export const importVideoPromptTemplate = (data: VideoPromptTQuery): AxiosPromise<void> => {
   return request({
     url: '/hivision/story/episode/video/prompt-template/import',
     method: 'post',
-    data: formData,
+    data,
     headers: {
       'Content-Type': 'multipart/form-data'
     }

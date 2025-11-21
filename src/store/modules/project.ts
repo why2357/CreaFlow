@@ -244,6 +244,19 @@ export const useProjectStore = defineStore('project', {
             scriptContent: ep.storyText,
             taskStatus: ep.taskStatus // 添加任务状态字段
           }));
+
+        // 如果剧集列表为空，清除当前剧集ID
+        if (this.episodes.length === 0) {
+          this.currentEpisodeId = null;
+          this.currentEpisode = null;
+        } else if (this.currentEpisodeId) {
+          // 如果当前剧集ID不在新的剧集列表中，清除它
+          const episodeExists = this.episodes.some((ep) => ep.id === this.currentEpisodeId);
+          if (!episodeExists) {
+            this.currentEpisodeId = null;
+            this.currentEpisode = null;
+          }
+        }
       } catch (error) {
         console.error('加载项目信息失败:', error);
         throw error;

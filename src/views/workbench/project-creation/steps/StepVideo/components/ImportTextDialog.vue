@@ -54,7 +54,7 @@
 
   const emit = defineEmits<{
     (e: 'update:modelValue', value: boolean): void;
-    (e: 'confirm', file: File): void;
+    (e: 'confirm', file: File, projectId?: number): void;
   }>();
 
   // 上传组件引用
@@ -125,7 +125,7 @@
       return;
     }
 
-    emit('confirm', currentUploadFile.value);
+    emit('confirm', currentUploadFile.value, props.projectId);
   };
 
   // 设置上传状态
@@ -152,8 +152,7 @@
 
     try {
       const response = await exportVideoPromptTemplate({
-        episodeId: props.episodeId,
-        projectId: props.projectId
+        episodeId: props.episodeId
       });
 
       // 根据控制台输出，response 本身就是 Blob 对象
