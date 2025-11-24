@@ -25,7 +25,7 @@
             </div>
             <div v-if="scriptCompleted" class="status-badge completed">已完成</div>
           </div>
-          <el-progress :percentage="scriptCompleted ? 100 : 0" :show-text="false" :stroke-width="8" color="#00C48C" />
+          <el-progress :percentage="scriptCompleted ? 100 : 0" :show-text="false" :stroke-width="8" color="#05DF72" />
         </div>
 
         <!-- 图片进度 -->
@@ -260,7 +260,7 @@
               background: #5b5fef;
 
               &.completed {
-                background: #00c48c;
+                background: #00c950;
               }
             }
 
@@ -276,10 +276,13 @@
             border-radius: 4px;
             font-size: 12px;
             font-weight: 500;
+            border: 0.716px solid #7bf1a8;
+
+            background: #f0fdf4;
 
             &.completed {
-              background: #d4f5eb;
-              color: #00c48c;
+              // background: #d4f5eb;
+              color: #008236;
             }
           }
 
@@ -293,7 +296,7 @@
         :deep(.el-progress) {
           .el-progress-bar__outer {
             border-radius: 100px;
-            background-color: #e8e6ff;
+            background-color: #e8e9ff;
           }
 
           .el-progress-bar__inner {

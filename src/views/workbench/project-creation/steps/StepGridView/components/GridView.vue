@@ -17,7 +17,7 @@
     </div>
 
     <!-- 故事板网格 -->
-    <div v-else class="grid-container">
+    <div v-else class="grid-container" ref="gridContainerRef">
       <div
         v-for="(scene, index) in scenes"
         :key="scene.id"
@@ -35,6 +35,7 @@
             class="shot-image"
             :preview-src-list="[scene.originOssUrl || scene.previewOssUrl]"
             :preview-teleported="true"
+            :lazy="true"
           />
           <div v-else class="image-placeholder">
             <img src="../../../../../../assets/images/no-sence.png" alt="暂无图片" class="placeholder-img" />
@@ -86,7 +87,7 @@
   import type { StoryBoardSceneVo } from '@/api/workbench/storyboard/types';
   import { Grid, Loading } from '@element-plus/icons-vue';
   import { ElMessage } from 'element-plus';
-  import { ref } from 'vue';
+  import { ref, nextTick } from 'vue';
   import SceneActions from '../../components/SceneActions.vue';
 
   interface Props {
@@ -112,15 +113,20 @@
 
   // 悬浮的卡片ID
   const hoveredCardId = ref<number | null>(null);
+  const gridContainerRef = ref<HTMLElement>();
 
-  // 卡片悬浮
+  // 卡片悬浮 - 使用 requestAnimationFrame 优化性能
   const handleCardHover = (scene: StoryBoardSceneVo) => {
-    hoveredCardId.value = scene.id || null;
+    requestAnimationFrame(() => {
+      hoveredCardId.value = scene.id || null;
+    });
   };
 
-  // 卡片离开
+  // 卡片离开 - 使用 requestAnimationFrame 优化性能
   const handleCardLeave = () => {
-    hoveredCardId.value = null;
+    requestAnimationFrame(() => {
+      hoveredCardId.value = null;
+    });
   };
 
   // 获取卡片样式类

@@ -493,6 +493,7 @@
           min-width: 50px;
           height: 28px;
           border: 1px solid #eee;
+          border-radius: 6px;
           background: #fff;
           color: #4e5969;
         }

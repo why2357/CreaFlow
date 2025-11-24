@@ -616,7 +616,7 @@
     flex-direction: column;
     justify-content: space-between;
     padding: 12px;
-    background: rgb(0 0 0 / 70%);
+    background: linear-gradient(0deg, rgba(0, 0, 0, 0.4) 0%, rgba(0, 0, 0, 0.4) 100%);
 
     .top-actions {
       display: flex;
@@ -627,9 +627,9 @@
         display: flex;
         justify-content: center;
         align-items: center;
-        width: 32px;
-        height: 32px;
-        border-radius: 50%;
+        width: 24px;
+        height: 24px;
+        border-radius: 4px;
         background: #f7f8fa;
         cursor: pointer;
         transition: all 0.3s;

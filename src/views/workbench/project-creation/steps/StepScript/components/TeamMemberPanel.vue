@@ -364,7 +364,7 @@
           transform: translateY(-3px);
 
           .member-avatar {
-            box-shadow: 0 6px 12px rgb(108 92 231 / 30%);
+            // box-shadow: 0 6px 12px rgb(108 92 231 / 30%);
           }
         }
 
@@ -378,7 +378,7 @@
           height: 48px;
           border: 1px solid var(--Borderl-border-2, #eee);
           border-radius: 50%;
-          box-shadow: 0 3px 8px rgb(108 92 231 / 20%);
+          // box-shadow: 0 3px 8px rgb(108 92 231 / 20%);
           font-size: 16px;
           font-weight: 700;
           transition: all 0.3s;
@@ -442,14 +442,13 @@
     border: 1.5px solid var(--Borderl-border-1, #d6d7ff);
     border-radius: 8px;
     background: var(--text-color-text-6, #ffffff);
-    color: #6c5ce7;
+    color: #3535fd;
     font-size: 12px;
     font-weight: 600;
     cursor: pointer;
     transition: all 0.3s;
 
     &:hover {
-      border-color: #6c5ce7;
       background: #f9f8ff;
       box-shadow: 0 2px 8px rgb(108 92 231 / 15%);
     }

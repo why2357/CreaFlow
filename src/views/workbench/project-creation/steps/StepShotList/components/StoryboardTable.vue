@@ -914,7 +914,6 @@
 
 <style scoped lang="scss">
   .storyboard-table-container {
-    margin-left: 20px;
     display: flex;
     justify-content: center;
     align-items: center;
@@ -961,7 +960,7 @@
     .table-wrapper {
       width: 100%;
       height: 100%;
-      padding: 0px 20px 0 0;
+      // padding: 0px 20px 0 0;
       overflow-x: auto; // 允许横向滚动
 
       // 滚动条样式优化
@@ -1384,7 +1383,7 @@
           flex-direction: column;
           justify-content: flex-start;
           padding: 12px;
-          background: rgb(0 0 0 / 70%);
+          background: linear-gradient(0deg, rgba(0, 0, 0, 0.4) 0%, rgba(0, 0, 0, 0.4) 100%);
 
           .scene-top-actions {
             display: flex;

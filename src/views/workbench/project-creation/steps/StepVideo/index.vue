@@ -150,6 +150,7 @@
   import { useUserStore } from '@/store/modules/user';
   import { ElMessage, ElMessageBox } from 'element-plus';
   import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue';
+  import { useVideoUpdateListener } from '@/composables/useSSEListener';
   import StoryboardReviewDialog from '../StepGridView/components/StoryboardReviewDialog.vue';
   import ImportTextDialog from './components/ImportTextDialog.vue';
   import VideoPointsConfirmDialog from './components/VideoPointsConfirmDialog.vue';
@@ -340,6 +341,13 @@
       selectedEpisodeId.value = projectStore.currentEpisodeId;
       await loadVideos();
     }
+  });
+
+  // 监听 SSE 视频生成更新
+  useVideoUpdateListener((detail) => {
+    console.log('[视频] 收到 SSE 视频更新:', detail);
+    // 无感刷新视频列表
+    loadVideos();
   });
 
   // 清理

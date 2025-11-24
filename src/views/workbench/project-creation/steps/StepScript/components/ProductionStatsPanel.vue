@@ -255,7 +255,7 @@
                 width: 32px;
                 height: 32px;
                 border-radius: 50%;
-                box-shadow: 0 2px 6px rgb(108 92 231 / 20%);
+                // box-shadow: 0 2px 6px rgb(108 92 231 / 20%);
                 font-size: 14px;
                 font-weight: 700;
               }

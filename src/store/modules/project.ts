@@ -415,6 +415,97 @@ export const useProjectStore = defineStore('project', {
 
       // 直接跳转到对应步骤（4/5/6）
       return await this.goToStep(viewMode);
+    },
+
+    // ==================== SSE 数据更新 ====================
+
+    /**
+     * 处理 SSE 推送的数据更新
+     * @param data SSE 推送的数据
+     * messageType: 1-文生文 2-文生图 3-文生视频
+     * projectId: 项目ID
+     * episodeId: 剧集ID
+     * message: 消息内容
+     */
+    async handleSSEUpdate(data: any) {
+      console.log('[SSE] 收到数据更新:', data);
+
+      try {
+        const { messageType, projectId, episodeId, message } = data;
+
+        // 检查是否是当前项目的消息
+        if (projectId && projectId !== Number(this.currentProjectId)) {
+          console.log('[SSE] 跳过其他项目的消息:', projectId);
+          return;
+        }
+
+        // 检查是否是当前剧集的消息
+        if (episodeId && episodeId !== Number(this.currentEpisodeId)) {
+          console.log('[SSE] 跳过其他剧集的消息:', episodeId);
+          return;
+        }
+
+        // 根据消息类型处理不同的更新
+        switch (messageType) {
+          case 1: // 文生文
+            await this.handleTextGenerationUpdate(message, projectId, episodeId);
+            break;
+
+          case 2: // 文生图（分镜头图片生成）
+            await this.handleImageGenerationUpdate(message, projectId, episodeId);
+            break;
+
+          case 3: // 文生视频
+            await this.handleVideoGenerationUpdate(message, projectId, episodeId);
+            break;
+
+          default:
+            console.log('[SSE] 未知的消息类型:', messageType);
+        }
+      } catch (error) {
+        console.error('[SSE] 处理数据更新失败:', error);
+      }
+    },
+
+    /**
+     * 处理文生文更新（messageType = 1）
+     */
+    async handleTextGenerationUpdate(message: any, projectId: number, episodeId: number) {
+      console.log('[SSE] 文生文更新:', message);
+      // 文生文一般用于剧本生成，可能需要刷新剧本相关数据
+      if (this.currentProjectId) {
+        await this.loadProjectInfo(Number(this.currentProjectId));
+      }
+    },
+
+    /**
+     * 处理文生图更新（messageType = 2）
+     * 对应接口：hivision/story/episode/img-scene-list
+     */
+    async handleImageGenerationUpdate(message: any, projectId: number, episodeId: number) {
+      console.log('[SSE] 文生图更新:', message);
+
+      // 发送事件通知，让分镜头列表组件刷新
+      window.dispatchEvent(
+        new CustomEvent('sse-image-update', {
+          detail: { message, projectId, episodeId }
+        })
+      );
+    },
+
+    /**
+     * 处理文生视频更新（messageType = 3）
+     * 对应接口：hivision/story/episode/video-scene-list
+     */
+    async handleVideoGenerationUpdate(message: any, projectId: number, episodeId: number) {
+      console.log('[SSE] 文生视频更新:', message);
+
+      // 发送事件通知，让视频列表组件刷新
+      window.dispatchEvent(
+        new CustomEvent('sse-video-update', {
+          detail: { message, projectId, episodeId }
+        })
+      );
     }
   }
 });

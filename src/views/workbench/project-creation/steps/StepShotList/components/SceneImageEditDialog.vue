@@ -580,7 +580,8 @@
     position: relative;
     width: 500px;
     height: 500px;
-    background: #1a1a1a;
+    // background: #1a1a1a;
+    background: linear-gradient(0deg, rgba(0, 0, 0, 0.4) 0%, rgba(0, 0, 0, 0.4) 100%);
     border-radius: 8px;
     overflow: hidden;
     box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);

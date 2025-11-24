@@ -46,20 +46,20 @@
             @command="handleCommand"
             @visible-change="(visible: boolean) => visible && setCurrentEpisode(episode)"
           >
-            <el-icon class="more-icon" @click.stop>
-              <MoreFilled />
-            </el-icon>
+            <div class="action-btn" @click.stop>
+              <svg-icon icon-class="fy-more" style="width: 12px; height: 12px" />
+            </div>
             <template #dropdown>
               <el-dropdown-menu>
                 <div v-has-project-permi="['episode-rename']">
                   <el-dropdown-item command="rename">
-                    <svg-icon icon-class="fy-pen" style="width: 16px; height: 16px; margin-right: 16px" />
+                    <svg-icon icon-class="fy-pen" style="width: 16px; height: 16px; margin-right: 8px" />
                     重命名
                   </el-dropdown-item>
                 </div>
                 <div v-has-project-permi="['episode-delete']">
                   <el-dropdown-item command="delete" class="delete-item">
-                    <svg-icon icon-class="fy-del" style="width: 16px; height: 16px; margin-right: 16px" />
+                    <svg-icon icon-class="fy-del" style="width: 16px; height: 16px; margin-right: 8px" />
                     删除
                   </el-dropdown-item>
                 </div>
@@ -74,7 +74,6 @@
 
 <script setup lang="ts">
   import type { Episode } from '@/api/workbench/project/types';
-  import { MoreFilled } from '@element-plus/icons-vue';
   import { ref } from 'vue';
 
   interface Props {
@@ -251,10 +250,6 @@
         &.active {
           background: #f3f3ff;
           color: #5252ff;
-
-          .more-icon {
-            color: #5252ff;
-          }
         }
 
         .episode-info {
@@ -308,17 +303,29 @@
             font-weight: 500;
           }
         }
-
-        .more-icon {
-          color: #909399;
-          font-size: 18px;
-          transition: all 0.3s;
-
-          &:hover {
-            color: #5252ff;
-          }
-        }
       }
+    }
+  }
+  .action-btn {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 20px;
+    height: 20px;
+    border-radius: 4px;
+    background: #fff;
+    cursor: pointer;
+    transition: all 0.3s;
+    margin-left: 4px;
+
+    &:hover {
+      background: white;
+      transform: scale(1.1);
+    }
+
+    .el-icon {
+      color: #606266;
+      font-size: 18px;
     }
   }
 </style>

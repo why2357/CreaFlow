@@ -385,7 +385,7 @@
     align-items: center;
     width: 80px;
     height: 80px;
-    border: 2px solid #e4e7ed;
+    border: 1px solid #e4e7ed;
     border-radius: 8px;
     background: #fafafa;
     text-align: center;

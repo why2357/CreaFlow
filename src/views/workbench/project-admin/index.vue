@@ -59,13 +59,13 @@
                 <el-dropdown-menu>
                   <div v-hasPermi="['project-rename']">
                     <el-dropdown-item command="rename">
-                      <svg-icon icon-class="fy-pen" style="width: 16px; height: 16px; margin-right: 16px" />
+                      <svg-icon icon-class="fy-pen" style="width: 16px; height: 16px; margin-right: 8px" />
                       重命名
                     </el-dropdown-item>
                   </div>
                   <div v-hasPermi="['project-delete']">
                     <el-dropdown-item command="delete" divided class="delete-item">
-                      <svg-icon icon-class="fy-del" style="width: 16px; height: 16px; margin-right: 16px" />
+                      <svg-icon icon-class="fy-del" style="width: 16px; height: 16px; margin-right: 8px" />
                       删除
                     </el-dropdown-item>
                   </div>
@@ -379,11 +379,10 @@
     overflow: hidden;
     border-radius: 12px;
     background: white;
-    box-shadow: 0 4px 6px 0 rgba(224, 231, 255, 0.25), 0 10px 15px 0 rgba(224, 231, 255, 0.5);
+    box-shadow: 0 4px 6px 0 rgba(224, 231, 255, 0.05), 0 10px 15px 0 rgba(224, 231, 255, 0.1);
     transition: all 0.3s ease;
 
     &:hover {
-      box-shadow: 0 6px 16px rgb(0 0 0 / 12%);
       transform: translateY(-4px);
 
       .card-actions {
@@ -518,9 +517,9 @@
 
   // 删除选项红色高亮
   :deep(.delete-item) {
+    color: #f56c6c;
     &:hover {
       color: #f56c6c;
-
       .el-icon {
         color: #f56c6c;
       }

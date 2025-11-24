@@ -1,10 +1,11 @@
 import { getInfo as getUserInfo, login as loginApi, logout as logoutApi } from '@/api/login';
-import { LoginData } from '@/api/types';
 import { getWalletPoints } from '@/api/system/userCenter';
-import defAva from '@/assets/images/profile.jpg';
+import { LoginData } from '@/api/types';
+import defAva from '@/assets/images/profile.svg';
 import store from '@/store';
 import { getToken, removeToken, setToken } from '@/utils/auth';
 import { to } from 'await-to-js';
+import { closeProjectSSE } from '@/utils/sse';
 
 export const useUserStore = defineStore('user', () => {
   const token = ref(getToken());
@@ -70,6 +71,13 @@ export const useUserStore = defineStore('user', () => {
 
   // 注销
   const logout = async (): Promise<void> => {
+    // 关闭 SSE 连接
+    try {
+      await closeProjectSSE();
+    } catch (error) {
+      console.error('关闭 SSE 连接失败:', error);
+    }
+
     await logoutApi();
     token.value = '';
     roles.value = [];

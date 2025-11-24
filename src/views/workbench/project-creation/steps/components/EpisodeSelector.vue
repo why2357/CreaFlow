@@ -5,6 +5,8 @@
     :width="260"
     trigger="click"
     popper-class="episode-popover"
+    :hide-after="0"
+    :tabindex="-1"
   >
     <template #reference>
       <slot name="reference">

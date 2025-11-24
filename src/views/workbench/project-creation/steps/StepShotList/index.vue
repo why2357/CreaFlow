@@ -125,6 +125,7 @@
   } from '@/api/workbench/episode';
   import type { EpisodeInfoResponseDto, EpisodeSceneItemInfo } from '@/api/workbench/episode/types';
   import type { Episode, Shot, ShotForm } from '@/api/workbench/project/types';
+  import { useImageUpdateListener } from '@/composables/useSSEListener';
   import { useProjectStore } from '@/store/modules/project';
   import { useUserStore } from '@/store/modules/user';
   import { convertModelsToOptions, getDefaultModel, getModelName, ratioToSize } from '@/utils/projectUtils';
@@ -217,6 +218,13 @@
       selectedEpisodeId.value = projectStore.episodes[0].id;
       await loadShots();
     }
+  });
+
+  // 监听 SSE 图片生成更新
+  useImageUpdateListener((detail) => {
+    console.log('[分镜头] 收到 SSE 图片更新:', detail);
+    // 无感刷新分镜头列表
+    loadShots();
   });
 
   // 监听剧集变化
@@ -780,6 +788,9 @@
       flex: 1;
       overflow: hidden;
       position: relative;
+      border-radius: 12px;
+      overflow: hidden;
+      margin-left: 20px;
 
       // 分镜生成中遮罩层
       .generating-overlay {

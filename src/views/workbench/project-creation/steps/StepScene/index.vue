@@ -50,6 +50,9 @@
                   @confirm="confirmEditEpisodes"
                   @close="handleEpisodeSelectorClose"
                 >
+                  <template #reference>
+                    <el-button class="select-btn" size="small">+ 编辑集数</el-button>
+                  </template>
                 </EpisodeSelector>
                 <el-button v-else class="select-btn" size="small" @click="handleEditEpisodes(library)"
                   >+ 编辑集数</el-button

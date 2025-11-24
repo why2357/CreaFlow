@@ -44,6 +44,7 @@
                 trigger="hover"
                 placement="bottom-end"
                 :hide-on-click="true"
+                :tabindex="-1"
                 @command="handleStoryboardViewChange"
               >
                 <span class="dropdown-trigger" @click.stop>
@@ -95,10 +96,10 @@
       <div class="center-content">
         <!-- 动态步骤内容 -->
         <div class="step-content">
-          <Transition name="step-fade" mode="out-in">
-            <!-- 只在初始化完成后才渲染步骤组件 -->
+          <!-- 只在初始化完成后才渲染步骤组件 -->
+          <KeepAlive>
             <component v-if="!projectStore.isInitializing" :is="currentStepComponent" :key="projectStore.currentStep" />
-          </Transition>
+          </KeepAlive>
         </div>
       </div>
     </div>
@@ -123,6 +124,7 @@
   import RechargeButton from '@/components/RechargeButton/index.vue';
   import UserProfileDropdown from '@/components/UserProfileDropdown/index.vue';
   import AddEpisodeDialog from './components/AddEpisodeDialog.vue';
+  import { initProjectSSE, closeProjectSSE } from '@/utils/sse';
 
   // 懒加载步骤组件
   const StepScript = defineAsyncComponent(() => import('./steps/StepScript/index.vue'));
@@ -211,6 +213,12 @@
           path: `/project-creation/${projectId}`
         });
       }
+
+      // 初始化 SSE 连接
+      initProjectSSE((data) => {
+        // 处理接收到的 SSE 消息
+        projectStore.handleSSEUpdate(data);
+      });
     } else {
       ElMessage.error('项目ID不存在');
       router.push('/workbench');
@@ -236,8 +244,11 @@
     }
   };
 
-  // 页面卸载前保存状态
-  onBeforeUnmount(async () => {});
+  // 页面卸载前保存状态并断开 SSE 连接
+  onBeforeUnmount(async () => {
+    // 关闭 SSE 连接
+    await closeProjectSSE();
+  });
 
   // 返回工作台
   const handleBack = async () => {
@@ -248,6 +259,8 @@
         cancelButtonText: '取消',
         type: 'warning'
       });
+      // 关闭 SSE 连接
+      await closeProjectSSE();
       projectStore.resetProject();
       router.push('/index');
     } catch {
@@ -638,10 +651,23 @@
     align-items: center;
     gap: 8px;
 
+    &:hover {
+      background-color: #f5f7fa;
+      color: #5252ff;
+    }
+
     .menu-icon {
       width: 16px;
       height: 16px;
       font-size: 16px;
+    }
+
+    .step-icon {
+      transition: color 0.3s;
+    }
+
+    &:hover .step-icon {
+      color: #5252ff;
     }
   }
 
