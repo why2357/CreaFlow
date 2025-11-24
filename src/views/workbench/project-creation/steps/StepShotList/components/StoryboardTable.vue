@@ -54,7 +54,7 @@
               @upload="(file:any) => handleImageUpload(row, file)"
               @show-history="handleShowHistory(row)"
               @download="handleImageDownload(row)"
-              @crop="handleImageCrop(row)"
+              @crop="(imageUrl: string) => handleImageCrop(row, imageUrl)"
               @toggle-favorite="(isCollect: boolean) => handleToggleFavorite(row, isCollect)"
               @regenerate="handleImageRegenerate(row)"
               @refresh="emit('refresh')"
@@ -147,6 +147,7 @@
                 :src="character.materialInfoVo?.previewOssUrl || character.materialInfoVo?.originOssUrl"
                 fit="contain"
                 class="character-avatar character-clickable"
+                hide-on-click-modal
                 @click="handleCharacterClick(row, character)"
               />
             </div>
@@ -188,6 +189,7 @@
                   fit="contain"
                   class="scene-location-image"
                   :preview-src-list="[row.envMaterialInfoVo.originOssUrl || row.envMaterialInfoVo.previewOssUrl]"
+                  hide-on-click-modal
                 />
               </div>
               <div v-else class="scene-placeholder">
@@ -388,9 +390,9 @@
   };
 
   // 裁剪图片
-  const handleImageCrop = (shot: Shot) => {
+  const handleImageCrop = (shot: Shot, imageUrl: string) => {
     currentCropShot.value = shot;
-    currentCropImage.value = shot.sceneImage || '';
+    currentCropImage.value = imageUrl || shot.sceneImage || '';
     cropDialogVisible.value = true;
   };
 

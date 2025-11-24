@@ -19,7 +19,7 @@
     </div>
     <!-- 图片显示区域（当没有视频但有图片时） -->
     <div v-else-if="hasImage" class="image-container">
-      <el-image :src="imageUrl" fit="contain" class="scene-image" :preview-src-list="[imageUrl]" preview-teleported />
+      <el-image :src="imageUrl" fit="contain" class="scene-image" :preview-src-list="[imageUrl]" preview-teleported hide-on-click-modal />
     </div>
     <!-- 空状态（既没有视频也没有图片） -->
     <div v-else class="empty-video">

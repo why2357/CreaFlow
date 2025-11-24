@@ -25,8 +25,13 @@
           <p class="empty-text">点击右侧图片进行查看</p>
         </div>
         <div v-else class="current-image-container">
-          <div class="current-image-wrapper">
-            <el-image :src="selectedHistoryDetail.previewOssUrl || selectedHistoryDetail.originOssUrl" fit="contain" />
+          <div class="current-image-wrapper" @click="handlePreviewImage(selectedHistoryDetail)">
+            <el-image
+              :src="selectedHistoryDetail.originOssUrl || selectedHistoryDetail.previewOssUrl"
+              fit="contain"
+              style="cursor: pointer"
+              hide-on-click-modal
+            />
           </div>
           <div class="lb-box">
             <div class="current-image-info">
@@ -90,10 +95,16 @@
                 :key="detail.historyDetailId"
                 class="image-item"
                 :class="{ selected: selectedHistoryDetail?.historyDetailId === detail.historyDetailId }"
+                :data-ratio="history.ratio"
                 @click="handleSelectImage(detail)"
               >
                 <div class="image-wrapper">
-                  <el-image :src="detail.previewOssUrl || detail.originOssUrl" fit="cover" :preview-src-list="[]" />
+                  <el-image
+                    :src="detail.previewOssUrl || detail.originOssUrl"
+                    fit="contain"
+                    :preview-src-list="[]"
+                    hide-on-click-modal
+                  />
 
                   <!-- 左上角：放大按钮 -->
                   <div class="action-top-left">
@@ -642,7 +653,7 @@
 
         // 图片容器 - 固定高度180px
         .current-image-wrapper {
-          height: 180px;
+          height: 230px;
           border-radius: 8px;
           background: #f5f7fa;
           overflow: hidden;
@@ -803,8 +814,8 @@
           }
 
           .image-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+            display: flex;
+            flex-wrap: wrap;
             gap: 12px;
 
             .image-item {
@@ -835,16 +846,30 @@
                 box-shadow: 0 4px 12px rgb(97 87 255 / 30%);
               }
 
+              // 根据不同比例设置宽度，高度固定160px
+              &[data-ratio='16:9'] {
+                width: 284px; // 160 * (16/9)
+              }
+              &[data-ratio='9:16'] {
+                width: 90px; // 160 * (9/16)
+              }
+              &[data-ratio='1:1'] {
+                width: 160px; // 160 * 1
+              }
+              &[data-ratio='4:3'] {
+                width: 213px; // 160 * (4/3)
+              }
+              &[data-ratio='3:4'] {
+                width: 120px; // 160 * (3/4)
+              }
+
               .image-wrapper {
                 position: relative;
                 width: 100%;
-                padding-bottom: 100%; // 1:1 ratio
+                height: 160px; // 固定高度160px
                 background: #f5f7fa;
 
                 .el-image {
-                  position: absolute;
-                  top: 0;
-                  left: 0;
                   width: 100%;
                   height: 100%;
                 }

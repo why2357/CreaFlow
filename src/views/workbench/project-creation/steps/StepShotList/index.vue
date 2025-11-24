@@ -49,11 +49,11 @@
       <!-- 主内容区 - 分镜表视图 -->
       <div class="content-area">
         <!-- 分镜生成中提示 -->
-        <div v-if="episodeTaskStatus === 1" class="generating-overlay">
-          <div class="generating-content">
-            <svg-icon icon-class="fy-loading" class="loading-icon" />
-            <p class="generating-text">分镜生成中，请稍等...</p>
+        <div v-if="episodeTaskStatus === 1" class="loading-overlay">
+          <div class="loading-animation-wrapper">
+            <Vue3Lottie :animation-data="generatingAnimation" :height="80" :width="80" class="loading-icon" />
           </div>
+          <p class="generating-text">分镜生成中，请稍等...</p>
         </div>
 
         <StoryboardTable
@@ -95,14 +95,6 @@
       @success="handleCharacterEditSuccess"
     />
 
-    <!-- 扣点确认对话框（单个生成） -->
-    <PointsConfirmDialog
-      v-model="pointsConfirmDialogVisible"
-      :shot-count="1"
-      :total-points="getCurrentModelPoints"
-      @confirm="handleConfirmGenerate"
-    />
-
     <!-- 批量生成扣点确认对话框 -->
     <PointsConfirmDialog
       v-model="batchGenerateDialogVisible"
@@ -131,8 +123,10 @@
   import { convertModelsToOptions, getDefaultModel, getModelName, ratioToSize } from '@/utils/projectUtils';
   import { ElMessage, ElMessageBox } from 'element-plus';
   import { computed, onMounted, ref, watch } from 'vue';
+  import { Vue3Lottie } from 'vue3-lottie';
 
   // 导入组件
+  import generatingAnimation from '@/assets/lottie/video-generating.json';
   import AddEpisodeDialog from '../../components/AddEpisodeDialog.vue';
   import EpisodeListPanel from '../StepScript/components/EpisodeListPanel.vue';
   import CharacterEditDialog from './components/CharacterEditDialog.vue';
@@ -184,10 +178,6 @@
 
   // 角色编辑对话框
   const characterEditDialogVisible = ref(false);
-
-  // 扣点确认对话框
-  const pointsConfirmDialogVisible = ref(false);
-  const currentRegenerateShot = ref<Shot | null>(null);
 
   // 批量生成相关状态
   const batchGenerateDialogVisible = ref(false);
@@ -503,7 +493,7 @@
   const handleCharacterEditSuccess = async () => {
     ElMessage.success('角色编辑成功');
     // 重新加载分镜列表以显示更新后的数据
-    await loadShots();
+    await loadShots(true);
   };
 
   // 重新匹配角色
@@ -618,17 +608,8 @@
 
   // 重新生成图片
   const handleImageRegenerate = async (shot: Shot) => {
-    // 保存当前要生成的镜头
-    currentRegenerateShot.value = shot;
-    // 打开扣点确认弹窗
-    pointsConfirmDialogVisible.value = true;
-  };
-
-  // 确认生成图片
-  const handleConfirmGenerate = async () => {
-    if (!currentRegenerateShot.value || !selectedEpisodeId.value) return;
-
-    const shot = currentRegenerateShot.value;
+    // 单个生成时直接生成，不弹扣点确认弹窗
+    if (!selectedEpisodeId.value) return;
 
     try {
       // 设置加载状态
@@ -651,8 +632,7 @@
     } catch (error) {
       console.error('生成图片失败:', error);
       shot.imageLoading = false;
-    } finally {
-      currentRegenerateShot.value = null;
+      ElMessage.error('生成图片失败');
     }
   };
 
@@ -853,46 +833,28 @@
       overflow: hidden;
       margin-left: 20px;
 
-      // 分镜生成中遮罩层
-      .generating-overlay {
-        position: absolute;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
+      // 生成中状态样式
+      .loading-overlay {
         display: flex;
+        flex-direction: column;
         justify-content: center;
         align-items: center;
-        z-index: 1000;
-
-        .generating-content {
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          gap: 16px;
-
-          .loading-icon {
-            width: 48px;
-            height: 48px;
-            color: #5b5bff;
-            animation: rotate 1.5s linear infinite;
-          }
-
-          .generating-text {
-            color: #1d2129;
-            font-size: 16px;
-            font-weight: 500;
-            margin: 0;
-          }
+        width: 100%;
+        height: 100%;
+        // background: linear-gradient(180deg, #f0ebff 0%, #fef5ff 100%);
+        .loading-animation-wrapper {
+          animation: fadeInScale 0.4s ease-out;
+        }
+        .loading-icon {
+          width: 80px;
+          height: 80px;
         }
 
-        @keyframes rotate {
-          from {
-            transform: rotate(0deg);
-          }
-          to {
-            transform: rotate(360deg);
-          }
+        .loading-text {
+          margin-top: 12px;
+          color: #4e5969;
+          font-size: 13px;
+          font-weight: 400;
         }
       }
     }

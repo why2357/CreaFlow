@@ -134,6 +134,7 @@
               class="grid-image"
               :preview-src-list="materialInfoVoList.map((i) => i.originOssUrl || i.previewOssUrl || '')"
               :initial-index="index"
+              hide-on-click-modal
             />
           </div>
         </div>
@@ -158,6 +159,7 @@
             class="grid-image"
             :preview-src-list="materialInfoVoList.map((i) => i.originOssUrl || i.previewOssUrl || '')"
             :initial-index="index"
+            hide-on-click-modal
           />
         </div>
         <!-- 收藏标记 -->
@@ -326,10 +328,10 @@
     return !hasMultipleImages.value;
   });
 
-  // 当前显示的图片URL（用于编辑弹窗）
+  // 当前显示的图片URL（用于编辑弹窗，使用原图以保证质量）
   const currentImageUrl = computed(() => {
     if (props.materialInfoVoList.length > 0) {
-      return props.materialInfoVoList[0].previewOssUrl || props.materialInfoVoList[0].originOssUrl || '';
+      return props.materialInfoVoList[0].originOssUrl || props.materialInfoVoList[0].previewOssUrl || '';
     }
     return props.imageUrl;
   });
@@ -513,11 +515,8 @@
 
   // 裁剪图片
   const handleCrop = () => {
-    // 获取当前显示的图片URL
-    const imageUrl =
-      props.materialInfoVoList.length > 0
-        ? props.materialInfoVoList[0].previewOssUrl || props.materialInfoVoList[0].originOssUrl
-        : props.imageUrl;
+    // 获取原图URL（裁剪必须使用原图以保证质量）
+    const imageUrl = currentImageUrl.value;
 
     if (!imageUrl) {
       ElMessage.warning('暂无图片可裁剪');

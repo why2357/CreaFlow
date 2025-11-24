@@ -76,7 +76,7 @@
               @click="handleSelectScene(item)"
             >
               <div class="scene-image-wrapper">
-                <el-image :src="item.ossUrl" fit="cover" class="scene-image">
+                <el-image :src="item.ossUrl" fit="cover" class="scene-image" hide-on-click-modal>
                   <template #error>
                     <div class="image-error">
                       <el-icon><Picture /></el-icon>

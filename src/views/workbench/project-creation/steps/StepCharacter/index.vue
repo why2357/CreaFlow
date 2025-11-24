@@ -82,7 +82,12 @@
               >
                 <!-- 图片 -->
                 <div class="costume-image">
-                  <el-image :src="costume.ossUrl || ''" fit="contain" :preview-src-list="[costume.ossUrl || '']">
+                  <el-image
+                    :src="costume.ossUrl || ''"
+                    fit="contain"
+                    :preview-src-list="[costume.ossUrl || '']"
+                    hide-on-click-modal
+                  >
                     <template #error>
                       <div class="image-error">
                         <el-icon :size="40"><Picture /></el-icon>

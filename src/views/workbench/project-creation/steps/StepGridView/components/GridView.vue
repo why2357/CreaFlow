@@ -11,8 +11,8 @@
     <!-- 空状态 -->
     <div v-else-if="scenes.length === 0" class="empty-state">
       <div class="empty-content">
-        <el-icon :size="100" color="#c0c4cc"><Grid /></el-icon>
-        <p class="empty-text">暂无分镜</p>
+        <img style="width: 200px; height: 200px" src="../../../../../../assets/images/no-image-light.png" alt="" />
+        <p class="empty-text">暂无数据</p>
       </div>
     </div>
 
@@ -85,9 +85,9 @@
 
 <script setup lang="ts">
   import type { StoryBoardSceneVo } from '@/api/workbench/storyboard/types';
-  import { Grid, Loading } from '@element-plus/icons-vue';
+  import { Loading } from '@element-plus/icons-vue';
   import { ElMessage } from 'element-plus';
-  import { ref, nextTick } from 'vue';
+  import { ref } from 'vue';
   import SceneActions from '../../components/SceneActions.vue';
 
   interface Props {

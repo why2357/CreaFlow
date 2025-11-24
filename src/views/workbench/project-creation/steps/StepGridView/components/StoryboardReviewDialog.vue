@@ -46,6 +46,7 @@
                   class="main-image"
                   :preview-src-list="[currentScene.originOssUrl || currentScene.previewOssUrl]"
                   preview-teleported
+                  hide-on-click-modal
                 />
                 <!-- 空状态 -->
                 <div v-else class="empty-image">

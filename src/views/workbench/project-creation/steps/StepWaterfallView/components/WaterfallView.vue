@@ -41,6 +41,7 @@
             :preview-src-list="[item.selectImg?.originOssUrl || item.selectImg?.previewOssUrl]"
             :preview-teleported="true"
             :z-index="9999"
+            hide-on-click-modal
             @load="(e: Event) => handleImageLoad(e, item.id)"
           />
 
@@ -113,6 +114,7 @@
                 :preview-src-list="[historyImg.imgMaterial?.originOssUrl || historyImg.imgMaterial?.previewOssUrl]"
                 :preview-teleported="true"
                 :z-index="9999"
+                hide-on-click-modal
               />
               <!-- 右上角操作按钮 -->
               <transition name="fade">

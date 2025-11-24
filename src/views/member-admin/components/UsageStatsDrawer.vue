@@ -10,8 +10,8 @@
       <div class="header-section">
         <el-tabs v-model="activeTab" @tab-change="handleTabChange">
           <el-tab-pane label="日统计" name="day" />
-          <el-tab-pane label="周统计" name="week" />
-          <el-tab-pane label="月统计" name="month" />
+          <el-tab-pane v-if="currentStatType === 1" label="周统计" name="week" />
+          <el-tab-pane v-if="currentStatType === 1" label="月统计" name="month" />
         </el-tabs>
 
         <div class="date-picker-section">

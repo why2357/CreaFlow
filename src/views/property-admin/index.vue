@@ -54,6 +54,7 @@
               :preview-src-list="[item.originOssUrl || item.previewOssUrl]"
               :initial-index="0"
               preview-teleported
+              hide-on-click-modal
             >
               <template #error>
                 <div class="image-error">

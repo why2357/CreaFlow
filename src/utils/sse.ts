@@ -10,6 +10,7 @@ interface SSEOptions {
     retries: number;
     delay: number;
     onFailed?: () => void;
+    enabled?: boolean; // 是否启用自动重连
   };
 }
 
@@ -24,15 +25,23 @@ class SSEManager {
   private reconnectTimer: number | null = null;
   private reader: ReadableStreamDefaultReader<Uint8Array> | null = null;
   private isConnected = false;
+  private connectionStartTime = 0; // 连接开始时间
 
   /**
    * 初始化并连接 SSE
    */
-  connect(baseUrl: string, options: SSEOptions = {}): void {
+  async connect(baseUrl: string, options: SSEOptions = {}): Promise<void> {
+    // 如果已经有连接正在进行，先关闭
+    if (this.isConnected || this.abortController) {
+      console.warn('SSE 连接已存在，先关闭旧连接');
+      this.cleanup();
+    }
+
     this.options = options;
     this.maxReconnectAttempts = options.autoReconnect?.retries ?? 10;
     this.reconnectDelay = options.autoReconnect?.delay ?? 3000;
     this.isManualClose = false;
+    this.reconnectAttempts = 0; // 重置重连次数
 
     const token = getToken();
     if (!token) {
@@ -49,6 +58,12 @@ class SSEManager {
    */
   private async createConnection(): Promise<void> {
     try {
+      // 防止重复连接
+      if (this.isConnected) {
+        console.warn('SSE 已连接，跳过重复连接');
+        return;
+      }
+
       const token = getToken();
       if (!token) {
         console.error('Token 不存在，无法建立连接');
@@ -57,6 +72,9 @@ class SSEManager {
 
       // 创建新的 AbortController
       this.abortController = new AbortController();
+
+      // 记录连接开始时间
+      this.connectionStartTime = Date.now();
 
       console.log('正在建立 SSE 连接...', this.url);
 
@@ -98,8 +116,9 @@ class SSEManager {
         const { done, value } = await this.reader.read();
 
         if (done) {
-          console.log('SSE 流结束');
+          console.log('SSE 流结束，连接已断开');
           reading = false;
+          this.isConnected = false;
           break;
         }
 
@@ -169,7 +188,22 @@ class SSEManager {
 
       // 流正常结束，如果不是手动关闭则尝试重连
       if (!this.isManualClose) {
-        this.handleReconnect();
+        // 检查连接持续时间
+        const connectionDuration = Date.now() - this.connectionStartTime;
+        console.log(`[SSE] 连接持续时间: ${connectionDuration}ms`);
+
+        if (connectionDuration < 1000) {
+          // 如果连接在1秒内就断开，可能是服务端问题
+          console.warn('SSE 连接过早断开（<1秒），可能是服务端在发送确认消息后立即关闭了连接');
+        }
+
+        // 检查是否启用自动重连
+        const autoReconnectEnabled = this.options.autoReconnect?.enabled !== false;
+        if (autoReconnectEnabled) {
+          this.handleReconnect();
+        } else {
+          console.log('[SSE] 自动重连已禁用');
+        }
       }
     } catch (error: any) {
       this.isConnected = false;
