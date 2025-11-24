@@ -57,29 +57,31 @@
       </div>
 
       <!-- 添加协作者按钮 - 使用 el-popover -->
-      <el-popover
-        v-model:visible="inviteVisible"
-        placement="bottom"
-        :width="400"
-        trigger="manual"
-        popper-class="invite-member-popover"
-      >
-        <template #reference>
-          <div v-has-project-permi="['member-add']" class="add-member-btn" @click="inviteVisible = !inviteVisible">
-            <el-icon class="add-icon"><Plus /></el-icon>
-            <span>添加协作者</span>
-          </div>
-        </template>
+      <div v-has-project-permi="['member-add']">
+        <el-popover
+          v-model:visible="inviteVisible"
+          placement="bottom"
+          :width="400"
+          trigger="manual"
+          popper-class="invite-member-popover"
+        >
+          <template #reference>
+            <div class="add-member-btn" @click="inviteVisible = !inviteVisible">
+              <el-icon class="add-icon"><Plus /></el-icon>
+              <span>添加协作者</span>
+            </div>
+          </template>
 
-        <!-- Popover 内容 -->
-        <InviteMember
-          :selected-members="members"
-          :project-id="props.projectId ? Number(props.projectId) : undefined"
-          @select="handleSelectMember"
-          @remove="handleRemoveMember"
-          @close="inviteVisible = false"
-        />
-      </el-popover>
+          <!-- Popover 内容 -->
+          <InviteMember
+            :selected-members="members"
+            :project-id="props.projectId ? Number(props.projectId) : undefined"
+            @select="handleSelectMember"
+            @remove="handleRemoveMember"
+            @close="inviteVisible = false"
+          />
+        </el-popover>
+      </div>
     </div>
   </div>
 </template>
