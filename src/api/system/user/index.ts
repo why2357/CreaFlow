@@ -1,9 +1,9 @@
-import { DeptVO } from './../dept/types';
 import { RoleVO } from '@/api/system/role/types';
 import request from '@/utils/request';
-import { AxiosPromise } from 'axios';
-import { UserForm, UserQuery, UserVO, UserInfoVO } from './types';
 import { parseStrEmpty } from '@/utils/sskj';
+import { AxiosPromise } from 'axios';
+import { DeptVO } from './../dept/types';
+import { MemberAddBo, MemberQuery, MemberVO, UserForm, UserInfoVO, UserQuery, UserVO } from './types';
 
 /**
  * 查询用户列表
@@ -196,6 +196,59 @@ export const deptTreeSelect = (): AxiosPromise<DeptVO[]> => {
   });
 };
 
+/**
+ * 查询成员列表
+ * @param query
+ */
+export const listMember = (query: MemberQuery): AxiosPromise<MemberVO[]> => {
+  return request({
+    url: '/hivision/system/user/member',
+    method: 'get',
+    params: query
+  });
+};
+
+/**
+ * 新增成员
+ * @param data
+ */
+export const addMember = (data: MemberAddBo) => {
+  return request({
+    url: '/hivision/system/user/member',
+    method: 'post',
+    data: data
+  });
+};
+
+/**
+ * 删除成员
+ * @param id 成员ID
+ */
+export const delMember = (id: number) => {
+  return request({
+    url: `/hivision/system/user/member/${id}`,
+    method: 'delete'
+  });
+};
+
+/**
+ * 成员点数统计
+ * @param data 统计请求参数
+ */
+export const getMemberPointsStat = (data: {
+  userId: number;
+  statType: number;
+  timeType?: number;
+  startStatTime: string;
+  endStatTime: string;
+}): AxiosPromise<any[]> => {
+  return request({
+    url: '/hivision/story/report/member/points-stat',
+    method: 'post',
+    data
+  });
+};
+
 export default {
   listUser,
   getUser,
@@ -211,5 +264,9 @@ export default {
   getAuthRole,
   updateAuthRole,
   deptTreeSelect,
-  listUserByDeptId
+  listUserByDeptId,
+  listMember,
+  addMember,
+  delMember,
+  getMemberPointsStat
 };

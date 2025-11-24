@@ -5,7 +5,7 @@ import { DeptForm, DeptQuery, DeptVO } from './types';
 // 查询部门列表
 export const listDept = (query?: DeptQuery) => {
   return request({
-    url: '/system/dept/list',
+    url: '/hivision/system/dept/list',
     method: 'get',
     params: query
   });
@@ -14,7 +14,7 @@ export const listDept = (query?: DeptQuery) => {
 // 查询部门列表（排除节点）
 export const listDeptExcludeChild = (deptId: string | number): AxiosPromise<DeptVO[]> => {
   return request({
-    url: '/system/dept/list/exclude/' + deptId,
+    url: '/hivision/system/dept/list/exclude/' + deptId,
     method: 'get'
   });
 };
@@ -22,7 +22,7 @@ export const listDeptExcludeChild = (deptId: string | number): AxiosPromise<Dept
 // 查询部门详细
 export const getDept = (deptId: string | number): AxiosPromise<DeptVO> => {
   return request({
-    url: '/system/dept/' + deptId,
+    url: '/hivision/system/dept/' + deptId,
     method: 'get'
   });
 };
@@ -30,7 +30,7 @@ export const getDept = (deptId: string | number): AxiosPromise<DeptVO> => {
 // 查询部门下拉树结构
 export const treeselect = (): AxiosPromise<DeptVO[]> => {
   return request({
-    url: '/system/dept/treeselect',
+    url: '/hivision/system/dept/treeselect',
     method: 'get'
   });
 };
@@ -38,7 +38,7 @@ export const treeselect = (): AxiosPromise<DeptVO[]> => {
 // 新增部门
 export const addDept = (data: DeptForm) => {
   return request({
-    url: '/system/dept',
+    url: '/hivision/system/dept',
     method: 'post',
     data: data
   });
@@ -47,7 +47,7 @@ export const addDept = (data: DeptForm) => {
 // 修改部门
 export const updateDept = (data: DeptForm) => {
   return request({
-    url: '/system/dept',
+    url: '/hivision/system/dept',
     method: 'put',
     data: data
   });
@@ -56,7 +56,7 @@ export const updateDept = (data: DeptForm) => {
 // 删除部门
 export const delDept = (deptId: number | string) => {
   return request({
-    url: '/system/dept/' + deptId,
+    url: '/hivision/system/dept/' + deptId,
     method: 'delete'
   });
 };

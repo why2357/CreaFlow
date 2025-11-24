@@ -13,28 +13,27 @@
 </template>
 
 <script setup lang="ts">
-import { useI18n } from 'vue-i18n';
-import SvgIcon from '@/components/SvgIcon/index.vue';
-import { useAppStore } from '@/store/modules/app';
+  import { useI18n } from 'vue-i18n';
+  import SvgIcon from '@/components/SvgIcon/index.vue';
+  import { useAppStore } from '@/store/modules/app';
 
-const appStore = useAppStore();
-const { locale } = useI18n();
+  const appStore = useAppStore();
+  const { locale } = useI18n();
 
-
-const message: any = {
-  zh_CN: '切换语言成功！',
-  en_US: 'Switch Language Successful!',
-}
-const handleLanguageChange = (lang: string) => {
-  locale.value = lang;
-  appStore.changeLanguage(lang);
-  ElMessage.success(message[lang] || '切换语言成功！');
-}
+  const message: any = {
+    zh_CN: '切换语言成功！',
+    en_US: 'Switch Language Successful!'
+  };
+  const handleLanguageChange = (lang: string) => {
+    locale.value = lang;
+    appStore.changeLanguage(lang);
+    ElMessage.success(message[lang] || '切换语言成功！');
+  };
 </script>
 
 <style lang="scss" scoped>
-.lang-select--style {
-  font-size: 18px;
-  line-height: 50px;
-}
+  .lang-select--style {
+    font-size: 18px;
+    line-height: 50px;
+  }
 </style>

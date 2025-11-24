@@ -20,11 +20,7 @@
             @row-click="getCacheKeys"
             style="width: 100%"
           >
-            <el-table-column
-              label="序号"
-              width="60"
-              type="index"
-            ></el-table-column>
+            <el-table-column label="序号" width="60" type="index"></el-table-column>
 
             <el-table-column
               label="缓存名称"
@@ -34,19 +30,9 @@
               :formatter="nameFormatter"
             ></el-table-column>
 
-            <el-table-column
-              label="备注"
-              align="center"
-              prop="remark"
-              :show-overflow-tooltip="true"
-            />
-            <el-table-column
-              label="操作"
-              width="60"
-              align="center"
-              class-name="small-padding fixed-width"
-            >
-              <template slot-scope="scope">
+            <el-table-column label="备注" align="center" prop="remark" :show-overflow-tooltip="true" />
+            <el-table-column label="操作" width="60" align="center" class-name="small-padding fixed-width">
+              <template v-slot="scope">
                 <el-button
                   size="mini"
                   type="text"
@@ -78,25 +64,11 @@
             @row-click="handleCacheValue"
             style="width: 100%"
           >
-            <el-table-column
-              label="序号"
-              width="60"
-              type="index"
-            ></el-table-column>
-            <el-table-column
-              label="缓存键名"
-              align="center"
-              :show-overflow-tooltip="true"
-              :formatter="keyFormatter"
-            >
+            <el-table-column label="序号" width="60" type="index"></el-table-column>
+            <el-table-column label="缓存键名" align="center" :show-overflow-tooltip="true" :formatter="keyFormatter">
             </el-table-column>
-            <el-table-column
-              label="操作"
-              width="60"
-              align="center"
-              class-name="small-padding fixed-width"
-            >
-              <template slot-scope="scope">
+            <el-table-column label="操作" width="60" align="center" class-name="small-padding fixed-width">
+              <template v-slot="scope">
                 <el-button
                   size="mini"
                   type="text"
@@ -118,7 +90,7 @@
               type="text"
               icon="el-icon-refresh-right"
               @click="handleClearCacheAll()"
-            >清理全部</el-button
+              >清理全部</el-button
             >
           </div>
           <el-form :model="cacheForm">
@@ -135,12 +107,7 @@
               </el-col>
               <el-col :offset="1" :span="22">
                 <el-form-item label="缓存内容:" prop="cacheValue">
-                  <el-input
-                    v-model="cacheForm.cacheValue"
-                    type="textarea"
-                    :rows="8"
-                    :readOnly="true"
-                  />
+                  <el-input v-model="cacheForm.cacheValue" type="textarea" :rows="8" :readOnly="true" />
                 </el-form-item>
               </el-col>
             </el-row>
@@ -152,90 +119,97 @@
 </template>
 
 <script>
-import { listCacheName, listCacheKey, getCacheValue, clearCacheName, clearCacheKey, clearCacheAll } from "@/api/monitor/cache";
+  import {
+    clearCacheAll,
+    clearCacheKey,
+    clearCacheName,
+    getCacheValue,
+    listCacheKey,
+    listCacheName
+  } from '@/api/monitor/cache';
 
-export default {
-  name: "CacheList",
-  data() {
-    return {
-      cacheNames: [],
-      cacheKeys: [],
-      cacheForm: {},
-      loading: true,
-      subLoading: false,
-      nowCacheName: "",
-      tableHeight: window.innerHeight - 200
-    };
-  },
-  created() {
-    this.getCacheNames();
-  },
-  methods: {
-    /** 查询缓存名称列表 */
-    getCacheNames() {
-      this.loading = true;
-      listCacheName().then(response => {
-        this.cacheNames = response.data;
-        this.loading = false;
-      });
+  export default {
+    name: 'CacheList',
+    data() {
+      return {
+        cacheNames: [],
+        cacheKeys: [],
+        cacheForm: {},
+        loading: true,
+        subLoading: false,
+        nowCacheName: '',
+        tableHeight: window.innerHeight - 200
+      };
     },
-    /** 刷新缓存名称列表 */
-    refreshCacheNames() {
+    created() {
       this.getCacheNames();
-      this.$modal.msgSuccess("刷新缓存列表成功");
     },
-    /** 清理指定名称缓存 */
-    handleClearCacheName(row) {
-      clearCacheName(row.cacheName).then(response => {
-        this.$modal.msgSuccess("清理缓存名称[" + this.nowCacheName + "]成功");
+    methods: {
+      /** 查询缓存名称列表 */
+      getCacheNames() {
+        this.loading = true;
+        listCacheName().then((response) => {
+          this.cacheNames = response.data;
+          this.loading = false;
+        });
+      },
+      /** 刷新缓存名称列表 */
+      refreshCacheNames() {
+        this.getCacheNames();
+        this.$modal.msgSuccess('刷新缓存列表成功');
+      },
+      /** 清理指定名称缓存 */
+      handleClearCacheName(row) {
+        clearCacheName(row.cacheName).then((response) => {
+          this.$modal.msgSuccess('清理缓存名称[' + this.nowCacheName + ']成功');
+          this.getCacheKeys();
+        });
+      },
+      /** 查询缓存键名列表 */
+      getCacheKeys(row) {
+        const cacheName = row !== undefined ? row.cacheName : this.nowCacheName;
+        if (cacheName === '') {
+          return;
+        }
+        this.subLoading = true;
+        listCacheKey(cacheName).then((response) => {
+          this.cacheKeys = response.data;
+          this.subLoading = false;
+          this.nowCacheName = cacheName;
+        });
+      },
+      /** 刷新缓存键名列表 */
+      refreshCacheKeys() {
         this.getCacheKeys();
-      });
-    },
-    /** 查询缓存键名列表 */
-    getCacheKeys(row) {
-      const cacheName = row !== undefined ? row.cacheName : this.nowCacheName;
-      if (cacheName === "") {
-        return;
+        this.$modal.msgSuccess('刷新键名列表成功');
+      },
+      /** 清理指定键名缓存 */
+      handleClearCacheKey(cacheKey) {
+        clearCacheKey(cacheKey).then((response) => {
+          this.$modal.msgSuccess('清理缓存键名[' + cacheKey + ']成功');
+          this.getCacheKeys();
+        });
+      },
+      /** 列表前缀去除 */
+      nameFormatter(row) {
+        return row.cacheName.replace(':', '');
+      },
+      /** 键名前缀去除 */
+      keyFormatter(cacheKey) {
+        return cacheKey.replace(this.nowCacheName, '');
+      },
+      /** 查询缓存内容详细 */
+      handleCacheValue(cacheKey) {
+        getCacheValue(this.nowCacheName, cacheKey).then((response) => {
+          this.cacheForm = response.data;
+        });
+      },
+      /** 清理全部缓存 */
+      handleClearCacheAll() {
+        clearCacheAll().then((response) => {
+          this.$modal.msgSuccess('清理全部缓存成功');
+        });
       }
-      this.subLoading = true;
-      listCacheKey(cacheName).then(response => {
-        this.cacheKeys = response.data;
-        this.subLoading = false;
-        this.nowCacheName = cacheName;
-      });
-    },
-    /** 刷新缓存键名列表 */
-    refreshCacheKeys() {
-      this.getCacheKeys();
-      this.$modal.msgSuccess("刷新键名列表成功");
-    },
-    /** 清理指定键名缓存 */
-    handleClearCacheKey(cacheKey) {
-      clearCacheKey(cacheKey).then(response => {
-        this.$modal.msgSuccess("清理缓存键名[" + cacheKey + "]成功");
-        this.getCacheKeys();
-      });
-    },
-    /** 列表前缀去除 */
-    nameFormatter(row) {
-      return row.cacheName.replace(":", "");
-    },
-    /** 键名前缀去除 */
-    keyFormatter(cacheKey) {
-      return cacheKey.replace(this.nowCacheName, "");
-    },
-    /** 查询缓存内容详细 */
-    handleCacheValue(cacheKey) {
-      getCacheValue(this.nowCacheName, cacheKey).then(response => {
-        this.cacheForm = response.data;
-      });
-    },
-    /** 清理全部缓存 */
-    handleClearCacheAll() {
-      clearCacheAll().then(response => {
-        this.$modal.msgSuccess("清理全部缓存成功");
-      });
     }
-  },
-};
+  };
 </script>

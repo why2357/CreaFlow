@@ -1,7 +1,7 @@
+import { UserInfo } from '@/api/system/user/types';
 import request from '@/utils/request';
 import { AxiosPromise } from 'axios';
-import { LoginData, LoginResult, VerifyCodeResult, TenantInfo } from './types';
-import { UserInfo } from '@/api/system/user/types';
+import { LoginData, LoginResult, TenantInfo, VerifyCodeResult } from './types';
 
 // pc端固定客户端授权id
 const clientId = import.meta.env.VITE_APP_CLIENT_ID;
@@ -11,19 +11,14 @@ const clientId = import.meta.env.VITE_APP_CLIENT_ID;
  * @returns
  */
 export function login(data: LoginData): AxiosPromise<LoginResult> {
-  const params = {
-    ...data,
-    clientId: data.clientId || clientId,
-    grantType: data.grantType || 'password'
-  };
   return request({
-    url: '/auth/login',
+    url: '/hivision/login',
     headers: {
-      isToken: false,
-      isEncrypt: true
+      isToken: false
+      // isEncrypt: true
     },
     method: 'post',
-    data: params
+    data
   });
 }
 
@@ -50,7 +45,7 @@ export function register(data: any) {
  */
 export function logout() {
   return request({
-    url: '/auth/logout',
+    url: '/hivision/logout',
     method: 'post'
   });
 }
@@ -66,6 +61,20 @@ export function getCodeImg(): AxiosPromise<VerifyCodeResult> {
     },
     method: 'get',
     timeout: 20000
+  });
+}
+/**
+ * 获取短信验证码
+ */
+export function sendPhoneCode(params: { phoneNumber: string }): AxiosPromise<{
+  code: number;
+  msg: string;
+  data: any;
+}> {
+  return request({
+    url: `/hivision/code`,
+    params,
+    method: 'get'
   });
 }
 
@@ -88,7 +97,7 @@ export function callback(data: LoginData): AxiosPromise<any> {
 // 获取用户详细信息
 export function getInfo(): AxiosPromise<UserInfo> {
   return request({
-    url: '/system/user/getInfo',
+    url: '/hivision/getInfo',
     method: 'get'
   });
 }
@@ -115,5 +124,67 @@ export function getVersion() {
     },
     method: 'get',
     timeout: 20000
+  });
+}
+
+/**
+ * 生成二维码登录key
+ */
+export function generateQrcodeKey(): AxiosPromise<{
+  code: number;
+  msg: string;
+  data: {
+    qrcodeKey: string;
+    qrcodeUrl: string;
+    expireTime: number;
+  };
+}> {
+  return request({
+    url: '/hivision/qrcode/generate',
+    headers: {
+      isToken: false
+    },
+    method: 'post'
+  });
+}
+
+/**
+ * 检查二维码扫码状态
+ */
+export function checkQrcodeStatus(qrcodeKey: string): AxiosPromise<{
+  code: number;
+  msg: string;
+  data: {
+    status: 'waiting' | 'scanned' | 'confirmed' | 'expired';
+    needBindPhone?: boolean;
+    token?: string;
+    userInfo?: any;
+  };
+}> {
+  return request({
+    url: '/hivision/qrcode/check',
+    headers: {
+      isToken: false
+    },
+    method: 'get',
+    params: { qrcodeKey }
+  });
+}
+
+/**
+ * 绑定手机号（首次扫码登录）
+ */
+export function bindPhoneForQrcode(data: {
+  qrcodeKey: string;
+  phoneNumber: string;
+  smsCode: string;
+}): AxiosPromise<LoginResult> {
+  return request({
+    url: '/hivision/qrcode/bind-phone',
+    headers: {
+      isToken: false
+    },
+    method: 'post',
+    data
   });
 }

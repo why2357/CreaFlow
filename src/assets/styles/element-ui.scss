@@ -1,8 +1,8 @@
 // cover some element-ui styles
 
 .el-divider--horizontal {
-  margin-bottom: 10px;
   margin-top: 10px;
+  margin-bottom: 10px;
 }
 
 .el-breadcrumb__inner,
@@ -22,21 +22,21 @@
 
 .cell {
   .el-tag {
-    margin-right: 0px;
+    margin-right: 0;
   }
 }
 
 .small-padding {
   .cell {
-    padding-left: 5px;
     padding-right: 5px;
+    padding-left: 5px;
   }
 }
 
 .fixed-width {
   .el-button--mini {
-    padding: 7px 10px;
     width: 60px;
+    padding: 7px 10px;
   }
 }
 
@@ -46,24 +46,25 @@
     text-align: center;
 
     .el-tag {
-      margin-right: 0px;
+      margin-right: 0;
     }
   }
 }
 
-/*-------------Dialog-------------**/
+/* -------------Dialog-------------  **/
 .el-overlay {
   overflow: hidden;
 
   .el-overlay-dialog {
     display: flex;
-    align-items: center;
     justify-content: center;
+    align-items: center;
     width: 100%;
     height: 100%;
 
     .el-dialog {
       margin: 0 auto !important;
+      border-radius: 12px !important;
 
       .el-dialog__body {
         padding: 15px !important;
@@ -74,8 +75,8 @@
 
 .el-dialog__body {
   max-height: calc(90vh - 111px) !important;
-  overflow-y: auto;
   overflow-x: hidden;
+  overflow-y: auto;
 }
 
 // refine element ui upload
@@ -113,4 +114,11 @@
 
 .el-dropdown .el-dropdown-link {
   color: var(--el-color-primary) !important;
+}
+
+// 自定义 invite-member-popover 样式
+.invite-member-popover.el-popper {
+  padding: 0 !important;
+  border-radius: 8px !important;
+  box-shadow: 0 4px 16px rgb(0 0 0 / 12%) !important;
 }

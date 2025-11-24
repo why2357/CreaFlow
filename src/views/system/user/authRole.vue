@@ -44,7 +44,7 @@
           </el-table-column>
         </el-table>
         <pagination v-show="total > 0" :total="total" v-model:page="pageNum" v-model:limit="pageSize" />
-        <div style="text-align: center;margin-left:-120px;margin-top:30px;">
+        <div style="text-align: center; margin-left: -120px; margin-top: 30px">
           <el-button type="primary" @click="submitForm()">提交</el-button>
           <el-button @click="close()">返回</el-button>
         </div>
@@ -55,73 +55,73 @@
 </template>
 
 <script setup name="AuthRole" lang="ts">
-import { RoleVO } from "@/api/system/role/types";
-import { getAuthRole, updateAuthRole } from "@/api/system/user";
-import { UserForm } from "@/api/system/user/types";
+  import { RoleVO } from '@/api/system/role/types';
+  import { getAuthRole, updateAuthRole } from '@/api/system/user';
+  import { UserForm } from '@/api/system/user/types';
 
-const route = useRoute();
-const { proxy } = getCurrentInstance() as ComponentInternalInstance;
+  const route = useRoute();
+  const { proxy } = getCurrentInstance() as ComponentInternalInstance;
 
-const loading = ref(true);
-const total = ref(0);
-const pageNum = ref(1);
-const pageSize = ref(10);
-const roleIds = ref<Array<string | number>>([]);
-const roles = ref<RoleVO[]>([]);
-const form = ref<Partial<UserForm>>({
-  nickName: undefined,
-  userName: "",
-  userId: undefined
-});
+  const loading = ref(true);
+  const total = ref(0);
+  const pageNum = ref(1);
+  const pageSize = ref(10);
+  const roleIds = ref<Array<string | number>>([]);
+  const roles = ref<RoleVO[]>([]);
+  const form = ref<Partial<UserForm>>({
+    nickName: undefined,
+    userName: '',
+    userId: undefined
+  });
 
-const tableRef = ref<ElTableInstance>();
+  const tableRef = ref<ElTableInstance>();
 
-/** 单击选中行数据 */
-const clickRow = (row: RoleVO) => {
-  // ele的方法有问题，selected应该为可选参数
-  tableRef.value?.toggleRowSelection(row, false);
-};
-/** 多选框选中数据 */
-const handleSelectionChange = (selection: RoleVO[]) => {
-  roleIds.value = selection.map(item => item.roleId);
-};
-/** 保存选中的数据编号 */
-const getRowKey = (row: RoleVO): string => {
-  return String(row.roleId);
-};
-/** 关闭按钮 */
-const close = () => {
-  const obj = { path: "/system/user" };
-  proxy?.$tab.closeOpenPage(obj);
-};
-/** 提交按钮 */
-const submitForm = async () => {
-  const userId = form.value.userId;
-  const rIds = roleIds.value.join(",");
-  await updateAuthRole({ userId: userId as string, roleIds: rIds });
-  proxy?.$modal.msgSuccess("授权成功");
-  close();
-};
+  /** 单击选中行数据 */
+  const clickRow = (row: RoleVO) => {
+    // ele的方法有问题，selected应该为可选参数
+    tableRef.value?.toggleRowSelection(row, false);
+  };
+  /** 多选框选中数据 */
+  const handleSelectionChange = (selection: RoleVO[]) => {
+    roleIds.value = selection.map((item) => item.roleId);
+  };
+  /** 保存选中的数据编号 */
+  const getRowKey = (row: RoleVO): string => {
+    return String(row.roleId);
+  };
+  /** 关闭按钮 */
+  const close = () => {
+    const obj = { path: '/system/user' };
+    proxy?.$tab.closeOpenPage(obj);
+  };
+  /** 提交按钮 */
+  const submitForm = async () => {
+    const userId = form.value.userId;
+    const rIds = roleIds.value.join(',');
+    await updateAuthRole({ userId: userId as string, roleIds: rIds });
+    proxy?.$modal.msgSuccess('授权成功');
+    close();
+  };
 
-const getList = async () => {
-  const userId = route.params && route.params.userId;
-  if (userId) {
-    loading.value = true;
-    const res = await getAuthRole(userId as string);
-    Object.assign(form.value, res.data.user);
-    Object.assign(roles.value, res.data.roles);
-    total.value = roles.value.length;
-    await nextTick(() => {
-      roles.value.forEach(row => {
-        if (row?.flag) {
-          tableRef.value?.toggleRowSelection(row, true);
-        }
+  const getList = async () => {
+    const userId = route.params && route.params.userId;
+    if (userId) {
+      loading.value = true;
+      const res = await getAuthRole(userId as string);
+      Object.assign(form.value, res.data.user);
+      Object.assign(roles.value, res.data.roles);
+      total.value = roles.value.length;
+      await nextTick(() => {
+        roles.value.forEach((row) => {
+          if (row?.flag) {
+            tableRef.value?.toggleRowSelection(row, true);
+          }
+        });
       });
-    });
-    loading.value = false;
-  }
-};
-onMounted(() => {
-  getList();
-});
+      loading.value = false;
+    }
+  };
+  onMounted(() => {
+    getList();
+  });
 </script>

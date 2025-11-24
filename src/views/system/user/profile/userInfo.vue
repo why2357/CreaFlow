@@ -23,43 +23,48 @@
 </template>
 
 <script setup lang="ts">
-import { updateUserProfile } from "@/api/system/user";
+  import { updateUserProfile } from '@/api/system/user';
 
-const props = defineProps({
-  user: {
-    type: Object as PropType<any>,
-    required: true
-  }
-});
-const userForm = computed(() => props.user);
-const { proxy } = getCurrentInstance() as ComponentInternalInstance;
-const userRef = ref<ElFormInstance>();
-const rules = ref<ElFormRules>({
-  nickName: [{ required: true, message: "用户昵称不能为空", trigger: "blur" }],
-  email: [{ required: true, message: "邮箱地址不能为空", trigger: "blur" }, {
-    type: "email",
-    message: "请输入正确的邮箱地址",
-    trigger: ["blur", "change"]
-  }],
-  phonenumber: [{
-    required: true,
-    message: "手机号码不能为空",
-    trigger: "blur"
-  }, { pattern: /^1[3|4|5|6|7|8|9][0-9]\d{8}$/, message: "请输入正确的手机号码", trigger: "blur" }]
-});
-
-
-/** 提交按钮 */
-const submit = () => {
-  userRef.value?.validate(async (valid: boolean) => {
-    if (valid) {
-      await updateUserProfile(props.user);
-      proxy?.$modal.msgSuccess("修改成功");
+  const props = defineProps({
+    user: {
+      type: Object as PropType<any>,
+      required: true
     }
   });
-};
-/** 关闭按钮 */
-const close = () => {
-  proxy?.$tab.closePage();
-};
+  const userForm = computed(() => props.user);
+  const { proxy } = getCurrentInstance() as ComponentInternalInstance;
+  const userRef = ref<ElFormInstance>();
+  const rules = ref<ElFormRules>({
+    nickName: [{ required: true, message: '用户昵称不能为空', trigger: 'blur' }],
+    email: [
+      { required: true, message: '邮箱地址不能为空', trigger: 'blur' },
+      {
+        type: 'email',
+        message: '请输入正确的邮箱地址',
+        trigger: ['blur', 'change']
+      }
+    ],
+    phonenumber: [
+      {
+        required: true,
+        message: '手机号码不能为空',
+        trigger: 'blur'
+      },
+      { pattern: /^1[3|4|5|6|7|8|9][0-9]\d{8}$/, message: '请输入正确的手机号码', trigger: 'blur' }
+    ]
+  });
+
+  /** 提交按钮 */
+  const submit = () => {
+    userRef.value?.validate(async (valid: boolean) => {
+      if (valid) {
+        await updateUserProfile(props.user);
+        proxy?.$modal.msgSuccess('修改成功');
+      }
+    });
+  };
+  /** 关闭按钮 */
+  const close = () => {
+    proxy?.$tab.closePage();
+  };
 </script>

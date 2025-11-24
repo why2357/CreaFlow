@@ -5,9 +5,9 @@
 </template>
 
 <script setup>
-const url = ref('https://www.cashfree.cn/');
+  const url = ref('https://www.cashfree.cn/');
 
-function goto() {
-  window.open(url.value)
-}
+  function goto() {
+    window.open(url.value);
+  }
 </script>

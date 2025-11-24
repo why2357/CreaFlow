@@ -130,11 +130,6 @@ h6 {
   width: 100%;
 }
 
-.pagination-container .el-pagination {
-  //right: 0;
-  //position: absolute;
-}
-
 @media (max-width: 768px) {
   .pagination-container .el-pagination > .el-pagination__jump {
     display: none !important;
@@ -191,9 +186,14 @@ h6 {
   float: right !important;
 }
 
+.el-card {
+  border-radius: 8px !important;
+}
+
 .el-card__header {
-  padding: 14px 15px 7px !important;
+  padding: 7px 18px 7px !important;
   min-height: 40px;
+  background: #f1f3f7 !important;
 }
 
 .el-card__body {
@@ -225,6 +225,28 @@ h6 {
   background-color: #20b2aa;
   border-color: #20b2aa;
   color: #ffffff;
+}
+
+/* 紫色主按钮样式 */
+.el-button--primary {
+  background: #5252ff !important;
+  border-color: rgba(82, 82, 255, 1) !important;
+  color: #ffffff !important;
+
+  &:hover,
+  &:focus {
+    background: #5252ff !important;
+    border-color: rgba(100, 100, 255, 1) !important;
+    color: #ffffff !important;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(82, 82, 255, 0.3) !important;
+  }
+
+  &:active {
+    background: #5252ff !important;
+    border-color: #bfbafb !important;
+    transform: translateY(0);
+  }
 }
 
 /* text color */
@@ -287,4 +309,73 @@ h6 {
 /* 表格右侧工具栏样式 */
 .top-right-btn {
   margin-left: auto;
+}
+
+.footer-btn {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 4px;
+  width: 80px;
+  height: 32px;
+  padding: 8px 16px;
+  border-radius: 8px !important;
+}
+// Tooltip 样式调整
+.el-tooltip__popper {
+  max-width: 200px !important;
+  word-break: break-all;
+}
+.el-input__wrapper {
+  border-radius: 8px !important;
+  background: #f7f8fa !important;
+  border: none !important;
+}
+// 登录页专
+.white-input-inner {
+  .el-input__wrapper {
+    border-radius: 4px !important;
+    background: #fff !important;
+  }
+}
+// 白色底
+.fff-input-inner {
+  .el-input__wrapper {
+    background: #fff !important;
+  }
+}
+.el-popper__arrow {
+  opacity: 0;
+}
+.el-dropdown-menu__item--divided {
+  opacity: 0;
+}
+.el-input .el-input__count .el-input__count-inner {
+  background: none !important;
+}
+.el-dialog__footer {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 8px;
+  align-self: stretch;
+  padding-top: 0 !important;
+  button {
+    display: flex;
+    width: 80px;
+    height: 32px;
+    padding: 8px 16px;
+    justify-content: center;
+    align-items: center;
+    gap: 4px;
+    border-radius: 8px;
+  }
+}
+.dialog-footer {
+  display: flex;
+}
+
+/** Element Plus Message 全局样式 - 调整显示位置，避免遮挡顶部导航 **/
+.el-message {
+  top: 60px !important;
 }

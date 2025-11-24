@@ -1,5 +1,5 @@
 <template>
-  <div :class="{ 'hidden': hidden }" class="pagination-container">
+  <div :class="{ hidden: hidden }" class="pagination-container">
     <el-pagination
       :background="background"
       v-model:current-page="currentPage"
@@ -15,16 +15,16 @@
 </template>
 
 <script lang="ts">
-export default {
+  export default {
     name: 'Pagination'
-}
+  };
 </script>
 
 <script setup lang="ts">
-import { scrollTo } from '@/utils/scroll-to'
-import { propTypes } from "@/utils/propTypes";
+  import { scrollTo } from '@/utils/scroll-to';
+  import { propTypes } from '@/utils/propTypes';
 
-const props = defineProps({
+  const props = defineProps({
     total: propTypes.number,
     page: propTypes.number.def(1),
     limit: propTypes.number.def(20),
@@ -39,50 +39,50 @@ const props = defineProps({
     autoScroll: propTypes.bool.def(true),
     hidden: propTypes.bool.def(false),
     float: propTypes.string.def('right')
-})
+  });
 
-const emit = defineEmits(['update:page', 'update:limit', 'pagination']);
-const currentPage = computed({
+  const emit = defineEmits(['update:page', 'update:limit', 'pagination']);
+  const currentPage = computed({
     get() {
-        return props.page
+      return props.page;
     },
     set(val) {
-        emit('update:page', val)
+      emit('update:page', val);
     }
-})
-const pageSize = computed({
+  });
+  const pageSize = computed({
     get() {
-        return props.limit
+      return props.limit;
     },
-    set(val){
-        emit('update:limit', val)
+    set(val) {
+      emit('update:limit', val);
     }
-})
-function handleSizeChange(val: number) {
+  });
+  function handleSizeChange(val: number) {
     if (currentPage.value * val > props.total) {
-        currentPage.value = 1
+      currentPage.value = 1;
     }
-    emit('pagination', { page: currentPage.value, limit: val })
+    emit('pagination', { page: currentPage.value, limit: val });
     if (props.autoScroll) {
-        scrollTo(0, 800)
+      scrollTo(0, 800);
     }
-}
-function handleCurrentChange(val: number) {
-    emit('pagination', { page: val, limit: pageSize.value })
+  }
+  function handleCurrentChange(val: number) {
+    emit('pagination', { page: val, limit: pageSize.value });
     if (props.autoScroll) {
-        scrollTo(0, 800)
+      scrollTo(0, 800);
     }
-}
+  }
 </script>
 
 <style lang="scss" scoped>
-.pagination-container {
-  padding: 32px 16px;
-  .el-pagination{
-    float: v-bind(float);
+  .pagination-container {
+    padding: 32px 16px;
+    .el-pagination {
+      float: v-bind(float);
+    }
   }
-}
-.pagination-container.hidden {
-  display: none;
-}
+  .pagination-container.hidden {
+    display: none;
+  }
 </style>

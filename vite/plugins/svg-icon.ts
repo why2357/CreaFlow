@@ -6,5 +6,21 @@ export default (path: any, isBuild: boolean) => {
     // 指定symbolId格式
     symbolId: 'icon-[dir]-[name]',
     svgoOptions: isBuild
+      ? {
+          plugins: [
+            {
+              name: 'preset-default',
+              params: {
+                overrides: {
+                  // 保留 currentColor，不要转换为具体颜色
+                  convertColors: false,
+                  // 不移除未知的元素和属性
+                  removeUnknownsAndDefaults: false
+                }
+              }
+            }
+          ]
+        }
+      : false
   });
 };

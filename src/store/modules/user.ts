@@ -1,9 +1,11 @@
-import { to } from 'await-to-js';
-import defAva from '@/assets/images/profile.jpg';
+import { getInfo as getUserInfo, login as loginApi, logout as logoutApi } from '@/api/login';
+import { getWalletPoints } from '@/api/system/userCenter';
+import { LoginData } from '@/api/types';
+import defAva from '@/assets/images/profile.svg';
 import store from '@/store';
 import { getToken, removeToken, setToken } from '@/utils/auth';
-import { login as loginApi, logout as logoutApi, getInfo as getUserInfo } from '@/api/login';
-import { LoginData } from '@/api/types';
+import { to } from 'await-to-js';
+import { closeProjectSSE } from '@/utils/sse';
 
 export const useUserStore = defineStore('user', () => {
   const token = ref(getToken());
@@ -13,6 +15,7 @@ export const useUserStore = defineStore('user', () => {
   const avatar = ref('');
   const roles = ref<Array<string>>([]); // 用户角色编码集合 → 判断路由权限
   const permissions = ref<Array<string>>([]); // 用户权限编码集合 → 判断按钮权限
+  const walletPoints = ref<number>(0); // 用户钱包积分
 
   /**
    * 登录
@@ -23,8 +26,8 @@ export const useUserStore = defineStore('user', () => {
     const [err, res] = await to(loginApi(userInfo));
     if (res) {
       const data = res.data;
-      setToken(data.access_token);
-      token.value = data.access_token;
+      setToken(data.token);
+      token.value = data.token;
       return Promise.resolve();
     }
     return Promise.reject(err);
@@ -34,17 +37,29 @@ export const useUserStore = defineStore('user', () => {
   const getInfo = async (): Promise<void> => {
     const [err, res] = await to(getUserInfo());
     if (res) {
+      console.log('res', res);
+
       const data = res.data;
       const user = data.user;
       const profile = user.avatar == '' || user.avatar == null ? defAva : user.avatar;
 
-      if (data.roles && data.roles.length > 0) {
-        // 验证返回的roles是否是一个非空数组
-        roles.value = data.roles;
-        permissions.value = data.permissions;
+      // 处理角色和权限
+      // 如果后端返回的 roles 为空数组或不存在，设置默认角色
+      if (user.roles && user.roles.length > 0) {
+        roles.value = user.roles;
       } else {
+        // 设置默认角色，确保用户可以正常访问系统
         roles.value = ['ROLE_DEFAULT'];
       }
+
+      // 处理权限
+      if (data.permissions && data.permissions.length > 0) {
+        permissions.value = data.permissions;
+      } else {
+        // 如果没有权限，设置为空数组
+        permissions.value = [];
+      }
+
       name.value = user.userName;
       nickname.value = user.nickName;
       avatar.value = profile;
@@ -56,6 +71,13 @@ export const useUserStore = defineStore('user', () => {
 
   // 注销
   const logout = async (): Promise<void> => {
+    // 关闭 SSE 连接
+    try {
+      await closeProjectSSE();
+    } catch (error) {
+      console.error('关闭 SSE 连接失败:', error);
+    }
+
     await logoutApi();
     token.value = '';
     roles.value = [];
@@ -67,6 +89,16 @@ export const useUserStore = defineStore('user', () => {
     avatar.value = value;
   };
 
+  // 更新钱包积分
+  const updateWalletPoints = async (): Promise<void> => {
+    try {
+      const res = await getWalletPoints();
+      walletPoints.value = res.data || 0;
+    } catch (error) {
+      console.error('获取钱包积分失败:', error);
+    }
+  };
+
   return {
     userId,
     token,
@@ -74,10 +106,12 @@ export const useUserStore = defineStore('user', () => {
     avatar,
     roles,
     permissions,
+    walletPoints,
     login,
     getInfo,
     logout,
-    setAvatar
+    setAvatar,
+    updateWalletPoints
   };
 });
 

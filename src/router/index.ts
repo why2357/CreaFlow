@@ -1,4 +1,4 @@
-import { createWebHistory, createRouter, RouteOption } from 'vue-router';
+import { createRouter, createWebHistory, RouteOption } from 'vue-router';
 /* Layout */
 import Layout from '@/layout/index.vue';
 
@@ -62,19 +62,104 @@ export const constantRoutes: RouteOption[] = [
     component: () => import('@/views/error/401.vue'),
     hidden: true
   },
+  // {
+  //   path: '',
+  //   component: Layout,
+  //   redirect: '/index',
+  //   children: [
+  //     {
+  //       path: '/index',
+  //       component: () => import('@/views/workbench/project-admin/index.vue'),
+  //       name: 'Index',
+  //       meta: { title: '工作台', icon: 'logo-work', affix: true }
+  //     }
+  //   ]
+  // },
+  // {
+  //   path: '',
+  //   component: Layout,
+  //   redirect: 'workbench',
+  //   children: [
+  //     {
+  //       path: 'workbench',
+  //       component: () => import('@/views/workbench/project-admin/index.vue'),
+  //       name: 'Workbench',
+  //       meta: { title: '工作台', icon: 'logo_shipin' }
+  //     }
+  //   ]
+  // },
   {
-    path: '',
-    component: Layout,
-    redirect: '/index',
-    children: [
-      {
-        path: '/index',
-        component: () => import('@/views/index.vue'),
-        name: 'Index',
-        meta: { title: '首页', icon: 'dashboard', affix: true }
-      }
-    ]
+    path: '/project-creation/:id',
+    name: 'ProjectCreation',
+    hidden: true,
+    component: () => import('@/views/workbench/project-creation/index.vue'),
+    meta: { title: '项目制作', noCache: true, icon: '' }
   },
+  // {
+  //   path: '',
+  //   component: Layout,
+  //   redirect: 'property',
+  //   children: [
+  //     {
+  //       path: '/property',
+  //       component: () => import('@/views/property-admin/index.vue'),
+  //       name: 'Property',
+  //       meta: { title: '资产', icon: 'logo-wenjian' }
+  //     }
+  //   ]
+  // },
+  // {
+  //   path: '',
+  //   component: Layout,
+  //   redirect: 'member',
+  //   children: [
+  //     {
+  //       path: '/member',
+  //       component: () => import('@/views/member-admin/index.vue'),
+  //       name: 'Member',
+  //       meta: { title: '成员', icon: 'logo-chengyuan' }
+  //     }
+  //   ]
+  // },
+  // {
+  //   path: '',
+  //   component: Layout,
+  //   redirect: 'projectData',
+  //   children: [
+  //     {
+  //       path: '/projectData',
+  //       component: () => import('@/views/project-data/index.vue'),
+  //       name: 'ProjectData',
+  //       meta: { title: '项目数据', icon: 'logo-project' }
+  //     }
+  //   ]
+  // },
+  // {
+  //   path: '',
+  //   component: Layout,
+  //   redirect: 'pointRecord',
+  //   children: [
+  //     {
+  //       path: '/pointRecord',
+  //       component: () => import('@/views/point-record/index.vue'),
+  //       name: 'PointRecord',
+  //       meta: { title: '点数使用记录', icon: 'logo-point' }
+  //     }
+  //   ]
+  // },
+  // {
+  //   path: '',
+  //   component: Layout,
+  //   redirect: 'menu',
+  //   children: [
+  //     {
+  //       path: '/menu',
+  //       component: () => import('@/views/system/menu/index.vue'),
+  //       name: 'Menu',
+  //       meta: { title: '菜单管理', icon: 'logo-menu' }
+  //     }
+  //   ]
+  // },
   {
     path: '/user',
     component: Layout,

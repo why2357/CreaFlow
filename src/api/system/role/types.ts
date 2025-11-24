@@ -15,7 +15,7 @@ export interface RoleDeptTree {
 }
 
 export interface RoleVO extends BaseEntity {
-  roleId: string | number;
+  roleId: number;
   roleName: string;
   roleKey: string;
   roleSort: number;

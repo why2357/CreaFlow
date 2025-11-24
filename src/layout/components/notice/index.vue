@@ -24,111 +24,121 @@
 </template>
 
 <script setup lang="ts" name="layoutBreadcrumbUserNews">
-import { ref } from "vue";
-import { storeToRefs } from 'pinia'
-import { nextTick, onMounted, reactive } from "vue";
-import useNoticeStore from '@/store/modules/notice';
+  import { ref } from 'vue';
+  import { storeToRefs } from 'pinia';
+  import { nextTick, onMounted, reactive } from 'vue';
+  import useNoticeStore from '@/store/modules/notice';
 
-const noticeStore = storeToRefs(useNoticeStore());
-const {readAll} = useNoticeStore();
+  const noticeStore = storeToRefs(useNoticeStore());
+  const { readAll } = useNoticeStore();
 
-// 定义变量内容
-const state = reactive({
-  loading: false,
-});
-const newsList =ref([]) as any;
-
-/**
- * 初始化数据
- * @returns
- */
-const getTableData = async () => {
-  state.loading = true;
-  newsList.value = noticeStore.state.value.notices;
-  state.loading = false;
-};
-
-
-//点击消息，写入已读
-const onNewsClick = (item: any) => {
-  newsList.value[item].read = true;
-  //并且写入pinia
-  noticeStore.state.value.notices = newsList.value;
-};
-
-// 前往通知中心点击
-const onGoToGiteeClick = () => {
-  window.open("https://www.cashfree.cn/");
-};
-
-onMounted(() => {
-  nextTick(() => {
-    getTableData();
+  // 定义变量内容
+  const state = reactive({
+    loading: false
   });
-});
+  const newsList = ref([]) as any;
+
+  /**
+   * 初始化数据
+   * @returns
+   */
+  const getTableData = async () => {
+    state.loading = true;
+    newsList.value = noticeStore.state.value.notices;
+    state.loading = false;
+  };
+
+  //点击消息，写入已读
+  const onNewsClick = (item: any) => {
+    newsList.value[item].read = true;
+    //并且写入pinia
+    noticeStore.state.value.notices = newsList.value;
+  };
+
+  // 前往通知中心点击
+  const onGoToGiteeClick = () => {
+    window.open('https://www.cashfree.cn/');
+  };
+
+  onMounted(() => {
+    nextTick(() => {
+      getTableData();
+    });
+  });
 </script>
 
 <style scoped lang="scss">
-.layout-navbars-breadcrumb-user-news {
-  .head-box {
-    display: flex;
-    border-bottom: 1px solid var(--el-border-color-lighter);
-    box-sizing: border-box;
-    color: var(--el-text-color-primary);
-    justify-content: space-between;
-    height: 35px;
-    align-items: center;
-    .head-box-btn {
+  .layout-navbars-breadcrumb-user-news {
+    .head-box {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      box-sizing: border-box;
+      height: 35px;
+      border-bottom: 1px solid var(--el-border-color-lighter);
+      color: var(--el-text-color-primary);
+
+      .head-box-btn {
+        color: var(--el-color-primary);
+        font-size: 13px;
+        opacity: 0.8;
+        cursor: pointer;
+
+        &:hover {
+          opacity: 1;
+        }
+      }
+    }
+
+    .content-box {
+      height: 300px;
+      overflow: auto;
+      font-size: 13px;
+
+      .content-box-item {
+        display: flex;
+        padding-top: 12px;
+
+        &:last-of-type {
+          padding-bottom: 12px;
+        }
+
+        .content-box-msg {
+          margin-top: 5px;
+          margin-bottom: 5px;
+          color: var(--el-text-color-secondary);
+        }
+
+        .content-box-time {
+          color: var(--el-text-color-secondary);
+        }
+
+        .item-conten {
+          display: flex;
+          flex-direction: column;
+          width: 100%;
+        }
+      }
+    }
+
+    .foot-box {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 35px;
+      border-top: 1px solid var(--el-border-color-lighter);
       color: var(--el-color-primary);
       font-size: 13px;
-      cursor: pointer;
       opacity: 0.8;
+      cursor: pointer;
+
       &:hover {
         opacity: 1;
       }
     }
-  }
-  .content-box {
-    height: 300px;
-    overflow: auto;
-    font-size: 13px;
-    .content-box-item {
-      padding-top: 12px;
-      display: flex;
-      &:last-of-type {
-        padding-bottom: 12px;
-      }
-      .content-box-msg {
-        color: var(--el-text-color-secondary);
-        margin-top: 5px;
-        margin-bottom: 5px;
-      }
-      .content-box-time {
-        color: var(--el-text-color-secondary);
-      }
-      .item-conten {
-        width: 100%;
-        display: flex;
-        flex-direction: column;
-      }
+
+    :deep(.el-empty__description p) {
+      font-size: 13px;
     }
   }
-  .foot-box {
-    height: 35px;
-    color: var(--el-color-primary);
-    font-size: 13px;
-    cursor: pointer;
-    opacity: 0.8;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border-top: 1px solid var(--el-border-color-lighter);
-    &:hover {
-      opacity: 1;
-    }
-  }
-  :deep(.el-empty__description p) {
-    font-size: 13px;
-  }
-}
 </style>

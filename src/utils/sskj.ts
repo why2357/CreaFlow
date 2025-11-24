@@ -1,3 +1,5 @@
+import formValidate from './formValidate';
+
 // 日期格式化
 export function parseTime(time: any, pattern?: string) {
   if (arguments.length === 0 || !time) {
@@ -51,7 +53,8 @@ export function parseTime(time: any, pattern?: string) {
  */
 export const addDateRange = (params: any, dateRange: any[], propName?: string) => {
   const search = params;
-  search.params = typeof search.params === 'object' && search.params !== null && !Array.isArray(search.params) ? search.params : {};
+  search.params =
+    typeof search.params === 'object' && search.params !== null && !Array.isArray(search.params) ? search.params : {};
   dateRange = Array.isArray(dateRange) ? dateRange : [];
   if (typeof propName === 'undefined') {
     search.params['beginTime'] = dateRange[0];
@@ -113,6 +116,7 @@ export function sprintf(str: string) {
     let flag = true,
       i = 1;
     str = str.replace(/%s/g, function () {
+      // eslint-disable-next-line prefer-rest-params
       const arg = arguments[i++];
       if (typeof arg === 'undefined') {
         flag = false;
@@ -245,3 +249,110 @@ export const getNormalPath = (p: string): string => {
 export const blobValidate = (data: any) => {
   return data.type !== 'application/json';
 };
+
+export const throttle = <T extends (...args: any[]) => any>(func: T, wait: number) => {
+  let previous = 0;
+  let timer: ReturnType<typeof setTimeout> | null = null;
+
+  return (...args: Parameters<T>) => {
+    const now = Date.now();
+    const remaining = wait - (now - previous);
+
+    if (remaining <= 0) {
+      previous = now;
+      func(...args);
+    } else if (!timer) {
+      timer = setTimeout(() => {
+        previous = Date.now();
+        timer = null;
+        func(...args);
+      }, remaining);
+    }
+  };
+};
+
+export function debounce<T extends (...args: any[]) => any>(func: T, wait: number): (...args: Parameters<T>) => void {
+  let timeout: ReturnType<typeof setTimeout> | null;
+
+  return function (...args: Parameters<T>) {
+    if (timeout) clearTimeout(timeout);
+    timeout = setTimeout(() => {
+      func(...args);
+    }, wait);
+  };
+}
+
+interface DataInfo {
+  label?: string;
+  conditions?: number[];
+  rules?: string[];
+}
+
+export const verification = (data: DataInfo) => {
+  return (_: any, value: any, callback: any) => {
+    const check = formValidate({
+      label: data.label || '',
+      value,
+      conditions: data.conditions,
+      rules: data.rules || []
+    });
+    if (!check?.result) {
+      callback(new Error(check?.message));
+    } else {
+      callback();
+    }
+  };
+};
+
+// 复制文案/复制成功
+export const copyToClipboard = (text: string) => {
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard
+      .writeText(text)
+      .then(() => ElMessage.success('复制成功'))
+      .catch(() => fallbackCopyText(text));
+  } else {
+    fallbackCopyText(text);
+  }
+};
+
+const fallbackCopyText = (text: string) => {
+  const textarea = document.createElement('textarea');
+  textarea.value = text;
+  textarea.style.position = 'fixed';
+  textarea.style.opacity = '0';
+  document.body.appendChild(textarea);
+  textarea.select();
+
+  try {
+    const successful = document.execCommand('copy');
+    if (successful) {
+      ElMessage.success('复制成功');
+    }
+    console.log(successful ? '内容已复制到剪贴板 (Fallback 方法):' : '复制失败 (Fallback 方法)', text);
+  } catch (err) {
+    console.error('复制失败 (Fallback 方法):', err);
+  } finally {
+    document.body.removeChild(textarea);
+  }
+};
+
+/**
+console.log(formatCommentDate("2025-03-18 14:20:51")); // 03-18（如果今年是 2025 年）
+console.log(formatCommentDate("2024-03-18 14:20:51")); // 2024-03-18
+**/
+export function formatCommentDate(dateStr: string) {
+  const inputDate = new Date(dateStr);
+  const now = new Date();
+
+  const year = inputDate.getFullYear();
+  const month = String(inputDate.getMonth() + 1).padStart(2, '0');
+  const day = String(inputDate.getDate()).padStart(2, '0');
+
+  return year === now.getFullYear() ? `${month}-${day}` : `${year}-${month}-${day}`;
+}
+
+// 根据系统中配置的字典的dictValue 返回字典的dictLabel
+export function getDictLabel(dictValue: string, dicts: DictDataOption[]) {
+  return dicts?.find((el) => el.value?.toString() === dictValue?.toString())?.label || '';
+}

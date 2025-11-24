@@ -90,7 +90,12 @@
           <el-table-column label="字典类型" min-width="12%">
             <template #default="scope">
               <el-select v-model="scope.row.dictType" clearable filterable placeholder="请选择">
-                <el-option v-for="dict in dictOptions" :key="dict.dictType" :label="dict.dictName" :value="dict.dictType">
+                <el-option
+                  v-for="dict in dictOptions"
+                  :key="dict.dictType"
+                  :label="dict.dictName"
+                  :value="dict.dictType"
+                >
                   <span style="float: left">{{ dict.dictName }}</span>
                   <span style="float: right; color: #8492a6; font-size: 13px">{{ dict.dictType }}</span>
                 </el-option>
@@ -104,7 +109,7 @@
       </el-tab-pane>
     </el-tabs>
     <el-form label-width="100px">
-      <div style="text-align: center;margin-left:-100px;margin-top:10px;">
+      <div style="text-align: center; margin-left: -100px; margin-top: 10px">
         <el-button type="primary" @click="submitForm()">提交</el-button>
         <el-button @click="close()">返回</el-button>
       </div>
@@ -113,75 +118,75 @@
 </template>
 
 <script setup name="GenEdit" lang="ts">
-import { getGenTable, updateGenTable } from '@/api/tool/gen';
-import { DbColumnVO, DbTableVO } from '@/api/tool/gen/types';
-import { optionselect as getDictOptionselect } from '@/api/system/dict/type';
-import { DictTypeVO } from '@/api/system/dict/type/types';
-import BasicInfoForm from './basicInfoForm.vue';
-import GenInfoForm from "./genInfoForm.vue";
+  import { getGenTable, updateGenTable } from '@/api/tool/gen';
+  import { DbColumnVO, DbTableVO } from '@/api/tool/gen/types';
+  import { optionselect as getDictOptionselect } from '@/api/system/dict/type';
+  import { DictTypeVO } from '@/api/system/dict/type/types';
+  import BasicInfoForm from './basicInfoForm.vue';
+  import GenInfoForm from './genInfoForm.vue';
 
-const route = useRoute();
-const { proxy } = getCurrentInstance() as ComponentInternalInstance;
+  const route = useRoute();
+  const { proxy } = getCurrentInstance() as ComponentInternalInstance;
 
-const activeName = ref('columnInfo');
-const tableHeight = ref(document.documentElement.scrollHeight - 245 + 'px');
-const tables = ref<DbTableVO[]>([]);
-const columns = ref<DbColumnVO[]>([]);
-const dictOptions = ref<DictTypeVO[]>([]);
-const info = ref<Partial<DbTableVO>>({});
+  const activeName = ref('columnInfo');
+  const tableHeight = ref(document.documentElement.scrollHeight - 245 + 'px');
+  const tables = ref<DbTableVO[]>([]);
+  const columns = ref<DbColumnVO[]>([]);
+  const dictOptions = ref<DictTypeVO[]>([]);
+  const info = ref<Partial<DbTableVO>>({});
 
-const basicInfo = ref<InstanceType<typeof BasicInfoForm>>();
-const genInfo = ref<InstanceType<typeof GenInfoForm>>();
+  const basicInfo = ref<InstanceType<typeof BasicInfoForm>>();
+  const genInfo = ref<InstanceType<typeof GenInfoForm>>();
 
-/** 提交按钮 */
-const submitForm = () => {
-  const basicForm = basicInfo.value?.$refs.basicInfoForm;
-  const genForm = genInfo.value?.$refs.genInfoForm;
+  /** 提交按钮 */
+  const submitForm = () => {
+    const basicForm = basicInfo.value?.$refs.basicInfoForm;
+    const genForm = genInfo.value?.$refs.genInfoForm;
 
-  Promise.all([basicForm, genForm].map(getFormPromise)).then(async res => {
-    const validateResult = res.every(item => !!item);
-    if (validateResult) {
-      const genTable: any = Object.assign({}, info.value);
-      genTable.columns = columns.value;
-      genTable.params = {
-        treeCode: info.value?.treeCode,
-        treeName: info.value.treeName,
-        treeParentCode: info.value.treeParentCode,
-        parentMenuId: info.value.parentMenuId
-      };
-      const response = await updateGenTable(genTable);
-      proxy?.$modal.msgSuccess(response.msg);
-      if (response.code === 200) {
-        close();
+    Promise.all([basicForm, genForm].map(getFormPromise)).then(async (res) => {
+      const validateResult = res.every((item) => !!item);
+      if (validateResult) {
+        const genTable: any = Object.assign({}, info.value);
+        genTable.columns = columns.value;
+        genTable.params = {
+          treeCode: info.value?.treeCode,
+          treeName: info.value.treeName,
+          treeParentCode: info.value.treeParentCode,
+          parentMenuId: info.value.parentMenuId
+        };
+        const response = await updateGenTable(genTable);
+        proxy?.$modal.msgSuccess(response.msg);
+        if (response.code === 200) {
+          close();
+        }
+      } else {
+        proxy?.$modal.msgError('表单校验未通过，请重新检查提交内容');
       }
-    } else {
-      proxy?.$modal.msgError("表单校验未通过，请重新检查提交内容");
-    }
-  });
-}
-const getFormPromise = (form: any) => {
-  return new Promise(resolve => {
-    form.validate((res: any) => {
-      resolve(res);
     });
-  });
-}
-const close = () => {
-  const obj = { path: "/tool/gen", query: { t: Date.now(), pageNum: route.query.pageNum } };
-  proxy?.$tab.closeOpenPage(obj);
-}
+  };
+  const getFormPromise = (form: any) => {
+    return new Promise((resolve) => {
+      form.validate((res: any) => {
+        resolve(res);
+      });
+    });
+  };
+  const close = () => {
+    const obj = { path: '/tool/gen', query: { t: Date.now(), pageNum: route.query.pageNum } };
+    proxy?.$tab.closeOpenPage(obj);
+  };
 
-(async () => {
-  const tableId = route.params && route.params.tableId as string;
-  if (tableId) {
-    // 获取表详细信息
-    const res = await getGenTable(tableId);
-    columns.value = res.data.rows;
-    info.value = res.data.info;
-    tables.value = res.data.tables;
-    /** 查询字典下拉列表 */
-    const response = await getDictOptionselect();
-    dictOptions.value = response.data;
-  }
-})();
+  (async () => {
+    const tableId = route.params && (route.params.tableId as string);
+    if (tableId) {
+      // 获取表详细信息
+      const res = await getGenTable(tableId);
+      columns.value = res.data.rows;
+      info.value = res.data.info;
+      tables.value = res.data.tables;
+      /** 查询字典下拉列表 */
+      const response = await getDictOptionselect();
+      dictOptions.value = response.data;
+    }
+  })();
 </script>

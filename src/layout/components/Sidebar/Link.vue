@@ -5,36 +5,36 @@
 </template>
 
 <script setup lang="ts">
-import { isExternal } from '@/utils/validate'
+  import { isExternal } from '@/utils/validate';
 
-const props = defineProps({
+  const props = defineProps({
     to: {
-        type: [String, Object],
-        required: true
+      type: [String, Object],
+      required: true
     }
-})
+  });
 
-const isExt = computed(() => {
-    return isExternal(props.to as string)
-})
+  const isExt = computed(() => {
+    return isExternal(props.to as string);
+  });
 
-const type = computed(() => {
+  const type = computed(() => {
     if (isExt.value) {
-        return 'a'
+      return 'a';
     }
-    return 'router-link'
-})
+    return 'router-link';
+  });
 
-function linkProps() {
+  function linkProps() {
     if (isExt.value) {
-        return {
-            href: props.to,
-            target: '_blank',
-            rel: 'noopener'
-        }
+      return {
+        href: props.to,
+        target: '_blank',
+        rel: 'noopener'
+      };
     }
     return {
-        to: props.to
-    }
-}
+      to: props.to
+    };
+  }
 </script>

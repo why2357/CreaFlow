@@ -1,0 +1,338 @@
+import { getToken } from '@/utils/auth';
+import request from '@/utils/request';
+import { ElNotification } from 'element-plus';
+
+interface SSEOptions {
+  onMessage?: (data: any) => void;
+  onError?: (error: any) => void;
+  onOpen?: () => void;
+  autoReconnect?: {
+    retries: number;
+    delay: number;
+    onFailed?: () => void;
+  };
+}
+
+class SSEManager {
+  private abortController: AbortController | null = null;
+  private url = '';
+  private options: SSEOptions = {};
+  private reconnectAttempts = 0;
+  private maxReconnectAttempts = 10;
+  private reconnectDelay = 3000;
+  private isManualClose = false;
+  private reconnectTimer: number | null = null;
+  private reader: ReadableStreamDefaultReader<Uint8Array> | null = null;
+  private isConnected = false;
+
+  /**
+   * 初始化并连接 SSE
+   */
+  connect(baseUrl: string, options: SSEOptions = {}): void {
+    this.options = options;
+    this.maxReconnectAttempts = options.autoReconnect?.retries ?? 10;
+    this.reconnectDelay = options.autoReconnect?.delay ?? 3000;
+    this.isManualClose = false;
+
+    const token = getToken();
+    if (!token) {
+      console.warn('未找到 token，无法建立 SSE 连接');
+      return;
+    }
+
+    this.url = baseUrl;
+    this.createConnection();
+  }
+
+  /**
+   * 创建 SSE 连接（使用 fetch + ReadableStream）
+   */
+  private async createConnection(): Promise<void> {
+    try {
+      const token = getToken();
+      if (!token) {
+        console.error('Token 不存在，无法建立连接');
+        return;
+      }
+
+      // 创建新的 AbortController
+      this.abortController = new AbortController();
+
+      console.log('正在建立 SSE 连接...', this.url);
+
+      // 使用 fetch 发起请求，可以自定义请求头
+      const response = await fetch(this.url, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'text/event-stream',
+          'Cache-Control': 'no-cache',
+          Connection: 'keep-alive',
+          Authorization: `Bearer ${token}`
+        },
+        signal: this.abortController.signal
+      });
+
+      if (!response.ok) {
+        throw new Error(`SSE 连接失败: ${response.status} ${response.statusText}`);
+      }
+
+      if (!response.body) {
+        throw new Error('Response body 为空');
+      }
+
+      // 连接成功
+      this.isConnected = true;
+      this.reconnectAttempts = 0;
+      console.log('SSE 连接已建立');
+      this.options.onOpen?.();
+
+      // 读取流数据
+      this.reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = '';
+      let reading = true;
+      let currentEvent = ''; // 当前事件类型
+      let currentData = ''; // 当前数据内容
+
+      while (reading) {
+        const { done, value } = await this.reader.read();
+
+        if (done) {
+          console.log('SSE 流结束');
+          reading = false;
+          break;
+        }
+
+        // 解码数据
+        buffer += decoder.decode(value, { stream: true });
+        console.log('[SSE] 收到原始数据:', buffer);
+
+        // 按行分割（SSE 使用 \n\n 分隔消息）
+        const lines = buffer.split('\n');
+        buffer = lines.pop() || ''; // 保留不完整的行
+
+        for (const line of lines) {
+          console.log('[SSE] 处理行:', JSON.stringify(line));
+
+          // 空行表示消息结束
+          if (line.trim() === '') {
+            if (currentData) {
+              console.log('[SSE] 解析数据:', currentData);
+              try {
+                const data = JSON.parse(currentData);
+                this.handleMessage(data);
+              } catch (error) {
+                console.error('[SSE] 解析 JSON 失败:', error, currentData);
+                // 如果不是 JSON，尝试直接处理
+                this.handleMessage({ message: currentData });
+              }
+              currentData = '';
+              currentEvent = '';
+            }
+            continue;
+          }
+
+          // 处理事件类型
+          if (line.startsWith('event: ')) {
+            currentEvent = line.slice(7).trim();
+            console.log('[SSE] 事件类型:', currentEvent);
+            continue;
+          }
+
+          // 处理数据
+          if (line.startsWith('data: ')) {
+            const dataStr = line.slice(6);
+            currentData += dataStr;
+            console.log('[SSE] 数据片段:', dataStr);
+            continue;
+          }
+
+          // 处理 id
+          if (line.startsWith('id: ')) {
+            console.log('[SSE] 消息 ID:', line.slice(4).trim());
+            continue;
+          }
+
+          // 处理 retry
+          if (line.startsWith('retry: ')) {
+            console.log('[SSE] 重试时间:', line.slice(7).trim());
+            continue;
+          }
+
+          // 处理注释
+          if (line.startsWith(':')) {
+            console.log('[SSE] 注释:', line.slice(1).trim());
+            continue;
+          }
+        }
+      }
+
+      // 流正常结束，如果不是手动关闭则尝试重连
+      if (!this.isManualClose) {
+        this.handleReconnect();
+      }
+    } catch (error: any) {
+      this.isConnected = false;
+
+      // 如果是手动取消，不输出错误
+      if (error.name === 'AbortError') {
+        console.log('SSE 连接已手动取消');
+        return;
+      }
+
+      console.error('SSE 连接错误:', error);
+      this.options.onError?.(error);
+
+      // 如果不是手动关闭，尝试重连
+      if (!this.isManualClose && this.reconnectAttempts < this.maxReconnectAttempts) {
+        this.handleReconnect();
+      } else if (this.reconnectAttempts >= this.maxReconnectAttempts) {
+        console.error('SSE 重连次数已达上限');
+        this.options.autoReconnect?.onFailed?.();
+      }
+    }
+  }
+
+  /**
+   * 处理收到的消息
+   */
+  private handleMessage(data: any): void {
+    if (!data) return;
+
+    console.log('收到 SSE 消息:', data);
+
+    // 调用自定义消息处理器
+    this.options.onMessage?.(data);
+
+    // 显示通知（如果需要）
+    if (data.message) {
+      ElNotification({
+        title: data.title || '消息',
+        message: data.message,
+        type: data.type || 'success',
+        duration: 3000
+      });
+    }
+  }
+
+  /**
+   * 处理重连逻辑
+   */
+  private handleReconnect(): void {
+    if (this.isManualClose) return;
+
+    this.reconnectAttempts++;
+    console.log(`准备进行第 ${this.reconnectAttempts} 次重连...`);
+
+    // 清除旧连接
+    this.cleanup();
+
+    // 延迟重连
+    this.reconnectTimer = window.setTimeout(() => {
+      console.log(`正在进行第 ${this.reconnectAttempts} 次重连...`);
+      this.createConnection();
+    }, this.reconnectDelay);
+  }
+
+  /**
+   * 清理连接资源
+   */
+  private cleanup(): void {
+    // 取消读取器
+    if (this.reader) {
+      this.reader.cancel().catch(() => {
+        // 忽略取消错误
+      });
+      this.reader = null;
+    }
+
+    // 取消请求
+    if (this.abortController) {
+      this.abortController.abort();
+      this.abortController = null;
+    }
+
+    this.isConnected = false;
+  }
+
+  /**
+   * 手动关闭连接并通知后端
+   */
+  async close(): Promise<void> {
+    this.isManualClose = true;
+
+    // 清除重连定时器
+    if (this.reconnectTimer) {
+      clearTimeout(this.reconnectTimer);
+      this.reconnectTimer = null;
+    }
+
+    // 清理连接
+    this.cleanup();
+    console.log('SSE 连接已关闭');
+
+    // 通知后端关闭连接
+    try {
+      await request({
+        url: '/hivision/system/sse/close',
+        method: 'get'
+      });
+      console.log('已通知后端关闭 SSE 连接');
+    } catch (error) {
+      console.error('通知后端关闭 SSE 连接失败:', error);
+    }
+
+    // 重置状态
+    this.reconnectAttempts = 0;
+  }
+
+  /**
+   * 检查连接状态
+   */
+  isConnectionOpen(): boolean {
+    return this.isConnected;
+  }
+}
+
+// 导出单例
+export const sseManager = new SSEManager();
+
+/**
+ * 初始化项目 SSE 连接
+ * @param onMessage 消息处理回调
+ */
+export const initProjectSSE = (onMessage?: (data: any) => void): void => {
+  const baseUrl = import.meta.env.VITE_APP_BASE_API + '/hivision/system/sse/connect';
+
+  sseManager.connect(baseUrl, {
+    onMessage: (data) => {
+      console.log('项目 SSE 消息:', data);
+      onMessage?.(data);
+    },
+    onError: (error) => {
+      console.error('项目 SSE 连接错误:', error);
+    },
+    onOpen: () => {
+      console.log('项目 SSE 连接已建立');
+    },
+    autoReconnect: {
+      retries: 10,
+      delay: 3000,
+      onFailed: () => {
+        ElNotification({
+          title: '连接失败',
+          message: 'SSE 连接失败，请刷新页面重试',
+          type: 'error',
+          duration: 5000
+        });
+      }
+    }
+  });
+};
+
+/**
+ * 关闭项目 SSE 连接
+ */
+export const closeProjectSSE = async (): Promise<void> => {
+  await sseManager.close();
+};

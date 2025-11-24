@@ -1,16 +1,15 @@
+import usePermissionStore from '@/store/modules/permission';
+import useSettingsStore from '@/store/modules/settings';
+import useUserStore from '@/store/modules/user';
+import { getToken } from '@/utils/auth';
+import { isRelogin } from '@/utils/request';
+import { isHttp } from '@/utils/validate';
 import { to as tos } from 'await-to-js';
-import router from './router';
 import NProgress from 'nprogress';
 import 'nprogress/nprogress.css';
-import { getToken } from '@/utils/auth';
-import { isHttp } from '@/utils/validate';
-import { isRelogin } from '@/utils/request';
-import useUserStore from '@/store/modules/user';
-import useSettingsStore from '@/store/modules/settings';
-import usePermissionStore from '@/store/modules/permission';
-
+import router from './router';
 NProgress.configure({ showSpinner: false });
-const whiteList = ['/login', '/register', '/social-callback'];
+const whiteList = ['/login', '/update', '/register', '/social-callback'];
 
 router.beforeEach(async (to, from, next) => {
   NProgress.start();
@@ -21,9 +20,9 @@ router.beforeEach(async (to, from, next) => {
       next({ path: '/' });
       NProgress.done();
     } else if (whiteList.indexOf(to.path) !== -1) {
-      next()
+      next();
     } else {
-      if (useUserStore().roles.length === 0) {
+      if (useUserStore().nickname.length === 0) {
         isRelogin.show = true;
         // 判断当前用户是否已拉取完user_info信息
         const [err] = await tos(useUserStore().getInfo());

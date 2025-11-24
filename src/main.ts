@@ -1,34 +1,35 @@
 import { createApp } from 'vue';
 // global css
-import 'uno.css';
 import '@/assets/styles/index.scss';
 import 'element-plus/theme-chalk/dark/css-vars.css';
+import 'uno.css';
 
 // App、router、store
 import App from './App.vue';
-import store from './store';
 import router from './router';
+import store from './store';
 
 // 自定义指令
 import directive from './directive';
 
 // 注册插件
-import plugins from './plugins/index'; // plugins
 import { download } from '@/utils/request';
+import plugins from './plugins/index'; // plugins
 
 // 预设动画
 import animate from './animate';
 
 // svg图标
-import 'virtual:svg-icons-register';
 import ElementIcons from '@/plugins/svgicon';
+import 'virtual:svg-icons-register';
 
 // permission control
+import usePermissionStore from '@/store/modules/permission';
 import './permission';
 
-import { useDict } from '@/utils/dict';
 import { getConfigKey, updateConfigByKey } from '@/api/system/config';
-import { parseTime, addDateRange, handleTree, selectDictLabel, selectDictLabels } from '@/utils/sskj';
+import { useDict } from '@/utils/dict';
+import { addDateRange, handleTree, parseTime, selectDictLabel, selectDictLabels, verification } from '@/utils/sskj';
 
 // 国际化
 import i18n from '@/lang/index';
@@ -44,6 +45,7 @@ app.config.globalProperties.handleTree = handleTree;
 app.config.globalProperties.addDateRange = addDateRange;
 app.config.globalProperties.selectDictLabel = selectDictLabel;
 app.config.globalProperties.selectDictLabels = selectDictLabels;
+app.config.globalProperties.verification = verification;
 app.config.globalProperties.animate = animate;
 
 app.use(ElementIcons);
@@ -53,5 +55,9 @@ app.use(i18n);
 app.use(plugins);
 // 自定义指令
 directive(app);
+
+// 初始化静态菜单
+const permissionStore = usePermissionStore();
+permissionStore.initStaticMenus();
 
 app.mount('#app');
