@@ -116,11 +116,15 @@
     loadWaterfallData();
   };
 
-  // 加载瀑布流数据
-  const loadWaterfallData = async () => {
+  // 加载瀑布流数据（支持无感刷新）
+  const loadWaterfallData = async (silentRefresh = false) => {
     if (!selectedEpisodeId.value) return;
 
-    loading.value = true;
+    // 只在非静默刷新时显示加载状态
+    if (!silentRefresh) {
+      loading.value = true;
+    }
+
     try {
       const params: any = {
         episodeId: Number(selectedEpisodeId.value)
@@ -134,16 +138,71 @@
       const res = await getWaterfallList(params);
 
       if (res.data) {
-        waterfallData.value = res.data;
+        const newData = res.data;
+
+        // 如果是静默刷新，进行差异更新
+        if (silentRefresh && waterfallData.value.length > 0) {
+          // 创建一个 Map 用于快速查找（使用 id 作为 key）
+          const newDataMap = new Map(newData.map((item) => [item.id, item]));
+
+          // 更新现有数据
+          waterfallData.value.forEach((item) => {
+            const newItem = newDataMap.get(item.id);
+            if (newItem) {
+              // 只更新可能变化的字段，保持对象引用
+              item.selectImg = newItem.selectImg; // 重要：更新当前选中的图片
+              item.selectImgMaterialId = newItem.selectImgMaterialId;
+              item.historyImgs = newItem.historyImgs;
+              item.imgStatus = newItem.imgStatus;
+              item.isCollect = newItem.isCollect;
+              item.commentCount = newItem.commentCount;
+              item.commentInfo = newItem.commentInfo;
+              item.sceneDesc = newItem.sceneDesc;
+              item.sceneHint = newItem.sceneHint;
+              item.dialogues = newItem.dialogues;
+              item.characterClothingInfoList = newItem.characterClothingInfoList;
+              item.envMaterialInfoVo = newItem.envMaterialInfoVo;
+            }
+          });
+
+          // 处理新增的项
+          newData.forEach((newItem) => {
+            const existingIndex = waterfallData.value.findIndex((item) => item.id === newItem.id);
+            if (existingIndex === -1) {
+              waterfallData.value.push(newItem);
+            }
+          });
+
+          // 处理删除的项
+          waterfallData.value = waterfallData.value.filter((item) => newDataMap.has(item.id));
+
+          // 按照新数据的顺序重新排列（保持与服务端一致）
+          const sortedData: typeof waterfallData.value = [];
+          newData.forEach((newItem) => {
+            const existingItem = waterfallData.value.find((item) => item.id === newItem.id);
+            if (existingItem) {
+              sortedData.push(existingItem);
+            }
+          });
+          waterfallData.value = sortedData;
+        } else {
+          // 非静默刷新或初次加载，直接替换
+          waterfallData.value = newData;
+        }
       } else {
         waterfallData.value = [];
       }
     } catch (error) {
       console.error('加载瀑布流数据失败:', error);
-      waterfallData.value = [];
-      ElMessage.error('加载数据失败');
+      // 静默刷新失败时不清空数据
+      if (!silentRefresh) {
+        waterfallData.value = [];
+        ElMessage.error('加载数据失败');
+      }
     } finally {
-      loading.value = false;
+      if (!silentRefresh) {
+        loading.value = false;
+      }
     }
   };
 
@@ -164,8 +223,8 @@
     try {
       await chooseHistoryDetail({ historyDetailId });
       ElMessage.success('替换成功');
-      // 重新加载数据
-      await loadWaterfallData();
+      // 无感刷新数据
+      await loadWaterfallData(true);
     } catch (error) {
       console.error('替换图片失败:', error);
       ElMessage.error('替换图片失败');
@@ -196,13 +255,13 @@
         await collectHistoryDetail({ historyDetailId });
         ElMessage.success('收藏成功');
       }
-      // 重新加载数据以确保数据一致性
-      await loadWaterfallData();
+      // 无感刷新数据以确保数据一致性
+      await loadWaterfallData(true);
     } catch (error) {
       console.error('操作收藏失败:', error);
       ElMessage.error('操作失败');
-      // 失败时重新加载数据恢复状态
-      await loadWaterfallData();
+      // 失败时无感刷新数据恢复状态
+      await loadWaterfallData(true);
     }
   };
 
@@ -257,7 +316,8 @@
 
   // 留言成功
   const handleCommentSuccess = () => {
-    loadWaterfallData();
+    // 无感刷新数据
+    loadWaterfallData(true);
   };
 
   // 插入镜头
@@ -280,7 +340,7 @@
       });
 
       ElMessage.success('插入镜头成功');
-      loadWaterfallData();
+      loadWaterfallData(true);
     } catch (error: any) {
       if (error !== 'cancel') {
         console.error('插入镜头失败:', error);
@@ -333,7 +393,7 @@
 
       await deleteScene([item.id]);
       ElMessage.success('删除镜头成功');
-      loadWaterfallData();
+      loadWaterfallData(true);
     } catch (error: any) {
       if (error !== 'cancel') {
         console.error('删除镜头失败:', error);

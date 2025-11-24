@@ -69,7 +69,7 @@
           @image-regenerate="handleImageRegenerate"
           @toggle-favorite="handleToggleFavorite"
           @update-shot="handleUpdateShot"
-          @refresh="loadShots"
+          @refresh="() => loadShots(true)"
           @delete-success="handleDeleteSuccess"
         />
       </div>
@@ -224,7 +224,7 @@
   useImageUpdateListener((detail) => {
     console.log('[分镜头] 收到 SSE 图片更新:', detail);
     // 无感刷新分镜头列表
-    loadShots();
+    loadShots(true);
   });
 
   // 监听剧集变化
@@ -330,8 +330,8 @@
     }));
   };
 
-  // 加载分镜列表
-  const loadShots = async () => {
+  // 加载分镜列表（支持无感刷新）
+  const loadShots = async (silentRefresh = false) => {
     if (!selectedEpisodeId.value) return;
 
     // 验证当前选中的剧集是否还存在于剧集列表中
@@ -345,7 +345,11 @@
       return;
     }
 
-    loading.value = true;
+    // 只在非静默刷新时显示加载状态
+    if (!silentRefresh) {
+      loading.value = true;
+    }
+
     try {
       const res = await getEpisodeImgSceneList(Number(selectedEpisodeId.value));
       const episodeData: EpisodeInfoResponseDto = res.data;
@@ -359,17 +363,78 @@
       if (episodeData && episodeData.episodeSceneItemInfoList && Array.isArray(episodeData.episodeSceneItemInfoList)) {
         // 过滤掉无效的场景数据
         const validScenes = episodeData.episodeSceneItemInfoList.filter((scene) => scene && scene.basicId);
-        shots.value = convertToShots(validScenes);
+        const newShots = convertToShots(validScenes);
+
+        // 如果是静默刷新，进行差异更新
+        if (silentRefresh && shots.value.length > 0) {
+          // 创建一个 Map 用于快速查找
+          const newShotsMap = new Map(newShots.map((shot) => [shot.basicId, shot]));
+
+          // 更新现有镜头数据
+          shots.value.forEach((shot) => {
+            const newShot = newShotsMap.get(shot.basicId);
+            if (newShot) {
+              // 只更新可能变化的字段，保持对象引用
+              shot.id = newShot.id;
+              shot.shotNumber = newShot.shotNumber;
+              shot.sceneImage = newShot.sceneImage;
+              shot.materialInfoVoList = newShot.materialInfoVoList;
+              shot.historyDetailId = newShot.historyDetailId;
+              shot.imageLoading = newShot.imageLoading;
+              shot.taskStatus = newShot.taskStatus;
+              shot.isCollect = newShot.isCollect;
+              shot.commentCount = newShot.commentCount;
+              shot.commentInfo = newShot.commentInfo;
+              shot.imgStatus = newShot.imgStatus;
+              shot.sceneDescription = newShot.sceneDescription;
+              shot.sceneDesc = newShot.sceneDesc;
+              shot.sceneHint = newShot.sceneHint;
+              shot.dialogue = newShot.dialogue;
+              shot.characters = newShot.characters;
+              shot.sceneLocationImage = newShot.sceneLocationImage;
+              shot.envMaterialInfoVo = newShot.envMaterialInfoVo;
+            }
+          });
+
+          // 处理新增的镜头
+          newShots.forEach((newShot) => {
+            const existingIndex = shots.value.findIndex((s) => s.basicId === newShot.basicId);
+            if (existingIndex === -1) {
+              shots.value.push(newShot);
+            }
+          });
+
+          // 处理删除的镜头
+          shots.value = shots.value.filter((shot) => newShotsMap.has(shot.basicId));
+
+          // 按照新数据的顺序重新排列（保持与服务端一致）
+          const sortedShots: typeof shots.value = [];
+          newShots.forEach((newShot) => {
+            const existingShot = shots.value.find((s) => s.basicId === newShot.basicId);
+            if (existingShot) {
+              sortedShots.push(existingShot);
+            }
+          });
+          shots.value = sortedShots;
+        } else {
+          // 非静默刷新或初次加载，直接替换
+          shots.value = newShots;
+        }
       } else {
         shots.value = [];
       }
     } catch (error) {
       console.error('加载分镜列表失败:', error);
-      shots.value = [];
-      episodeTaskStatus.value = undefined;
-      batchStatus.value = undefined;
+      // 静默刷新失败时不清空数据
+      if (!silentRefresh) {
+        shots.value = [];
+        episodeTaskStatus.value = undefined;
+        batchStatus.value = undefined;
+      }
     } finally {
-      loading.value = false;
+      if (!silentRefresh) {
+        loading.value = false;
+      }
     }
   };
 
@@ -581,8 +646,8 @@
       // 更新钱包积分
       await userStore.updateWalletPoints();
 
-      // 重新加载分镜列表以获取最新状态
-      await loadShots();
+      // 无感刷新分镜列表以获取最新状态
+      await loadShots(true);
     } catch (error) {
       console.error('生成图片失败:', error);
       shot.imageLoading = false;
@@ -683,8 +748,6 @@
     if (!selectedEpisodeId.value) return;
 
     try {
-      loading.value = true;
-
       // 调用批量生成接口（不传 basicId）
       await generateEpisodeImg({
         episodeId: Number(selectedEpisodeId.value),
@@ -696,13 +759,11 @@
       // 更新钱包积分
       await userStore.updateWalletPoints();
 
-      // 重新加载分镜列表以获取最新状态
-      await loadShots();
+      // 无感刷新分镜列表以获取最新状态
+      await loadShots(true);
     } catch (error) {
       console.error('批量生成失败:', error);
       ElMessage.error('批量生成失败，请重试');
-    } finally {
-      loading.value = false;
     }
   };
 </script>

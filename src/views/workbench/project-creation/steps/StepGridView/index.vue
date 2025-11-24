@@ -103,11 +103,15 @@
   // 故事板审阅弹窗
   const storyboardReviewDialogVisible = ref(false);
 
-  // 加载故事板数据
-  const loadStoryBoard = async () => {
+  // 加载故事板数据（支持无感刷新）
+  const loadStoryBoard = async (silentRefresh = false) => {
     if (!selectedEpisodeId.value) return;
 
-    loading.value = true;
+    // 只在非静默刷新时显示加载状态
+    if (!silentRefresh) {
+      loading.value = true;
+    }
+
     try {
       const res = await queryStoryBoard({
         episodeId: Number(selectedEpisodeId.value),
@@ -116,18 +120,70 @@
 
       if (res.data) {
         // 确保每个场景的 commentCnt 字段都有初始值
-        scenes.value = res.data.map((scene) => ({
+        const newScenes = res.data.map((scene) => ({
           ...scene,
           commentCnt: scene.commentCnt ?? 0
         }));
+
+        // 如果是静默刷新，进行差异更新
+        if (silentRefresh && scenes.value.length > 0) {
+          // 创建一个 Map 用于快速查找（使用 id 作为 key）
+          const newScenesMap = new Map(newScenes.map((scene) => [scene.id, scene]));
+
+          // 更新现有场景数据
+          scenes.value.forEach((scene) => {
+            const newScene = newScenesMap.get(scene.id);
+            if (newScene) {
+              // 只更新可能变化的字段，保持对象引用
+              scene.imgStatus = newScene.imgStatus;
+              scene.commentCnt = newScene.commentCnt;
+              scene.sceneDesc = newScene.sceneDesc;
+              scene.sceneHint = newScene.sceneHint;
+              scene.dialogues = newScene.dialogues;
+              scene.originOssUrl = newScene.originOssUrl;
+              scene.previewOssUrl = newScene.previewOssUrl;
+              scene.selectImgMaterialId = newScene.selectImgMaterialId;
+              scene.envMaterialId = newScene.envMaterialId;
+            }
+          });
+
+          // 处理新增的场景
+          newScenes.forEach((newScene) => {
+            const existingIndex = scenes.value.findIndex((scene) => scene.id === newScene.id);
+            if (existingIndex === -1) {
+              scenes.value.push(newScene);
+            }
+          });
+
+          // 处理删除的场景
+          scenes.value = scenes.value.filter((scene) => newScenesMap.has(scene.id));
+
+          // 按照新数据的顺序重新排列（保持与服务端一致）
+          const sortedScenes: typeof scenes.value = [];
+          newScenes.forEach((newScene) => {
+            const existingScene = scenes.value.find((scene) => scene.id === newScene.id);
+            if (existingScene) {
+              sortedScenes.push(existingScene);
+            }
+          });
+          scenes.value = sortedScenes;
+        } else {
+          // 非静默刷新或初次加载，直接替换
+          scenes.value = newScenes;
+        }
       } else {
         scenes.value = [];
       }
     } catch (error) {
       console.error('加载故事板失败:', error);
-      scenes.value = [];
+      // 静默刷新失败时不清空数据
+      if (!silentRefresh) {
+        scenes.value = [];
+      }
     } finally {
-      loading.value = false;
+      if (!silentRefresh) {
+        loading.value = false;
+      }
     }
   };
 
@@ -156,7 +212,8 @@
 
   // 留言成功
   const handleCommentSuccess = () => {
-    loadStoryBoard();
+    // 无感刷新数据
+    loadStoryBoard(true);
   };
 
   // 查看留言列表
@@ -177,7 +234,8 @@
 
   // 留言数量变化
   const handleCommentChange = () => {
-    loadStoryBoard();
+    // 无感刷新数据
+    loadStoryBoard(true);
   };
 
   // 插入镜头
@@ -200,7 +258,7 @@
       });
 
       ElMessage.success('插入镜头成功');
-      loadStoryBoard();
+      loadStoryBoard(true);
     } catch (error: any) {
       if (error !== 'cancel') {
         console.error('插入镜头失败:', error);
@@ -253,7 +311,7 @@
 
       await deleteScene([scene.id]);
       ElMessage.success('删除镜头成功');
-      loadStoryBoard();
+      loadStoryBoard(true);
     } catch (error: any) {
       if (error !== 'cancel') {
         console.error('删除镜头失败:', error);
@@ -304,7 +362,8 @@
 
   // 审阅弹窗刷新回调
   const handleReviewDialogRefresh = () => {
-    loadStoryBoard(); // 重新加载所有场景
+    // 无感刷新数据
+    loadStoryBoard(true);
   };
 </script>
 

@@ -386,7 +386,7 @@
       // await userStore.getInfo();
 
       ElMessage.success('登录成功');
-      await router.push({ path: '/' });
+      await router.push({ path: '/index' });
     } catch (error) {
       console.error('登录失败:', error);
     }
@@ -565,8 +565,8 @@
       stopCountDown();
 
       ElMessage.success('登录成功');
-      // 跳转到首页
-      await router.push({ path: '/' });
+      // 跳转到工作台
+      await router.push({ path: '/index' });
     } catch (error) {
       console.error('登录失败:', error);
     } finally {

@@ -27,12 +27,16 @@
         :style="{ width: columnWidths[item.id] ? `${columnWidths[item.id]}px` : 'auto' }"
       >
         <!-- 第一张图片（当前选中的图片） -->
-        <div class="main-image-wrapper" @mouseenter="handleMainImageHover(item)" @mouseleave="handleMainImageLeave">
+        <div
+          class="main-image-wrapper"
+          :style="{ height: `${mainImageHeight}px` }"
+          @mouseenter="handleMainImageHover(item)"
+          @mouseleave="handleMainImageLeave"
+        >
           <!-- 有图片时显示 -->
           <el-image
             v-if="item.selectImg?.previewOssUrl || item.selectImg?.originOssUrl"
             :src="item.selectImg?.previewOssUrl || item.selectImg?.originOssUrl"
-            fit="contain"
             class="main-image"
             :preview-src-list="[item.selectImg?.originOssUrl || item.selectImg?.previewOssUrl]"
             :preview-teleported="true"
@@ -41,11 +45,10 @@
           />
 
           <!-- 空图片占位符 -->
-          <div v-else class="empty-image-placeholder" :style="{ height: `${mainImageHeight}px`, width: '100%' }">
+          <div v-else class="empty-image-placeholder">
             <div class="placeholder-content">
               <svg-icon icon-class="fy-image" class="placeholder-icon" />
               <p class="placeholder-text">暂无画面</p>
-              <p class="placeholder-hint">{{ item.sceneHint || item.dialogues || '等待生成分镜画面' }}</p>
             </div>
           </div>
 
@@ -624,7 +627,7 @@
           .main-image {
             width: 100%;
             height: 100%;
-            object-fit: contain;
+            // object-fit: contain;
           }
 
           // 空图片占位符
@@ -633,6 +636,7 @@
             align-items: center;
             justify-content: center;
             width: 100%;
+            height: 100%;
             background: linear-gradient(135deg, #f5f7fa 0%, #e8ecf1 100%);
             border: 2px dashed #d1d5db;
             border-radius: 4px;

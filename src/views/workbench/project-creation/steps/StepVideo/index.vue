@@ -117,7 +117,7 @@
       :scene-type="2"
       :initial-index="0"
       :picture-ratio="projectStore.pictureRatio || 1"
-      @refresh="loadVideos"
+      @refresh="() => loadVideos(true)"
     />
 
     <!-- 点数确认弹窗 -->
@@ -347,7 +347,7 @@
   useVideoUpdateListener((detail) => {
     console.log('[视频] 收到 SSE 视频更新:', detail);
     // 无感刷新视频列表
-    loadVideos();
+    loadVideos(true);
   });
 
   // 清理
@@ -489,11 +489,15 @@
     }
   };
 
-  // 加载视频列表
-  const loadVideos = async () => {
+  // 加载视频列表（支持无感刷新）
+  const loadVideos = async (silentRefresh = false) => {
     if (!selectedEpisodeId.value) return;
 
-    loading.value = true;
+    // 只在非静默刷新时显示加载状态
+    if (!silentRefresh) {
+      loading.value = true;
+    }
+
     try {
       const res = await getVideoSceneList(Number(selectedEpisodeId.value));
       const episodeData: VideoEpisodeInfoResponseDto = res.data;
@@ -501,7 +505,49 @@
       if (episodeData && episodeData.episodeSceneItemInfoList && Array.isArray(episodeData.episodeSceneItemInfoList)) {
         // 过滤掉无效的场景数据
         const validScenes = episodeData.episodeSceneItemInfoList.filter((scene) => scene && scene.basicId);
-        videos.value = validScenes;
+
+        // 如果是静默刷新，进行差异更新
+        if (silentRefresh && videos.value.length > 0) {
+          // 创建一个 Map 用于快速查找（使用 basicId 作为 key）
+          const newVideosMap = new Map(validScenes.map((video) => [video.basicId, video]));
+
+          // 更新现有视频数据
+          videos.value.forEach((video) => {
+            const newVideo = newVideosMap.get(video.basicId);
+            if (newVideo) {
+              // 只更新可能变化的字段，保持对象引用
+              video.videoPrompt = newVideo.videoPrompt;
+              video.videoUrl = newVideo.videoUrl;
+              video.historyVos = newVideo.historyVos;
+              video.taskStatus = newVideo.taskStatus;
+              video.sceneStatus = newVideo.sceneStatus;
+              video.sceneDesc = newVideo.sceneDesc;
+              video.sceneHint = newVideo.sceneHint;
+              video.dialogues = newVideo.dialogues;
+              video.characterClothingInfoList = newVideo.characterClothingInfoList;
+              video.materialInfoVoList = newVideo.materialInfoVoList;
+              video.envMaterialInfoVo = newVideo.envMaterialInfoVo;
+              video.commentCnt = newVideo.commentCnt;
+              video.isCollect = newVideo.isCollect;
+              video.endFrameOssId = newVideo.endFrameOssId;
+              video.endFrameOssUrl = newVideo.endFrameOssUrl;
+            }
+          });
+
+          // 处理新增的视频
+          validScenes.forEach((newVideo) => {
+            const existingIndex = videos.value.findIndex((v) => v.basicId === newVideo.basicId);
+            if (existingIndex === -1) {
+              videos.value.push(newVideo);
+            }
+          });
+
+          // 处理删除的视频
+          videos.value = videos.value.filter((video) => newVideosMap.has(video.basicId));
+        } else {
+          // 非静默刷新或初次加载，直接替换
+          videos.value = validScenes;
+        }
 
         // 过滤 selectedIds，移除已删除镜头的 ID
         const validBasicIds = new Set(validScenes.map((scene) => scene.basicId));
@@ -526,10 +572,15 @@
       restoreScrollPosition();
     } catch (error) {
       console.error('加载视频列表失败:', error);
-      videos.value = [];
-      ElMessage.error('加载视频列表失败');
+      // 静默刷新失败时不清空数据
+      if (!silentRefresh) {
+        videos.value = [];
+        ElMessage.error('加载视频列表失败');
+      }
     } finally {
-      loading.value = false;
+      if (!silentRefresh) {
+        loading.value = false;
+      }
     }
   };
 
@@ -592,7 +643,8 @@
       // 更新钱包积分
       await userStore.updateWalletPoints();
 
-      await loadVideos();
+      // 无感刷新视频列表
+      await loadVideos(true);
     } catch (error: any) {
       if (error !== 'cancel') {
         console.error('生成视频失败:', error);
@@ -621,7 +673,8 @@
       ElMessage.success('导入成功');
       // 关闭弹窗
       importDialogRef.value.close();
-      await loadVideos();
+      // 无感刷新视频列表
+      await loadVideos(true);
     } catch (error) {
       console.error('导入失败:', error);
     } finally {
@@ -700,8 +753,8 @@
       selectedIds.value = [];
       selectAll.value = false;
       isIndeterminate.value = false;
-      // 刷新列表
-      await loadVideos();
+      // 无感刷新视频列表
+      await loadVideos(true);
     } catch (error: any) {
       console.error('生成视频失败:', error);
       ElMessage.error('生成视频失败');
