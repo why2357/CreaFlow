@@ -1,7 +1,7 @@
 <template>
   <el-dialog
     v-model="visible"
-    title="图片历史"
+    title="审阅"
     width="1200px"
     :close-on-click-modal="false"
     destroy-on-close
@@ -419,7 +419,6 @@
           scene.imgStatus = 2; // 2-绿色(通过)
         }
       }
-      console.log('sceneList.value', sceneList.value);
 
       // 延迟展示状态，让用户看到审阅结果
       await new Promise((resolve) => setTimeout(resolve, 800));

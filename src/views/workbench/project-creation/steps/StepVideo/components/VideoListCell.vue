@@ -316,8 +316,6 @@
 
   // 替换视频
   const handleReplace = async (videoItem: any) => {
-    console.log('videoItem', videoItem);
-
     if (!videoItem.historyDetailId) {
       ElMessage.warning('缺少历史记录ID');
       return;
@@ -379,8 +377,6 @@
 
   // 删除视频
   const handleDelete = async (videoItem: any) => {
-    console.log('videoItem', videoItem);
-
     if (!videoItem.id) {
       ElMessage.warning('缺少历史记录ID');
       return;

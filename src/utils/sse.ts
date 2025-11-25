@@ -1,6 +1,7 @@
 import { getToken } from '@/utils/auth';
 import request from '@/utils/request';
 import { ElNotification } from 'element-plus';
+import { SSETabCoordinator } from './sseTabCoordinator';
 
 interface SSEOptions {
   onMessage?: (data: any) => void;
@@ -26,6 +27,7 @@ class SSEManager {
   private reader: ReadableStreamDefaultReader<Uint8Array> | null = null;
   private isConnected = false;
   private connectionStartTime = 0; // 连接开始时间
+  private coordinator: SSETabCoordinator | null = null; // 标签页协调器
 
   /**
    * 初始化并连接 SSE
@@ -50,7 +52,26 @@ class SSEManager {
     }
 
     this.url = baseUrl;
-    this.createConnection();
+
+    // 初始化标签页协调器
+    if (!this.coordinator) {
+      this.coordinator = new SSETabCoordinator();
+      this.coordinator.init({
+        onBecameMaster: () => {
+          console.log('[SSE Manager] 🎯 成为主标签页，建立 SSE 连接');
+          this.createConnection();
+        },
+        onBecameSlave: () => {
+          console.log('[SSE Manager] 📡 成为从标签页，关闭本地 SSE 连接');
+          this.cleanup();
+        },
+        onSSEMessage: (data) => {
+          console.log('[SSE Manager] 📨 从主标签页接收到 SSE 消息');
+          // 从标签页收到消息，也要触发处理逻辑
+          this.handleMessage(data);
+        }
+      });
+    }
   }
 
   /**
@@ -58,6 +79,12 @@ class SSEManager {
    */
   private async createConnection(): Promise<void> {
     try {
+      // 只有主标签页才能创建连接
+      if (this.coordinator && !this.coordinator.getIsMaster()) {
+        console.log('[SSE Manager] 非主标签页，不建立 SSE 连接');
+        return;
+      }
+
       // 防止重复连接
       if (this.isConnected) {
         console.warn('SSE 已连接，跳过重复连接');
@@ -253,6 +280,12 @@ class SSEManager {
     console.log('[SSE] 是否有 message 字段:', !!data.message);
     console.log('[SSE] message 内容:', data.message);
 
+    // 如果是主标签页，广播消息到其他标签页
+    if (this.coordinator && this.coordinator.getIsMaster()) {
+      console.log('[SSE Manager] 主标签页广播消息到其他标签页');
+      this.coordinator.broadcastSSEData(data);
+    }
+
     // 调用自定义消息处理器
     this.options.onMessage?.(data);
 
@@ -314,15 +347,15 @@ class SSEManager {
       }
     }
 
-    // 显示通知（如果需要）
-    if (data.message && typeof data.message === 'string') {
-      ElNotification({
-        title: data.title || '消息',
-        message: data.message,
-        type: data.type || 'success',
-        duration: 3000
-      });
-    }
+    // // 显示通知（如果需要）
+    // if (data.message && typeof data.message === 'string') {
+    //   ElNotification({
+    //     title: data.title || '消息',
+    //     message: data.message,
+    //     type: data.type || 'success',
+    //     duration: 3000
+    //   });
+    // }
   }
 
   /**
@@ -381,7 +414,13 @@ class SSEManager {
     this.cleanup();
     console.log('SSE 连接已关闭');
 
-    // 通知后端关闭连接
+    // 销毁协调器
+    if (this.coordinator) {
+      this.coordinator.destroy();
+      this.coordinator = null;
+    }
+
+    // 通知后端关闭连接（只有主标签页需要通知）
     try {
       await request({
         url: '/hivision/system/sse/close',

@@ -311,10 +311,6 @@ export const useProjectStore = defineStore('project', {
               episodeId: Number(episodeInfo.episodeId!),
               currentPage: previousStep
             });
-            console.log(
-              '[switchEpisodeFromInfo] 更新工作流记录:',
-              `项目=${this.currentProjectId}, 剧集=${episodeInfo.episodeId}, 步骤=${previousStep}`
-            );
           } catch (error) {
             console.error('[switchEpisodeFromInfo] 更新工作流记录失败:', error);
             // 继续执行，不阻塞剧集切换
@@ -376,10 +372,6 @@ export const useProjectStore = defineStore('project', {
           episodeId: this.currentEpisodeId ? Number(this.currentEpisodeId) : undefined,
           currentPage: step
         });
-        console.log(
-          '[goToStep] 保存工作流记录:',
-          `项目=${this.currentProjectId}, 剧集=${this.currentEpisodeId}, 步骤=${step}`
-        );
       } catch (error) {
         console.error('创建工作流记录失败:', error);
         // 继续执行，不阻塞步骤切换
@@ -428,20 +420,16 @@ export const useProjectStore = defineStore('project', {
      * message: 消息内容
      */
     async handleSSEUpdate(data: any) {
-      console.log('[SSE] 收到数据更新:', data);
-
       try {
         const { messageType, projectId, episodeId, message } = data;
 
         // 检查是否是当前项目的消息
         if (projectId && projectId !== Number(this.currentProjectId)) {
-          console.log('[SSE] 跳过其他项目的消息:', projectId);
           return;
         }
 
         // 检查是否是当前剧集的消息
         if (episodeId && episodeId !== Number(this.currentEpisodeId)) {
-          console.log('[SSE] 跳过其他剧集的消息:', episodeId);
           return;
         }
 
@@ -460,7 +448,6 @@ export const useProjectStore = defineStore('project', {
             break;
 
           default:
-            console.log('[SSE] 未知的消息类型:', messageType);
         }
       } catch (error) {
         console.error('[SSE] 处理数据更新失败:', error);
@@ -471,7 +458,6 @@ export const useProjectStore = defineStore('project', {
      * 处理文生文更新（messageType = 1）
      */
     async handleTextGenerationUpdate(message: any, projectId: number, episodeId: number) {
-      console.log('[SSE] 文生文更新:', message);
       // 发送事件通知，让分镜头列表组件刷新
       window.dispatchEvent(
         new CustomEvent('sse-image-update', {
@@ -485,8 +471,6 @@ export const useProjectStore = defineStore('project', {
      * 对应接口：hivision/story/episode/img-scene-list
      */
     async handleImageGenerationUpdate(message: any, projectId: number, episodeId: number) {
-      console.log('[SSE] 文生图更新:', message);
-
       // 发送事件通知，让分镜头列表组件刷新
       window.dispatchEvent(
         new CustomEvent('sse-image-update', {
@@ -500,8 +484,6 @@ export const useProjectStore = defineStore('project', {
      * 对应接口：hivision/story/episode/video-scene-list
      */
     async handleVideoGenerationUpdate(message: any, projectId: number, episodeId: number) {
-      console.log('[SSE] 文生视频更新:', message);
-
       // 发送事件通知，让视频列表组件刷新
       window.dispatchEvent(
         new CustomEvent('sse-video-update', {

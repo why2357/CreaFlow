@@ -135,7 +135,6 @@
 
   const projectStore = useProjectStore();
   const userStore = useUserStore();
-  console.log('projectStore.episodes', projectStore.episodes);
 
   // StoryboardTable 组件引用
   const storyboardTableRef = ref<InstanceType<typeof StoryboardTable>>();
@@ -246,8 +245,6 @@
   // 脚本生成完成后，需要刷新剧集列表和镜头列表
   useScriptUpdateListener(
     async (detail) => {
-      console.log('[分镜头] 收到 SSE 脚本生成完成，开始刷新数据:', detail);
-
       // 更新任务状态
       if (detail.taskStatus !== undefined) {
         episodeTaskStatus.value = detail.taskStatus;
@@ -255,7 +252,6 @@
 
       // 刷新剧集列表（更新剧集的任务状态等信息）
       if (projectStore.currentProjectId) {
-        console.log('[分镜头] 刷新剧集列表');
         await projectStore.loadProjectInfo(Number(projectStore.currentProjectId));
       }
 
@@ -273,8 +269,6 @@
   // 只有当消息的 projectId 和 episodeId 与当前页面匹配时，才会触发回调
   useImageUpdateListener(
     (detail) => {
-      console.log('[分镜头] 收到 SSE 图片更新，开始刷新数据:', detail);
-
       // 更新任务状态
       if (detail.taskStatus !== undefined) {
         episodeTaskStatus.value = detail.taskStatus;
@@ -707,7 +701,6 @@
     } catch (error) {
       console.error('生成图片失败:', error);
       shot.imageLoading = false;
-      ElMessage.error('生成图片失败');
     }
   };
 

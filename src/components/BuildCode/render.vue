@@ -44,7 +44,6 @@
         }, 200);
       }
       if (props.isView) {
-        console.log(props.isView);
         setTimeout(() => {
           vFormRef.value.disableForm();
         }, 100);

@@ -77,7 +77,13 @@
             <!-- 历史组标题 -->
             <div class="history-group-header">
               <div class="header-content">
-                <div class="prompt-section">
+                <div class="prompt-section" v-if="history.operationType == 2">
+                  <div class="prompt-line">
+                    <span class="label">·</span>
+                    <span class="text">提示词：{{ history.prompt }}</span>
+                  </div>
+                </div>
+                <div class="prompt-section" v-else>
                   <div v-if="history.sceneDesc" class="prompt-line">
                     <span class="label">·</span>
                     <span class="text">{{ history.sceneDesc }}</span>
@@ -101,17 +107,12 @@
                 @click="handleSelectImage(detail)"
               >
                 <div class="image-wrapper">
-                  <el-image
-                    :src="detail.previewOssUrl || detail.originOssUrl"
-                    :preview-src-list="[detail.originOssUrl || detail.previewOssUrl]"
-                    :preview-teleported="true"
-                    hide-on-click-modal
-                  />
+                  <el-image :src="detail.previewOssUrl || detail.originOssUrl" :preview-src-list="[]" />
 
                   <!-- 左上角：放大按钮 -->
                   <div class="action-top-left">
                     <el-tooltip content="放大" placement="top">
-                      <div class="action-icon" @click.stop="handlePreviewImageClick">
+                      <div class="action-icon" @click.stop="handlePreviewImage(detail)">
                         <svg-icon icon-class="fy-zoomin" />
                       </div>
                     </el-tooltip>
@@ -206,6 +207,18 @@
     :comment-list="currentCommentList"
     @change="handleCommentChange"
   />
+
+  <!-- 隐藏的预览图片（用于点击放大按钮时的预览） -->
+  <el-image
+    v-if="previewImageUrl"
+    ref="previewImageRef"
+    style="display: none"
+    :src="previewImageUrl"
+    :preview-src-list="[previewImageUrl]"
+    :initial-index="0"
+    :preview-teleported="true"
+    hide-on-click-modal
+  />
 </template>
 
 <script setup lang="ts">
@@ -242,6 +255,7 @@
     historyId: number;
     sceneDesc: string;
     sceneHint: string;
+    prompt?: string;
     modelCode: string;
     ratio: string;
     createTime?: string;
@@ -271,6 +285,10 @@
   const commentBasicId = ref(0);
   const commentTriggerElement = ref<HTMLElement>();
   const currentCommentList = ref<any[]>([]);
+
+  // 图片预览相关状态
+  const previewImageRef = ref();
+  const previewImageUrl = ref('');
 
   // 监听 modelValue 变化
   watch(
@@ -352,6 +370,7 @@
         historyId: history.historyId || 0,
         sceneDesc: history.sceneDesc || '',
         sceneHint: history.sceneHint || '',
+        prompt: history.prompt || '',
         modelCode: history.modelCode || '',
         ratio: getRatioText(history.pictureRatio),
         createTime: history.createTime ? formatDate(String(history.createTime)) : '',
@@ -361,7 +380,7 @@
           historyDetailId: item.historyDetailId || 0,
           originOssUrl: item.materialVo?.originOssUrl,
           previewOssUrl: item.materialVo?.previewOssUrl,
-          prompt: history.sceneHint,
+          prompt: history.prompt || history.sceneHint,
           description: history.sceneDesc,
           ratio: getRatioText(history.pictureRatio),
           createTime: history.createTime ? formatDate(String(history.createTime)) : '',
@@ -381,16 +400,16 @@
     selectedHistoryDetail.value = detail;
   };
 
-  // 预览图片（点击放大按钮时触发 el-image 的点击）
-  const handlePreviewImageClick = (event: MouseEvent) => {
-    const target = event.target as HTMLElement;
-    const imageWrapper = target.closest('.image-wrapper');
-    if (imageWrapper) {
-      const imageElement = imageWrapper.querySelector('.el-image__inner') as HTMLElement;
+  // 预览图片（点击放大按钮时触发）
+  const handlePreviewImage = (detail: HistoryDetail) => {
+    previewImageUrl.value = detail.originOssUrl || detail.previewOssUrl || '';
+    // 等待 DOM 更新后触发预览
+    setTimeout(() => {
+      const imageElement = previewImageRef.value?.$el?.querySelector('.el-image__inner');
       if (imageElement) {
         imageElement.click();
       }
-    }
+    }, 50);
   };
 
   // 切换收藏状态
@@ -819,7 +838,7 @@
           .image-grid {
             display: flex;
             flex-wrap: wrap;
-            gap: 12px;
+            gap: 3px;
 
             .image-item {
               position: relative;

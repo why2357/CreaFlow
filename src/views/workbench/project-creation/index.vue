@@ -38,10 +38,7 @@
           <div class="step-item" style="display: flex; align-items: center">
             <!-- 第4步根据当前步骤动态显示图标和名称 -->
             <template v-if="step.key === 4">
-              <div
-                style="display: flex; align-items: center; cursor: pointer"
-                @click.stop="handleStoryboardClick"
-              >
+              <div style="display: flex; align-items: center; cursor: pointer" @click.stop="handleStoryboardClick">
                 <svg-icon class="step-icon" :icon-class="getCurrentStoryboardIcon()" />
                 <span class="step-name" style="margin-left: 6px">{{ getCurrentStoryboardName() }}</span>
               </div>

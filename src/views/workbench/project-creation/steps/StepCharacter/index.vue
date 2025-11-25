@@ -276,11 +276,9 @@
     const waitForInit = () => {
       if (projectStore.isInitializing) {
         // 如果还在初始化，延迟50ms后重试
-        console.log('[StepCharacter] 等待项目初始化完成...');
         setTimeout(waitForInit, 50);
       } else {
         // 初始化完成，加载数据
-        console.log('[StepCharacter] 项目初始化完成，开始加载角色数据');
         loadCharacterData();
         setupHorizontalScroll();
       }
@@ -328,8 +326,6 @@
           delete (wrapper as any).__wheelHandler;
           delete (wrapper as any).__cleanupScroll;
         };
-
-        console.log('已为第', index + 1, '个容器绑定滚轮事件');
       });
     });
   };
@@ -532,15 +528,12 @@
             requiredMd5: true
           });
 
-          console.log('上传结果:', uploadResult);
-
           if (uploadResult.url && uploadResult.ossId) {
             uploadedImages.push({
               url: uploadResult.url,
               ossId: uploadResult.ossId,
               name: fileName
             });
-            console.log('已添加到上传列表:', { url: uploadResult.url, ossId: uploadResult.ossId, name: fileName });
           } else {
             console.warn('上传结果缺少必要字段:', { url: uploadResult.url, ossId: uploadResult.ossId });
           }
@@ -549,18 +542,9 @@
         }
       }
 
-      console.log('准备创建库详情，图片数量:', uploadedImages.length);
-
       if (uploadedImages.length > 0) {
         // 调用创建服装图片的 API
         for (const imgInfo of uploadedImages) {
-          console.log('调用 createLibraryDetail:', {
-            libraryId: Number(library.libraryId),
-            name: imgInfo.name,
-            ossId: Number(imgInfo.ossId),
-            ossUrl: imgInfo.url
-          });
-
           await createLibraryDetail({
             libraryId: Number(library.libraryId),
             name: imgInfo.name,

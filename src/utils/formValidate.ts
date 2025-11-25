@@ -130,7 +130,6 @@ export default (ruleObj: RuleItem) => {
       ruleName = ruleObj.rules[i];
       // 当验证的规则不存在，默认跳过这个验证
       if (!validateObj[ruleName]) {
-        console.log(ruleName + '规则不存在');
         break;
       }
       // 得到当前验证失败信息

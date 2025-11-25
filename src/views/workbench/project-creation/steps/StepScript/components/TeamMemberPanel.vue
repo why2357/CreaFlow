@@ -208,8 +208,6 @@
 
   // 确认移除成员
   const confirmRemoveMember = async (member: MemberDisplay) => {
-    console.log('member', member);
-
     try {
       await ElMessageBox.confirm(`确定要移除成员 "${member.nickName}" 吗？`, '移除成员', {
         confirmButtonText: '确定',

@@ -323,13 +323,10 @@
   // 状态变更
   const handleStatusChange = (scene: StoryBoardSceneVo, status: number) => {
     // 这里可以调用接口更新状态，或者直接在本地更新
-    console.log('状态变更:', scene.orderNo, status);
   };
 
   // 图片点击
-  const handleImageClick = (scene: StoryBoardSceneVo) => {
-    console.log('点击图片:', scene);
-  };
+  const handleImageClick = (scene: StoryBoardSceneVo) => {};
 
   // 打开故事板审阅弹窗（只审阅橙色状态的场景）
   const handleOpenReviewDialog = async () => {

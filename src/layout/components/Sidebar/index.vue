@@ -44,8 +44,6 @@
 
   const sidebarRouters = computed<RouteOption[]>(() => {
     const routers = permissionStore.sidebarRouters;
-    console.log('Sidebar routers length:', routers.length);
-    console.log('Sidebar routers:', routers);
     return routers;
   });
   const showLogo = computed(() => settingsStore.sidebarLogo);

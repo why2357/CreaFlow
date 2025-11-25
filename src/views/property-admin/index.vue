@@ -166,7 +166,6 @@
       });
       if (res.rows && Array.isArray(res.rows)) {
         projectList.value = res.rows;
-        console.log('projectList.value', projectList.value);
 
         // 默认选择第一个项目
         if (projectList.value.length > 0 && projectList.value[0].projectId) {
@@ -293,7 +292,6 @@
       };
 
       const res = await getAssetList(requestData);
-      console.log('res', res);
 
       // 处理返回数据，rows 可能为 null、undefined 或空数组
       const rows = res.rows || [];

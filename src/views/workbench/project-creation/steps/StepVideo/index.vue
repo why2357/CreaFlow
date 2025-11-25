@@ -146,11 +146,11 @@
     VideoSceneItemInfo
   } from '@/api/workbench/episode/types';
   import { queryStoryBoard } from '@/api/workbench/storyboard';
+  import { useVideoUpdateListener } from '@/composables/useSSEListener';
   import { useProjectStore } from '@/store/modules/project';
   import { useUserStore } from '@/store/modules/user';
   import { ElMessage, ElMessageBox } from 'element-plus';
   import { computed, nextTick, onActivated, onBeforeUnmount, onMounted, ref, watch } from 'vue';
-  import { useVideoUpdateListener } from '@/composables/useSSEListener';
   import StoryboardReviewDialog from '../StepGridView/components/StoryboardReviewDialog.vue';
   import ImportTextDialog from './components/ImportTextDialog.vue';
   import VideoPointsConfirmDialog from './components/VideoPointsConfirmDialog.vue';
@@ -279,7 +279,6 @@
   // 时长变化处理
   const handleDurationChange = (duration: number) => {
     // 时长变化后无需额外操作，currentModelConfigObj 会自动更新
-    console.log('Selected config:', currentModelConfigObj.value);
   };
 
   // 全选状态
@@ -311,9 +310,6 @@
     if (tableWrapper) {
       tableWrapper.removeEventListener('scroll', saveScrollPosition);
       tableWrapper.addEventListener('scroll', saveScrollPosition);
-      console.log('已添加滚动监听');
-    } else {
-      console.log('表格容器未找到，无法添加滚动监听');
     }
   };
 
@@ -353,7 +349,6 @@
   // 监听 SSE 视频生成更新
   useVideoUpdateListener(
     (detail) => {
-      console.log('[视频] 收到 SSE 视频更新:', detail);
       // 无感刷新视频列表
       loadVideos(true);
     },
@@ -444,25 +439,21 @@
   const getTableWrapper = () => {
     // 尝试多种方式获取表格滚动容器
     if (!videoTableRef.value) {
-      console.log('videoTableRef 为空');
       return null;
     }
 
     // 方法1: 通过组件的 $refs.tableRef 查找
     let wrapper = (videoTableRef.value as any)?.$refs?.tableRef?.$el?.querySelector('.el-table__body-wrapper');
     if (wrapper) {
-      console.log('通过 $refs.tableRef 找到表格容器');
       return wrapper;
     }
 
     // 方法2: 直接通过类名查找
     wrapper = document.querySelector('.video-table-container .el-table__body-wrapper');
     if (wrapper) {
-      console.log('通过类名找到表格容器');
       return wrapper;
     }
 
-    console.log('未找到表格容器');
     return null;
   };
 
@@ -473,7 +464,6 @@
       const scrollKey = `videolist_scroll_${projectStore.currentProjectId}_${selectedEpisodeId.value}`;
       const scrollTop = tableWrapper.scrollTop;
       sessionStorage.setItem(scrollKey, String(scrollTop));
-      console.log('保存滚动位置:', scrollKey, scrollTop);
     }
   };
 
@@ -483,7 +473,6 @@
 
     const scrollKey = `videolist_scroll_${projectStore.currentProjectId}_${selectedEpisodeId.value}`;
     const savedScroll = sessionStorage.getItem(scrollKey);
-    console.log('尝试恢复滚动位置:', scrollKey, savedScroll);
 
     if (savedScroll) {
       // 使用多次 nextTick 确保 DOM 完全渲染
@@ -491,10 +480,8 @@
         nextTick(() => {
           setTimeout(() => {
             const tableWrapper = getTableWrapper();
-            console.log('表格容器:', tableWrapper);
             if (tableWrapper) {
               tableWrapper.scrollTop = Number(savedScroll);
-              console.log('已恢复滚动位置:', tableWrapper.scrollTop);
             }
           }, 100);
         });

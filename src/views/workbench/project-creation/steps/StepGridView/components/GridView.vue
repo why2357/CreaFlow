@@ -35,6 +35,7 @@
             class="shot-image"
             :preview-src-list="[scene.originOssUrl || scene.previewOssUrl]"
             :preview-teleported="true"
+            hide-on-click-modal
             :lazy="true"
           />
           <div v-else class="image-placeholder">
@@ -284,7 +285,7 @@
       display: flex;
       flex-wrap: wrap;
       align-content: start;
-      gap: 20px;
+      gap: 10px;
       width: 100%;
       height: calc(100vh - 180px);
       overflow-y: auto;

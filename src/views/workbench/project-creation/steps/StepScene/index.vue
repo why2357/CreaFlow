@@ -117,7 +117,12 @@
               <div v-for="scene in library.librarySubInfoList || []" :key="scene.libraryDetailId" class="scene-card">
                 <!-- 图片 -->
                 <div class="scene-image">
-                  <el-image :src="scene.ossUrl || ''" fit="cover" :preview-src-list="[scene.ossUrl || '']" hide-on-click-modal>
+                  <el-image
+                    :src="scene.ossUrl || ''"
+                    fit="cover"
+                    :preview-src-list="[scene.ossUrl || '']"
+                    hide-on-click-modal
+                  >
                     <template #error>
                       <div class="image-error">
                         <el-icon :size="40"><Picture /></el-icon>
@@ -280,11 +285,9 @@
     const waitForInit = () => {
       if (projectStore.isInitializing) {
         // 如果还在初始化，延迟50ms后重试
-        console.log('[StepScene] 等待项目初始化完成...');
         setTimeout(waitForInit, 50);
       } else {
         // 初始化完成，加载数据
-        console.log('[StepScene] 项目初始化完成，开始加载场景数据');
         loadSceneData();
         setupHorizontalScroll();
       }

@@ -41,18 +41,7 @@ const TRANSFER_TYPE_FILE_EXISTS = 4;
  *
  * @example
  * ```ts
- * const result = await uploadFile({
- *   file: file,
- *   fileSuffix: '.jpg',
- *   originalFileName: 'photo.jpg',
- *   fileType: 'image',
- *   requiredMd5: true
- * }, (percent) => {
- *   console.log(`上传进度: ${percent}%`);
- * });
- * console.log('ossId:', result.ossId);
- * console.log('url:', result.url);
- * ```
+
  */
 export async function uploadFile(
   req: UploadReq,

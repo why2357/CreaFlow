@@ -88,9 +88,9 @@
 
         <!-- 镜头提示与台词 -->
         <div class="scene-info">
-          <div v-if="item.sceneHint" class="scene-hint">
+          <div v-if="item.sceneDesc" class="scene-hint">
             <svg-icon icon-class="fy-jingtou" class="info-icon" />
-            <span class="info-text">{{ item.sceneHint }}</span>
+            <span class="info-text">{{ item.sceneDesc }}</span>
           </div>
           <div v-if="item.dialogues" class="scene-dialogue">
             <svg-icon icon-class="fy-taici" class="info-icon" />
@@ -561,7 +561,7 @@
 
     .waterfall-container {
       display: flex;
-      gap: 20px;
+      gap: 10px;
       padding-bottom: 20px;
       // min-height: 100%;
       overflow-x: auto;

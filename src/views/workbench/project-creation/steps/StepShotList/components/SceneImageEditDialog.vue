@@ -35,53 +35,14 @@
                     v-for="(img, index) in uploadedImages"
                     :key="img.ossId"
                     class="reference-image-item"
-                    :class="{ 'is-hovered': isHoveringImages, 'is-uploading': img.uploading }"
+                    :class="{ 'is-hovered': isHoveringImages }"
                     :style="getImageStackStyle(index, isHoveringImages)"
                   >
                     <el-image :src="img.url" fit="cover" class="reference-thumbnail" hide-on-click-modal />
 
-                    <!-- Upload Progress Overlay -->
-                    <Transition name="progress-fade">
-                      <div v-if="img.uploading" class="upload-progress-overlay">
-                        <div class="progress-ring">
-                          <svg width="36" height="36" viewBox="0 0 36 36">
-                            <circle
-                              class="progress-ring-bg"
-                              cx="18"
-                              cy="18"
-                              r="15"
-                              fill="none"
-                              stroke="rgba(255,255,255,0.2)"
-                              stroke-width="3"
-                            />
-                            <circle
-                              class="progress-ring-circle"
-                              cx="18"
-                              cy="18"
-                              r="15"
-                              fill="none"
-                              stroke="#5252ff"
-                              stroke-width="3"
-                              stroke-linecap="round"
-                              :style="{
-                                strokeDasharray: `${2 * Math.PI * 15}`,
-                                strokeDashoffset: `${2 * Math.PI * 15 * (1 - (img.progress || 0) / 100)}`
-                              }"
-                              transform="rotate(-90 18 18)"
-                            />
-                          </svg>
-                          <span class="progress-text">{{ Math.round(img.progress || 0) }}%</span>
-                        </div>
-                      </div>
-                    </Transition>
-
                     <!-- Delete Button (shown on hover expand) -->
                     <Transition name="delete-fade">
-                      <div
-                        v-if="isHoveringImages && !img.uploading"
-                        class="delete-button"
-                        @click.stop="removeImage(index)"
-                      >
+                      <div v-if="isHoveringImages" class="delete-button" @click.stop="removeImage(index)">
                         <el-icon :size="16">
                           <Close />
                         </el-icon>
@@ -108,7 +69,6 @@
                 </TransitionGroup>
               </div>
 
-              <!-- Circular Add Button (positioned at bottom-right, shown when collapsed and has images) -->
               <div
                 v-if="uploadedImages.length > 0 && uploadedImages.length < 3 && !isHoveringImages"
                 class="circular-add-button"
@@ -202,8 +162,6 @@
     url: string;
     ossId: number;
     file?: File;
-    uploading?: boolean; // 上传中状态
-    progress?: number; // 上传进度 0-100
   }
 
   interface Props {
@@ -522,32 +480,9 @@
       return;
     }
 
-    // Upload valid files with progress animation
+    // Upload valid files
     try {
       for (const file of valid) {
-        // Create preview URL immediately
-        const previewUrl = URL.createObjectURL(file);
-
-        // Add placeholder with uploading state
-        const placeholderImage: UploadedImage = {
-          url: previewUrl,
-          ossId: Date.now() + Math.random(), // Temporary ID
-          file,
-          uploading: true,
-          progress: 0
-        };
-
-        uploadedImages.value.push(placeholderImage);
-
-        // Simulate smooth progress animation
-        const progressInterval = setInterval(() => {
-          const currentProgress = placeholderImage.progress || 0;
-          if (currentProgress < 90) {
-            const newProgress = currentProgress + Math.random() * 15;
-            placeholderImage.progress = newProgress > 90 ? 90 : newProgress;
-          }
-        }, 200);
-
         try {
           // Get file suffix
           const fileSuffix = file.name.substring(file.name.lastIndexOf('.'));
@@ -562,31 +497,14 @@
             needSync: 0
           });
 
-          // Clear progress interval
-          clearInterval(progressInterval);
-
-          // Complete progress animation
-          placeholderImage.progress = 100;
-
-          // Wait for animation to finish
-          await new Promise((resolve) => setTimeout(resolve, 300));
-
-          // Update with actual data
-          placeholderImage.url = uploadRes.url || '';
-          placeholderImage.ossId = Number(uploadRes.ossId);
-          placeholderImage.uploading = false;
-          placeholderImage.progress = undefined;
-
-          // Clean up preview URL
-          URL.revokeObjectURL(previewUrl);
+          // Add uploaded image to list
+          uploadedImages.value.push({
+            url: uploadRes.url || '',
+            ossId: Number(uploadRes.ossId),
+            file
+          });
         } catch (error) {
-          clearInterval(progressInterval);
-          // Remove failed upload
-          const index = uploadedImages.value.indexOf(placeholderImage);
-          if (index > -1) {
-            uploadedImages.value.splice(index, 1);
-          }
-          URL.revokeObjectURL(previewUrl);
+          console.error('上传失败:', error);
           throw error;
         }
       }
@@ -816,66 +734,16 @@
           transform: scale(1.133); // 68px / 60px ≈ 1.133 for 8px increase in width
         }
 
-        // 上传中状态时的样式
-        &.is-uploading {
-          .reference-thumbnail {
-            opacity: 0.6;
-          }
-        }
-
         .reference-thumbnail {
           width: 100%;
           height: 100%;
           border-radius: 2px;
           overflow: hidden;
-          transition: opacity 0.3s;
 
           :deep(img) {
             width: 100%;
             height: 100%;
             object-fit: cover;
-          }
-        }
-
-        // 上传进度遮罩层
-        .upload-progress-overlay {
-          position: absolute;
-          top: 0;
-          left: 0;
-          right: 0;
-          bottom: 0;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          background: rgba(0, 0, 0, 0.4);
-          backdrop-filter: blur(2px);
-          border-radius: 2px;
-          z-index: 2;
-
-          .progress-ring {
-            position: relative;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-
-            svg {
-              display: block;
-            }
-
-            .progress-ring-circle {
-              transition: stroke-dashoffset 0.3s ease;
-            }
-
-            .progress-text {
-              position: absolute;
-              top: 50%;
-              left: 50%;
-              transform: translate(-50%, -50%);
-              color: white;
-              font-size: 10px;
-              font-weight: 600;
-              text-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
-            }
           }
         }
 
@@ -1274,25 +1142,6 @@
   .delete-fade-leave-to {
     opacity: 0;
     transform: scale(0);
-  }
-
-  // Progress overlay fade transition
-  .progress-fade-enter-active {
-    transition: all 0.3s ease;
-  }
-
-  .progress-fade-leave-active {
-    transition: all 0.4s ease;
-  }
-
-  .progress-fade-enter-from {
-    opacity: 0;
-    transform: scale(0.8);
-  }
-
-  .progress-fade-leave-to {
-    opacity: 0;
-    transform: scale(1.2);
   }
 
   // Stack slide transition for adding/removing images (improved with bounce)
