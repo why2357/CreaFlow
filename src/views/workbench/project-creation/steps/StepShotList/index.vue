@@ -74,7 +74,7 @@
         />
       </div>
       <!-- 右下批量生成按钮 -->
-      <div v-if="batchStatus === 0" class="right-tools">
+      <div v-if="batchStatus === 0" class="right-tools" v-hasPermi="['generate-continue']">
         <el-button class="bottom-btn" :loading="batchGenerateLoading" @click="handleBatchGenerate"> 继续 </el-button>
       </div>
     </div>
@@ -212,18 +212,61 @@
 
   // 当组件被 keep-alive 激活时触发（用户切换回该步骤时）
   onActivated(async () => {
+    // 检查剧集列表是否为空
+    if (projectStore.episodes.length === 0) {
+      selectedEpisodeId.value = null;
+      shots.value = [];
+      episodeTaskStatus.value = undefined;
+      batchStatus.value = undefined;
+      return;
+    }
+
     // 每次激活时重新加载数据
     if (selectedEpisodeId.value) {
-      await loadShots(true); // 使用静默刷新
+      // 验证当前选中的剧集是否还存在
+      const episodeExists = projectStore.episodes.some((ep) => ep.id === selectedEpisodeId.value);
+      if (episodeExists) {
+        await loadShots(true); // 使用静默刷新
+      } else {
+        // 剧集不存在，清除缓存并选择第一个剧集
+        selectedEpisodeId.value = null;
+        shots.value = [];
+        episodeTaskStatus.value = undefined;
+        batchStatus.value = undefined;
+
+        if (projectStore.episodes.length > 0) {
+          selectedEpisodeId.value = projectStore.episodes[0].id;
+          await loadShots();
+        }
+      }
     }
   });
 
-  // 监听 SSE 图片生成更新
-  useImageUpdateListener((detail) => {
-    console.log('[分镜头] 收到 SSE 图片更新:', detail);
-    // 无感刷新分镜头列表
-    loadShots(true);
-  });
+  // 监听 SSE 图片生成更新（messageType=2）
+  // 只有当消息的 projectId 和 episodeId 与当前页面匹配时，才会触发回调
+  useImageUpdateListener(
+    (detail) => {
+      console.log('[分镜头] 收到 SSE 图片更新，开始刷新数据:', detail);
+
+      // 更新任务状态
+      if (detail.taskStatus !== undefined) {
+        episodeTaskStatus.value = detail.taskStatus;
+      }
+
+      // 更新批量状态
+      if (detail.batchStatus !== undefined) {
+        batchStatus.value = detail.batchStatus;
+      }
+
+      // 无感刷新分镜头列表
+      loadShots(true);
+    },
+    {
+      // 传入当前的项目ID和剧集ID的响应式引用，自动过滤不匹配的消息
+      projectId: projectStore.currentProjectId,
+      episodeId: selectedEpisodeId
+    }
+  );
 
   // 监听剧集变化
   watch(

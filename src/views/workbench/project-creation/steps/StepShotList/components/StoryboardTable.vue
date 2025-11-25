@@ -149,6 +149,7 @@
           <template #default="{ row }">
             <div
               class="scene-location-cell"
+              :data-aspect-ratio="aspectRatio"
               @mouseenter="handleSceneHover(row, true)"
               @mouseleave="handleSceneHover(row, false)"
             >
@@ -1335,8 +1336,25 @@
         align-items: center;
         width: 100%;
         height: 100%; // 填满父容器（190px）
-        max-height: 190px; // 确保不超过行高
         overflow: hidden;
+
+        // 根据宽高比设置最大高度限制，与画面列保持一致
+        &[data-aspect-ratio='16:9'],
+        &[data-aspect-ratio='4:3'] {
+          max-height: 190px; // 横版比例保持正常行高
+        }
+
+        &[data-aspect-ratio='9:16'] {
+          max-height: 462px; // 竖版 9:16，260px * (16/9) ≈ 462px
+        }
+
+        &[data-aspect-ratio='1:1'] {
+          max-height: 260px; // 正方形 1:1
+        }
+
+        &[data-aspect-ratio='3:4'] {
+          max-height: 347px; // 竖版 3:4，260px * (4/3) ≈ 347px
+        }
 
         .scene-hover-overlay {
           position: absolute;
@@ -1400,7 +1418,6 @@
           position: relative;
           width: 100%;
           height: 100%;
-          max-height: 100%;
           display: flex;
           align-items: center;
           justify-content: center;
@@ -1409,8 +1426,38 @@
           .scene-location-image {
             width: 100%;
             height: 100%;
-            object-fit: cover;
+            object-fit: contain; // 使用contain以完整显示图片，不裁剪
             cursor: pointer;
+          }
+        }
+
+        // 为 scene-image-container 和 scene-location-image 根据比例设置最大高度
+        &[data-aspect-ratio='16:9'],
+        &[data-aspect-ratio='4:3'] {
+          .scene-image-container,
+          .scene-location-image {
+            max-height: 190px; // 横版比例保持正常行高
+          }
+        }
+
+        &[data-aspect-ratio='9:16'] {
+          .scene-image-container,
+          .scene-location-image {
+            max-height: 462px; // 竖版 9:16
+          }
+        }
+
+        &[data-aspect-ratio='1:1'] {
+          .scene-image-container,
+          .scene-location-image {
+            max-height: 260px; // 正方形 1:1
+          }
+        }
+
+        &[data-aspect-ratio='3:4'] {
+          .scene-image-container,
+          .scene-location-image {
+            max-height: 347px; // 竖版 3:4
           }
         }
 

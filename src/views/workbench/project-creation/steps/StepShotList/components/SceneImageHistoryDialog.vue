@@ -3,7 +3,7 @@
     style="background-color: #f7f8fa"
     v-model="visible"
     title="图片历史"
-    width="70%"
+    width="72%"
     :close-on-click-modal="false"
     @close="handleClose"
   >
@@ -25,11 +25,13 @@
           <p class="empty-text">点击右侧图片进行查看</p>
         </div>
         <div v-else class="current-image-container">
-          <div class="current-image-wrapper" @click="handlePreviewImage(selectedHistoryDetail)">
+          <div class="current-image-wrapper">
             <el-image
               :src="selectedHistoryDetail.originOssUrl || selectedHistoryDetail.previewOssUrl"
+              :preview-src-list="[selectedHistoryDetail.originOssUrl || selectedHistoryDetail.previewOssUrl]"
               fit="contain"
               style="cursor: pointer"
+              :preview-teleported="true"
               hide-on-click-modal
             />
           </div>
@@ -101,15 +103,15 @@
                 <div class="image-wrapper">
                   <el-image
                     :src="detail.previewOssUrl || detail.originOssUrl"
-                    fit="contain"
-                    :preview-src-list="[]"
+                    :preview-src-list="[detail.originOssUrl || detail.previewOssUrl]"
+                    :preview-teleported="true"
                     hide-on-click-modal
                   />
 
                   <!-- 左上角：放大按钮 -->
                   <div class="action-top-left">
                     <el-tooltip content="放大" placement="top">
-                      <div class="action-icon" @click.stop="handlePreviewImage(detail)">
+                      <div class="action-icon" @click.stop="handlePreviewImageClick">
                         <svg-icon icon-class="fy-zoomin" />
                       </div>
                     </el-tooltip>
@@ -168,6 +170,7 @@
             <!-- 历史组底部信息 -->
             <div class="history-group-footer">
               <div class="footer-info">
+                <span class="info-text">{{ getOperationTypeText(history.operationType) }}</span>
                 <span v-if="history.modelCode" class="info-text">{{ getModelNameByCode(history.modelCode) }}</span>
                 <span class="info-text">{{ history.ratio }}</span>
                 <span class="info-text">{{ history.createTime }}</span>
@@ -194,15 +197,6 @@
     </div>
   </el-dialog>
 
-  <!-- 图片预览 -->
-  <el-image-viewer
-    v-if="showImageViewer"
-    :url-list="[previewImageUrl]"
-    :initial-index="0"
-    :z-index="9999"
-    @close="showImageViewer = false"
-  />
-
   <!-- 评论列表弹窗 -->
   <CommentListDialog
     v-model="showCommentList"
@@ -227,7 +221,7 @@
   import { useProjectStore } from '@/store/modules/project';
   import { formatDate } from '@/utils';
   import { Delete, Download, Loading, MoreFilled } from '@element-plus/icons-vue';
-  import { ElImageViewer, ElMessage, ElMessageBox } from 'element-plus';
+  import { ElMessage, ElMessageBox } from 'element-plus';
   import { ref, watch } from 'vue';
   import CommentListDialog from './CommentListDialog.vue';
 
@@ -251,6 +245,7 @@
     modelCode: string;
     ratio: string;
     createTime?: string;
+    operationType?: number;
     details: HistoryDetail[];
   }
 
@@ -270,8 +265,6 @@
   const selectedHistoryDetail = ref<HistoryDetail | null>(null);
   const initialSelectedHistoryDetailId = ref<number | null>(null); // 初始选中的图片ID
   const historyList = ref<HistoryGroup[]>([]);
-  const showImageViewer = ref(false);
-  const previewImageUrl = ref('');
 
   // 评论相关状态
   const showCommentList = ref(false);
@@ -315,6 +308,15 @@
       5: '9:16'
     };
     return ratioMap[pictureRatio || 3] || '1:1';
+  };
+
+  // 操作类型映射
+  const getOperationTypeText = (operationType?: number): string => {
+    const operationTypeMap: Record<number, string> = {
+      1: '',
+      2: '编辑生成'
+    };
+    return operationTypeMap[operationType || 1] || '';
   };
 
   // 加载历史记录
@@ -362,6 +364,7 @@
         modelCode: history.modelCode || '',
         ratio: getRatioText(history.pictureRatio),
         createTime: history.createTime ? formatDate(String(history.createTime)) : '',
+        operationType: history.operationType,
         details: (history.sceneItemHistoryInfoList || []).map((item) => ({
           ...item,
           historyDetailId: item.historyDetailId || 0,
@@ -387,17 +390,16 @@
     selectedHistoryDetail.value = detail;
   };
 
-  // 预览图片
-  const handlePreviewImage = (detail: HistoryDetail) => {
-    const imageUrl = detail.originOssUrl || detail.previewOssUrl;
-    if (!imageUrl) {
-      ElMessage.warning('图片地址不存在');
-      return;
+  // 预览图片（点击放大按钮时触发 el-image 的点击）
+  const handlePreviewImageClick = (event: MouseEvent) => {
+    const target = event.target as HTMLElement;
+    const imageWrapper = target.closest('.image-wrapper');
+    if (imageWrapper) {
+      const imageElement = imageWrapper.querySelector('.el-image__inner') as HTMLElement;
+      if (imageElement) {
+        imageElement.click();
+      }
     }
-
-    // 设置预览图片URL并显示查看器
-    previewImageUrl.value = imageUrl;
-    showImageViewer.value = true;
   };
 
   // 切换收藏状态
@@ -1053,6 +1055,7 @@
               .info-text {
                 color: #86909c;
                 font-size: 12px;
+                font-family: 'PingFang SC';
               }
             }
 

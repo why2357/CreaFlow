@@ -398,6 +398,8 @@
 
       ElMessage.success('场景创建成功');
       addGroupDialog.value = false;
+      // 重置筛选为"全部"
+      selectedEpisodeId.value = null;
       await loadSceneData();
     } catch (error) {
       console.error('创建场景失败:', error);

@@ -238,8 +238,62 @@ class SSEManager {
     // 调用自定义消息处理器
     this.options.onMessage?.(data);
 
+    // 根据 messageType 分发不同的事件
+    if (data.messageType !== undefined && data.message) {
+      const message = data.message;
+
+      // messageType=1: 分镜头脚本生成完成
+      if (data.messageType === 1) {
+        console.log('[SSE] 分镜头脚本生成完成:', message);
+        window.dispatchEvent(
+          new CustomEvent('sse-script-update', {
+            detail: {
+              projectId: message.projectId || data.projectId,
+              episodeId: message.episodeId || data.episodeId,
+              taskStatus: message.taskStatus,
+              message: message
+            }
+          })
+        );
+      }
+
+      // messageType=2: 分镜头图片生成更新
+      if (data.messageType === 2) {
+        console.log('[SSE] 分镜头图片生成更新:', message);
+        window.dispatchEvent(
+          new CustomEvent('sse-image-update', {
+            detail: {
+              projectId: message.projectId || data.projectId,
+              episodeId: message.episodeId || data.episodeId,
+              taskStatus: message.taskStatus,
+              batchStatus: message.batchStatus,
+              episodeSceneItemInfoList: message.episodeSceneItemInfoList,
+              message: message
+            }
+          })
+        );
+      }
+
+      // messageType=3: 视频生成更新
+      if (data.messageType === 3) {
+        console.log('[SSE] 视频生成更新:', message);
+        window.dispatchEvent(
+          new CustomEvent('sse-video-update', {
+            detail: {
+              projectId: message.projectId || data.projectId,
+              episodeId: message.episodeId || data.episodeId,
+              taskStatus: message.taskStatus,
+              batchStatus: message.batchStatus,
+              episodeSceneItemInfoList: message.episodeSceneItemInfoList,
+              message: message
+            }
+          })
+        );
+      }
+    }
+
     // 显示通知（如果需要）
-    if (data.message) {
+    if (data.message && typeof data.message === 'string') {
       ElNotification({
         title: data.title || '消息',
         message: data.message,

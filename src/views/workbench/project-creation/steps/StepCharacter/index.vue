@@ -398,6 +398,8 @@
 
       ElMessage.success('角色创建成功');
       addGroupDialog.value = false;
+      // 重置筛选为"全部"
+      selectedEpisodeId.value = null;
       await loadCharacterData();
     } catch (error) {
       console.log('创建角色失败:', error);

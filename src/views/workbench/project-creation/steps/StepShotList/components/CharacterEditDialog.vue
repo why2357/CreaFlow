@@ -109,7 +109,7 @@
     }
   });
 
-  // 设置横向滚动
+  // 设置横向滚动（Ctrl+滚轮触发）
   const setupHorizontalScroll = () => {
     nextTick(() => {
       const scrollWrappers = document.querySelectorAll('.character-edit-dialog .costume-list');
@@ -117,8 +117,8 @@
       scrollWrappers.forEach((wrapper) => {
         const handleWheel = (e: Event) => {
           const wheelEvent = e as WheelEvent;
-          // 只处理垂直滚动
-          if (wheelEvent.deltaY !== 0) {
+          // 只处理按住 Ctrl 键的垂直滚动
+          if (wheelEvent.ctrlKey && wheelEvent.deltaY !== 0) {
             wheelEvent.preventDefault();
             // 将垂直滚动转换为横向滚动
             const element = wrapper as HTMLElement;

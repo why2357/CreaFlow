@@ -235,88 +235,73 @@
     }
   };
 
-  // 根据宽高比计算主图片的固定高度
+  // 根据宽高比计算主图片的高度
   const mainImageHeight = computed(() => {
-    // 竖版和正方形比例使用固定高度
-    const squareHeight = 260; // 1:1 的高度
-    const verticalHeight = 462; // 9:16 的高度
-    const defaultHeight = 320; // 横版默认高度
+    const baseSize = 280; // 基础尺寸 280px
 
-    const heightMap: Record<string, number> = {
-      '1:1': squareHeight, // 正方形固定高度 260px
-      '16:9': defaultHeight,
-      '9:16': verticalHeight,
-      '4:3': defaultHeight,
-      '3:4': 347 // 3:4 的高度
+    // 1:1 比例：宽高都是 280px
+    if (props.aspectRatio === '1:1') {
+      return baseSize;
+    }
+
+    // 其他比例：最小边固定为 280px，另一边按比例计算
+    const ratioMap: Record<string, { width: number; height: number }> = {
+      '16:9': { width: 16, height: 9 }, // 横版：高度固定 280，宽度按比例
+      '9:16': { width: 9, height: 16 }, // 竖版：宽度固定 280，高度按比例
+      '4:3': { width: 4, height: 3 }, // 横版：高度固定 280，宽度按比例
+      '3:4': { width: 3, height: 4 } // 竖版：宽度固定 280，高度按比例
     };
 
-    return heightMap[props.aspectRatio] || defaultHeight;
+    const ratio = ratioMap[props.aspectRatio] || { width: 16, height: 9 };
+
+    // 判断是横版还是竖版
+    if (ratio.width > ratio.height) {
+      // 横版：高度固定为 280，宽度按比例计算
+      return baseSize;
+    } else {
+      // 竖版：宽度固定为 280，高度按比例计算
+      return Math.round((baseSize * ratio.height) / ratio.width);
+    }
   });
 
   // 计算列宽的通用函数
-  const calculateColumnWidth = (imageAspectRatio: number) => {
-    // 固定宽度为 260px（用于竖版和正方形）
-    const fixedWidth = 260;
-    const containerHeight = 320;
+  const calculateColumnWidth = () => {
+    const baseSize = 280; // 基础尺寸 280px
 
-    // 根据项目配置的宽高比判断是否使用固定宽度
-    const ratioMap: Record<string, { useFixedWidth: boolean; ratio: number }> = {
-      '1:1': { useFixedWidth: true, ratio: 1 }, // 正方形使用固定宽度
-      '16:9': { useFixedWidth: false, ratio: 16 / 9 },
-      '9:16': { useFixedWidth: true, ratio: 9 / 16 }, // 竖版使用固定宽度
-      '4:3': { useFixedWidth: false, ratio: 4 / 3 },
-      '3:4': { useFixedWidth: true, ratio: 3 / 4 } // 竖版使用固定宽度
-    };
-
-    const config = ratioMap[props.aspectRatio] || { useFixedWidth: false, ratio: 16 / 9 };
-
-    // 如果使用固定宽度（竖版或正方形），返回固定宽度
-    if (config.useFixedWidth) {
-      return fixedWidth;
+    // 1:1 比例：宽度为 280px
+    if (props.aspectRatio === '1:1') {
+      return baseSize;
     }
 
-    // 横版比例根据实际图片宽高比计算宽度
-    const calculatedWidth = Math.round(containerHeight * imageAspectRatio);
-    const minWidth = 280;
-    const maxWidth = 500;
-    return Math.max(minWidth, Math.min(maxWidth, calculatedWidth));
+    // 其他比例：最小边固定为 280px，另一边按比例计算
+    const ratioMap: Record<string, { width: number; height: number }> = {
+      '16:9': { width: 16, height: 9 }, // 横版：高度固定 280，宽度按比例
+      '9:16': { width: 9, height: 16 }, // 竖版：宽度固定 280，高度按比例
+      '4:3': { width: 4, height: 3 }, // 横版：高度固定 280，宽度按比例
+      '3:4': { width: 3, height: 4 } // 竖版：宽度固定 280，高度按比例
+    };
+
+    const ratio = ratioMap[props.aspectRatio] || { width: 16, height: 9 };
+
+    // 判断是横版还是竖版
+    if (ratio.width > ratio.height) {
+      // 横版：高度固定为 280，宽度按比例计算
+      return Math.round((baseSize * ratio.width) / ratio.height);
+    } else {
+      // 竖版：宽度固定为 280
+      return baseSize;
+    }
   };
 
   // 计算空镜头高度的通用函数（根据项目配置的宽高比）
-  const calculateEmptyColumnHeight = (width: number) => {
-    // 根据项目配置的宽高比计算高度
-    const ratioMap: Record<string, number> = {
-      '1:1': 1,
-      '16:9': 16 / 9,
-      '9:16': 9 / 16,
-      '4:3': 4 / 3,
-      '3:4': 3 / 4
-    };
-
-    const aspectRatioValue = ratioMap[props.aspectRatio] || 16 / 9;
-    const calculatedHeight = Math.round(width / aspectRatioValue);
-
-    // 正方形比例使用固定高度 260px
-    if (props.aspectRatio === '1:1') {
-      return 260;
-    }
-
-    // 竖版比例使用更大的高度范围
-    const isVertical = props.aspectRatio === '9:16' || props.aspectRatio === '3:4';
-    if (isVertical) {
-      const minHeight = props.aspectRatio === '9:16' ? 462 : 347;
-      return Math.max(minHeight, calculatedHeight);
-    }
-
-    // 横版比例使用默认高度范围
-    const minHeight = 280;
-    const maxHeight = 320;
-    return Math.max(minHeight, Math.min(maxHeight, calculatedHeight));
+  const calculateEmptyColumnHeight = () => {
+    // 直接返回 mainImageHeight 的值，保持一致
+    return mainImageHeight.value;
   };
 
-  // 为空镜头设置默认高度（根据宽度计算）
-  const initializeEmptyColumnHeight = (itemId: number, width: number) => {
-    emptyColumnHeights.value[itemId] = calculateEmptyColumnHeight(width);
+  // 为空镜头设置默认高度
+  const initializeEmptyColumnHeight = (itemId: number) => {
+    emptyColumnHeights.value[itemId] = calculateEmptyColumnHeight();
   };
 
   // 获取已加载图片的平均宽度，用于空镜头
@@ -324,15 +309,7 @@
     const widths = Object.values(columnWidths.value);
     if (widths.length === 0) {
       // 如果没有任何已加载的图片，根据项目配置的宽高比返回默认宽度
-      const ratioMap: Record<string, number> = {
-        '1:1': 1,
-        '16:9': 16 / 9,
-        '9:16': 9 / 16,
-        '4:3': 4 / 3,
-        '3:4': 3 / 4
-      };
-      const defaultRatio = ratioMap[props.aspectRatio] || 16 / 9;
-      return calculateColumnWidth(defaultRatio);
+      return calculateColumnWidth();
     }
     // 返回平均宽度
     const sum = widths.reduce((acc, width) => acc + width, 0);
@@ -344,13 +321,8 @@
     const img = event.target as HTMLImageElement;
     if (!img) return;
 
-    // 获取图片的实际尺寸
-    const naturalWidth = img.naturalWidth;
-    const naturalHeight = img.naturalHeight;
-
-    // 根据图片宽高比计算实际显示宽度
-    const aspectRatio = naturalWidth / naturalHeight;
-    const finalWidth = calculateColumnWidth(aspectRatio);
+    // 根据项目配置的宽高比计算列宽
+    const finalWidth = calculateColumnWidth();
 
     // 更新列宽
     columnWidths.value[itemId] = finalWidth;
@@ -366,8 +338,8 @@
       // 如果没有图片，则使用平均宽度和计算的高度
       if (!item.selectImg?.previewOssUrl && !item.selectImg?.originOssUrl) {
         columnWidths.value[item.id] = averageWidth;
-        // 根据宽度计算对应的高度
-        initializeEmptyColumnHeight(item.id, averageWidth);
+        // 设置空镜头的高度
+        initializeEmptyColumnHeight(item.id);
       }
     });
   };

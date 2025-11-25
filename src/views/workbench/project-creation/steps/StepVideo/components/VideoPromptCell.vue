@@ -499,8 +499,12 @@
 
   // 判断是否正在生成中
   const isGenerating = computed(() => {
+    // 检查 historyVos 中是否有任何视频正在生成
     // taskStatus: 0-待执行 1-执行中
-    return props.video.taskStatus === 0 || props.video.taskStatus === 1;
+    if (props.video.historyVos && props.video.historyVos.length > 0) {
+      return props.video.historyVos.some((history) => history.taskStatus === 0 || history.taskStatus === 1);
+    }
+    return false;
   });
 
   // 生成视频
