@@ -351,11 +351,17 @@
   });
 
   // 监听 SSE 视频生成更新
-  useVideoUpdateListener((detail) => {
-    console.log('[视频] 收到 SSE 视频更新:', detail);
-    // 无感刷新视频列表
-    loadVideos(true);
-  });
+  useVideoUpdateListener(
+    (detail) => {
+      console.log('[视频] 收到 SSE 视频更新:', detail);
+      // 无感刷新视频列表
+      loadVideos(true);
+    },
+    {
+      projectId: projectStore.currentProjectId,
+      episodeId: selectedEpisodeId
+    }
+  );
 
   // 清理
   onBeforeUnmount(() => {

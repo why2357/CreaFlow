@@ -131,14 +131,26 @@ class SSEManager {
         buffer = lines.pop() || ''; // 保留不完整的行
 
         for (const line of lines) {
-          console.log('[SSE] 处理行:', JSON.stringify(line));
+          console.log('[SSE] 处理行原始内容:', line);
+          console.log('[SSE] 处理行JSON格式:', JSON.stringify(line));
+          console.log('[SSE] 行是否为空:', line.trim() === '');
+          console.log('[SSE] 行是否以data:开头:', line.trim().startsWith('data:'));
 
           // 空行表示消息结束
           if (line.trim() === '') {
+            console.log('[SSE] 遇到空行，当前累积数据:', currentData);
             if (currentData) {
               console.log('[SSE] 解析数据:', currentData);
               try {
-                const data = JSON.parse(currentData);
+                // 尝试反转义 JSON 字符串
+                let jsonStr = currentData;
+                // 如果数据被过度转义，尝试解析
+                if (jsonStr.includes('\\"')) {
+                  console.log('[SSE] 检测到转义的引号，尝试反转义');
+                  jsonStr = jsonStr.replace(/\\"/g, '"');
+                }
+                const data = JSON.parse(jsonStr);
+                console.log('[SSE] JSON 解析成功:', data);
                 this.handleMessage(data);
               } catch (error) {
                 console.error('[SSE] 解析 JSON 失败:', error, currentData);
@@ -152,17 +164,20 @@ class SSEManager {
           }
 
           // 处理事件类型
-          if (line.startsWith('event: ')) {
-            currentEvent = line.slice(7).trim();
+          if (line.startsWith('event:')) {
+            currentEvent = line.slice(6).trim();
             console.log('[SSE] 事件类型:', currentEvent);
             continue;
           }
 
-          // 处理数据
-          if (line.startsWith('data: ')) {
-            const dataStr = line.slice(6);
+          // 处理数据（支持有空格和没空格两种格式）
+          if (line.trim().startsWith('data:')) {
+            const dataStr = line.includes('data: ')
+              ? line.slice(line.indexOf('data: ') + 6)
+              : line.slice(line.indexOf('data:') + 5).trim();
             currentData += dataStr;
             console.log('[SSE] 数据片段:', dataStr);
+            console.log('[SSE] 当前累积数据:', currentData);
             continue;
           }
 
@@ -234,12 +249,16 @@ class SSEManager {
     if (!data) return;
 
     console.log('收到 SSE 消息:', data);
+    console.log('[SSE] messageType:', data.messageType);
+    console.log('[SSE] 是否有 message 字段:', !!data.message);
+    console.log('[SSE] message 内容:', data.message);
 
     // 调用自定义消息处理器
     this.options.onMessage?.(data);
 
     // 根据 messageType 分发不同的事件
     if (data.messageType !== undefined && data.message) {
+      console.log('[SSE] 进入事件分发逻辑，messageType:', data.messageType);
       const message = data.message;
 
       // messageType=1: 分镜头脚本生成完成
@@ -260,18 +279,21 @@ class SSEManager {
       // messageType=2: 分镜头图片生成更新
       if (data.messageType === 2) {
         console.log('[SSE] 分镜头图片生成更新:', message);
+        const eventDetail = {
+          projectId: message.projectId || data.projectId,
+          episodeId: message.episodeId || data.episodeId,
+          taskStatus: message.taskStatus,
+          batchStatus: message.batchStatus,
+          episodeSceneItemInfoList: message.episodeSceneItemInfoList,
+          message: message
+        };
+        console.log('[SSE] 分发 sse-image-update 事件，detail:', eventDetail);
         window.dispatchEvent(
           new CustomEvent('sse-image-update', {
-            detail: {
-              projectId: message.projectId || data.projectId,
-              episodeId: message.episodeId || data.episodeId,
-              taskStatus: message.taskStatus,
-              batchStatus: message.batchStatus,
-              episodeSceneItemInfoList: message.episodeSceneItemInfoList,
-              message: message
-            }
+            detail: eventDetail
           })
         );
+        console.log('[SSE] sse-image-update 事件已分发');
       }
 
       // messageType=3: 视频生成更新

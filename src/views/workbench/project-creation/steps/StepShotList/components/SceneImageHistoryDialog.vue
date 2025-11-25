@@ -170,7 +170,7 @@
             <!-- 历史组底部信息 -->
             <div class="history-group-footer">
               <div class="footer-info">
-                <span class="info-text">{{ getOperationTypeText(history.operationType) }}</span>
+                <span class="info-text" v-if="history.operationType == 2">编辑生成</span>
                 <span v-if="history.modelCode" class="info-text">{{ getModelNameByCode(history.modelCode) }}</span>
                 <span class="info-text">{{ history.ratio }}</span>
                 <span class="info-text">{{ history.createTime }}</span>
@@ -308,15 +308,6 @@
       5: '9:16'
     };
     return ratioMap[pictureRatio || 3] || '1:1';
-  };
-
-  // 操作类型映射
-  const getOperationTypeText = (operationType?: number): string => {
-    const operationTypeMap: Record<number, string> = {
-      1: '',
-      2: '编辑生成'
-    };
-    return operationTypeMap[operationType || 1] || '';
   };
 
   // 加载历史记录

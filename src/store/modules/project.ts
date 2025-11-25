@@ -472,10 +472,12 @@ export const useProjectStore = defineStore('project', {
      */
     async handleTextGenerationUpdate(message: any, projectId: number, episodeId: number) {
       console.log('[SSE] 文生文更新:', message);
-      // 文生文一般用于剧本生成，可能需要刷新剧本相关数据
-      if (this.currentProjectId) {
-        await this.loadProjectInfo(Number(this.currentProjectId));
-      }
+      // 发送事件通知，让分镜头列表组件刷新
+      window.dispatchEvent(
+        new CustomEvent('sse-image-update', {
+          detail: { message, projectId, episodeId }
+        })
+      );
     },
 
     /**

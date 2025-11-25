@@ -96,14 +96,17 @@ export function useImageUpdateListener(
   options: SSEListenerOptions = {}
 ) {
   const handleImageUpdate = (event: Event) => {
+    console.log('[SSE Listener] 收到 sse-image-update 事件');
     const customEvent = event as CustomEvent<SSEEventDetail>;
     const detail = customEvent.detail;
+    console.log('[SSE Listener] 事件详情:', detail);
 
     // 如果启用自动过滤（默认启用）
     if (options.autoFilter !== false) {
       // 获取当前的项目ID和剧集ID（支持响应式引用）
       const currentProjectId = unref(options.projectId);
       const currentEpisodeId = unref(options.episodeId);
+      console.log('[SSE Listener] 当前过滤条件 - projectId:', currentProjectId, 'episodeId:', currentEpisodeId);
 
       // 检查项目ID是否匹配
       if (currentProjectId && detail.projectId && Number(currentProjectId) !== Number(detail.projectId)) {
@@ -140,10 +143,12 @@ export function useImageUpdateListener(
   };
 
   onMounted(() => {
+    console.log('[SSE Listener] 注册 sse-image-update 监听器');
     window.addEventListener('sse-image-update', handleImageUpdate);
   });
 
   onBeforeUnmount(() => {
+    console.log('[SSE Listener] 移除 sse-image-update 监听器');
     window.removeEventListener('sse-image-update', handleImageUpdate);
   });
 }

@@ -117,7 +117,7 @@
   } from '@/api/workbench/episode';
   import type { EpisodeInfoResponseDto, EpisodeSceneItemInfo } from '@/api/workbench/episode/types';
   import type { Episode, Shot, ShotForm } from '@/api/workbench/project/types';
-  import { useImageUpdateListener } from '@/composables/useSSEListener';
+  import { useImageUpdateListener, useScriptUpdateListener } from '@/composables/useSSEListener';
   import { useProjectStore } from '@/store/modules/project';
   import { useUserStore } from '@/store/modules/user';
   import { convertModelsToOptions, getDefaultModel, getModelName, ratioToSize } from '@/utils/projectUtils';
@@ -241,6 +241,33 @@
       }
     }
   });
+
+  // 监听 SSE 脚本生成完成（messageType=1）
+  // 脚本生成完成后，需要刷新剧集列表和镜头列表
+  useScriptUpdateListener(
+    async (detail) => {
+      console.log('[分镜头] 收到 SSE 脚本生成完成，开始刷新数据:', detail);
+
+      // 更新任务状态
+      if (detail.taskStatus !== undefined) {
+        episodeTaskStatus.value = detail.taskStatus;
+      }
+
+      // 刷新剧集列表（更新剧集的任务状态等信息）
+      if (projectStore.currentProjectId) {
+        console.log('[分镜头] 刷新剧集列表');
+        await projectStore.loadProjectInfo(Number(projectStore.currentProjectId));
+      }
+
+      // 无感刷新分镜头列表
+      loadShots(true);
+    },
+    {
+      // 传入当前的项目ID和剧集ID的响应式引用，自动过滤不匹配的消息
+      projectId: projectStore.currentProjectId,
+      episodeId: selectedEpisodeId
+    }
+  );
 
   // 监听 SSE 图片生成更新（messageType=2）
   // 只有当消息的 projectId 和 episodeId 与当前页面匹配时，才会触发回调
