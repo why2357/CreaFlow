@@ -108,11 +108,11 @@
 </template>
 
 <script setup lang="ts">
-  import { chooseHistoryDetail, deleteHistoryDetail } from '@/api/workbench/episode';
+  import { chooseHistoryDetail, deleteHistory } from '@/api/workbench/episode';
   import type { VideoSceneItemInfo } from '@/api/workbench/episode/types';
   import generatingAnimation from '@/assets/lottie/video-generating.json';
   import { Delete, Download, RefreshRight } from '@element-plus/icons-vue';
-  import { ElMessage, ElMessageBox } from 'element-plus';
+  import { ElMessage } from 'element-plus';
   import { computed, ref } from 'vue';
   import { Vue3Lottie } from 'vue3-lottie';
   import VideoHistoryDialog from './VideoHistoryDialog.vue';
@@ -381,48 +381,25 @@
   const handleDelete = async (videoItem: any) => {
     console.log('videoItem', videoItem);
 
-    if (!videoItem.historyDetailId) {
+    if (!videoItem.id) {
       ElMessage.warning('缺少历史记录ID');
       return;
     }
 
+    // 设置操作中状态
+    isOperating.value = true;
+
     try {
-      await ElMessageBox.confirm('确定要删除这个视频吗？此操作不可恢复。', '删除确认', {
-        confirmButtonText: '确定删除',
-        cancelButtonText: '取消',
-        type: 'warning',
-        confirmButtonClass: 'el-button--danger',
-        center: true
-      });
+      // 直接调用删除历史主数据接口，不需要弹窗确认
+      await deleteHistory([videoItem.id]);
 
-      // 设置操作中状态
-      isOperating.value = true;
-      const loadingMessage = ElMessage.info({
-        message: '正在删除视频...',
-        duration: 0
-      });
-
-      try {
-        // 调用删除历史明细接口
-        await deleteHistoryDetail([videoItem.historyDetailId]);
-
-        loadingMessage.close();
-        ElMessage.success('删除成功');
-        emit('refresh');
-      } catch (deleteError: any) {
-        loadingMessage.close();
-        console.error('删除视频失败:', deleteError);
-        ElMessage.error(deleteError.message || '删除失败，请重试');
-      } finally {
-        isOperating.value = false;
-      }
+      ElMessage.success('删除成功');
+      emit('refresh');
     } catch (error: any) {
-      // 用户取消操作
-      if (error === 'cancel' || error === 'close') {
-        return;
-      }
-      console.error('删除操作失败:', error);
-      ElMessage.error('操作失败');
+      console.error('删除视频失败:', error);
+      ElMessage.error(error.message || '删除失败，请重试');
+    } finally {
+      isOperating.value = false;
     }
   };
 

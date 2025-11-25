@@ -122,7 +122,7 @@
   import { useUserStore } from '@/store/modules/user';
   import { convertModelsToOptions, getDefaultModel, getModelName, ratioToSize } from '@/utils/projectUtils';
   import { ElMessage, ElMessageBox } from 'element-plus';
-  import { computed, onMounted, ref, watch } from 'vue';
+  import { computed, onActivated, onMounted, ref, watch } from 'vue';
   import { Vue3Lottie } from 'vue3-lottie';
 
   // 导入组件
@@ -207,6 +207,14 @@
       // 如果没有当前剧集但有剧集列表，选择第一个
       selectedEpisodeId.value = projectStore.episodes[0].id;
       await loadShots();
+    }
+  });
+
+  // 当组件被 keep-alive 激活时触发（用户切换回该步骤时）
+  onActivated(async () => {
+    // 每次激活时重新加载数据
+    if (selectedEpisodeId.value) {
+      await loadShots(true); // 使用静默刷新
     }
   });
 
@@ -504,7 +512,6 @@
     }
 
     try {
-      loading.value = true;
       const res = await rematchCharacters(Number(selectedEpisodeId.value));
       const errorSceneNums = res.data?.errorSceneNums;
 
@@ -521,12 +528,10 @@
         ElMessage.success('角色匹配成功');
       }
 
-      // 重新加载分镜列表以显示更新后的数据
-      await loadShots();
+      // 静默刷新分镜列表以显示更新后的数据
+      await loadShots(true);
     } catch (error) {
       console.log('重新匹配角色失败:', error);
-    } finally {
-      loading.value = false;
     }
   };
 

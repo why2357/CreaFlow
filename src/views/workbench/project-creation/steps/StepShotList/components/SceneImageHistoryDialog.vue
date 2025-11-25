@@ -268,6 +268,7 @@
   const visible = ref(false);
   const loading = ref(false);
   const selectedHistoryDetail = ref<HistoryDetail | null>(null);
+  const initialSelectedHistoryDetailId = ref<number | null>(null); // 初始选中的图片ID
   const historyList = ref<HistoryGroup[]>([]);
   const showImageViewer = ref(false);
   const previewImageUrl = ref('');
@@ -287,6 +288,7 @@
         loadHistory();
       } else {
         selectedHistoryDetail.value = null;
+        initialSelectedHistoryDetailId.value = null;
       }
     }
   );
@@ -347,6 +349,8 @@
             createTime: data.selectHistory.createTime ? formatDate(String(data.selectHistory.createTime)) : '',
             isCollected: selectedItem.isCollect
           };
+          // 保存初始选中的图片ID
+          initialSelectedHistoryDetailId.value = selectedItem.historyDetailId || null;
         }
       }
 
@@ -551,6 +555,12 @@
   const handleConfirm = async () => {
     if (!selectedHistoryDetail.value || !selectedHistoryDetail.value.historyDetailId) {
       ElMessage.error('请选择图片');
+      return;
+    }
+
+    // 如果选中的图片没有变化，直接关闭弹窗，不调用接口
+    if (selectedHistoryDetail.value.historyDetailId === initialSelectedHistoryDetailId.value) {
+      handleClose();
       return;
     }
 

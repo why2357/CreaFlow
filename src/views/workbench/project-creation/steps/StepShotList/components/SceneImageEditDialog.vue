@@ -706,9 +706,12 @@
 
   .main-image-container {
     position: relative;
-    width: 500px;
-    height: 500px;
-    // background: #1a1a1a;
+    width: 39.06vw; // 500px / 1280px ≈ 39.06% 的视口宽度
+    height: 39.06vw; // 保持正方形
+    // max-width: 500px; // 最大宽度限制
+    max-height: 500px; // 最大高度限制
+    min-width: 300px; // 最小宽度保证可用性
+    min-height: 300px; // 最小高度保证可用性
     background: linear-gradient(0deg, rgba(0, 0, 0, 0.4) 0%, rgba(0, 0, 0, 0.4) 100%);
     border-radius: 8px;
     overflow: hidden;
@@ -774,7 +777,9 @@
     display: flex;
     gap: 12px;
     box-shadow: 0 4px 6px rgba(224, 231, 255, 0.25), 0 10px 15px rgba(224, 231, 255, 0.5);
-    width: 500px;
+    width: 39.06vw; // 500px / 1280px ≈ 39.06% 的视口宽度
+    // max-width: 500px; // 最大宽度限制
+    min-width: 300px; // 最小宽度保证可用性
   }
 
   // Reference images section (overlapping)

@@ -77,7 +77,12 @@
             </div>
 
             <!-- 状态指示圆点 -->
-            <div v-if="item.imgStatus !== undefined" class="status-dot" :class="getDotClass(item.imgStatus)"></div>
+            <div
+              v-if="item.imgStatus !== undefined"
+              class="status-dot"
+              :class="[getDotClass(item.imgStatus), { clickable: canApproveScene }]"
+              @click.stop="handleDotClick(item, $event)"
+            ></div>
           </div>
         </div>
 
@@ -183,6 +188,7 @@
 
 <script setup lang="ts">
   import type { WaterfallItem } from '@/api/workbench/episode/waterfall';
+  import { hasProjectPermission } from '@/utils/projectPermission';
   import { Loading } from '@element-plus/icons-vue';
   import { computed, onMounted, ref, watch } from 'vue';
   import SceneActions from '../../components/SceneActions.vue';
@@ -218,6 +224,9 @@
   const columnRefs = new Map<number, HTMLElement>();
   const replaceDialogVisible = ref(false);
   const replaceInfo = ref<{ basicId: number; historyDetailId: number } | null>(null);
+
+  // 权限检查
+  const canApproveScene = computed(() => hasProjectPermission(['scene-approval']));
 
   // 设置列引用
   const setColumnRef = (el: any, itemId: number) => {
@@ -489,6 +498,15 @@
     return hoveredHistoryImageId.value === historyImgId || activeDropdownImageId.value === historyImgId;
   };
 
+  // 点击小圆点触发评审
+  const handleDotClick = (item: WaterfallItem, event: MouseEvent) => {
+    // 检查权限，没有权限则不触发事件
+    if (!canApproveScene.value) {
+      return;
+    }
+    emit('review', item, event);
+  };
+
   // 处理滚轮事件：Ctrl + 滚轮实现左右滑动
   const handleWheel = (event: WheelEvent) => {
     if (event.ctrlKey && waterfallContainerRef.value) {
@@ -755,6 +773,21 @@
               width: 12px;
               height: 12px;
               border-radius: 50%;
+              transition: all 0.3s;
+
+              // 可点击样式
+              &.clickable {
+                cursor: pointer;
+
+                &:hover {
+                  transform: scale(1.2);
+                  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+                }
+
+                &:active {
+                  transform: scale(1.1);
+                }
+              }
 
               &.status-gray {
                 background-color: #c9cdd4;

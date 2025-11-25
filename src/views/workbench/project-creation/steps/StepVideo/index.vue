@@ -149,7 +149,7 @@
   import { useProjectStore } from '@/store/modules/project';
   import { useUserStore } from '@/store/modules/user';
   import { ElMessage, ElMessageBox } from 'element-plus';
-  import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue';
+  import { computed, nextTick, onActivated, onBeforeUnmount, onMounted, ref, watch } from 'vue';
   import { useVideoUpdateListener } from '@/composables/useSSEListener';
   import StoryboardReviewDialog from '../StepGridView/components/StoryboardReviewDialog.vue';
   import ImportTextDialog from './components/ImportTextDialog.vue';
@@ -340,6 +340,13 @@
     if (projectStore.currentEpisodeId) {
       selectedEpisodeId.value = projectStore.currentEpisodeId;
       await loadVideos();
+    }
+  });
+
+  // 当组件从 KeepAlive 缓存中激活时重新加载数据
+  onActivated(async () => {
+    if (selectedEpisodeId.value) {
+      await loadVideos(true); // 使用静默刷新
     }
   });
 

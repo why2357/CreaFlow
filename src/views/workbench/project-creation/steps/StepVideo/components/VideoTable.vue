@@ -26,14 +26,60 @@
             />
             <span class="shot-number-text">{{ $index + 1 }}</span>
             <!-- 留言数量显示 -->
-            <div
+            <el-popover
               v-if="row.commentCount && row.commentCount > 0"
-              class="comment-count-badge"
-              @click.stop="(event: MouseEvent) => handleViewComments(row, event)"
+              placement="bottom-start"
+              trigger="hover"
+              :width="382"
+              popper-class="comment-list-popover"
+              :offset="8"
+              @show="() => loadCommentsForVideo(row)"
             >
-              <svg-icon icon-class="fy-comment" class="comment-icon" />
-              <span class="count-text">{{ row.commentCount }}</span>
-            </div>
+              <template #reference>
+                <div class="comment-count-badge">
+                  <svg-icon icon-class="fy-comment" class="comment-icon" />
+                  <span class="count-text">{{ row.commentCount }}</span>
+                </div>
+              </template>
+
+              <div v-loading="hoverCommentLoading" class="comment-list">
+                <!-- 标题栏 -->
+                <div class="comment-header">
+                  <svg-icon icon-class="fy-comment" class="header-icon" />
+                  <span class="header-title">留言</span>
+                </div>
+
+                <!-- 留言列表 -->
+                <div v-if="hoverComments.length === 0" class="empty-state">
+                  <div class="empty-text">暂无留言</div>
+                </div>
+                <div v-else class="comment-items">
+                  <div v-for="comment in hoverComments" :key="comment.id" class="comment-item">
+                    <div
+                      class="avatar"
+                      :style="{
+                        background: getRoleBgColor(comment.roleKey),
+                        color: getRoleTextColor(comment.roleKey)
+                      }"
+                    >
+                      {{ getRoleShortName(comment.roleKey) }}
+                    </div>
+                    <div class="comment-content-wrapper">
+                      <div class="comment-info">
+                        <div>
+                          <span class="username">{{ comment.commentUsername || '匿名用户' }}</span>
+                          <span class="time">{{ formatTime(comment.createTime) }}</span>
+                        </div>
+                        <svg-icon @click="handleDeleteComment(comment.id!)" icon-class="fy-del" class="delete-icon" />
+                      </div>
+                      <div class="comment-bubble">
+                        <p class="comment-text">{{ comment.comment }}</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </el-popover>
           </div>
         </template>
       </el-table-column>
@@ -46,7 +92,7 @@
       </el-table-column>
 
       <!-- 画面描述列 -->
-      <el-table-column label="画面描述" min-width="400">
+      <el-table-column label="画面描述" min-width="600">
         <template #default="{ row }">
           <div class="scene-desc-cell">
             <div v-if="row.sceneDesc" class="desc-section">
@@ -99,6 +145,7 @@
       :basic-id="currentVideoForAction?.basicId || 0"
       :scene-type="2"
       :trigger-ref="commentListTriggerRef"
+      trigger-type="hover"
       @change="handleCommentChange"
     />
 
@@ -116,7 +163,9 @@
 <script setup lang="ts">
   import { editVideoPrompt } from '@/api/workbench/episode';
   import type { VideoSceneItemInfo } from '@/api/workbench/episode/types';
-  import { addScene, deleteScene } from '@/api/workbench/storyboard';
+  import { addScene, deleteScene, deleteSceneComment, getSceneCommentList } from '@/api/workbench/storyboard';
+  import type { SceneCommentVo } from '@/api/workbench/storyboard/types';
+  import { getRoleBgColor, getRoleShortName, getRoleTextColor } from '@/utils/roleUtils';
   import type { ElTable } from 'element-plus';
   import { ElMessage, ElMessageBox } from 'element-plus';
   import { computed, nextTick, ref } from 'vue';
@@ -176,6 +225,10 @@
   const commentTriggerRef = ref<HTMLElement>();
   const commentListTriggerRef = ref<HTMLElement>();
   const reviewTriggerRef = ref<HTMLElement>();
+
+  // Hover 留言相关状态
+  const hoverCommentLoading = ref(false);
+  const hoverComments = ref<SceneCommentVo[]>([]);
 
   // 当前选中的 ID 集合（用于本地状态管理）
   const selectedIdsSet = computed(() => new Set(props.selectedIds));
@@ -278,6 +331,70 @@
   // 留言数量变化
   const handleCommentChange = () => {
     emit('refresh');
+  };
+
+  // 加载视频的留言列表（用于 hover 弹窗）
+  const loadCommentsForVideo = async (video: VideoSceneItemInfo) => {
+    if (!video.basicId) {
+      return;
+    }
+
+    hoverCommentLoading.value = true;
+    hoverComments.value = [];
+
+    try {
+      const res = await getSceneCommentList({
+        basicId: video.basicId,
+        sceneType: 2
+      });
+      const allComments = res.data || [];
+      // 过滤无效评论并按创建时间降序排序，取最新的一条
+      const validComments = allComments.filter((comment) => comment && comment.id);
+      if (validComments.length > 0) {
+        const sortedComments = validComments.sort((a, b) => {
+          const timeA = new Date(a.createTime || 0).getTime();
+          const timeB = new Date(b.createTime || 0).getTime();
+          return timeB - timeA;
+        });
+        hoverComments.value = [sortedComments[0]];
+      }
+    } catch (error) {
+      console.error('加载留言列表失败:', error);
+      hoverComments.value = [];
+    } finally {
+      hoverCommentLoading.value = false;
+    }
+  };
+
+  // 删除留言（用于 hover 弹窗）
+  const handleDeleteComment = async (id: number) => {
+    try {
+      await ElMessageBox.confirm('确定要删除这条留言吗?', '删除留言', {
+        confirmButtonText: '确定',
+        cancelButtonText: '取消',
+        type: 'warning'
+      });
+
+      await deleteSceneComment([id]);
+      ElMessage.success('删除成功');
+      emit('refresh');
+    } catch (error: any) {
+      if (error !== 'cancel') {
+        console.error('删除留言失败:', error);
+      }
+    }
+  };
+
+  // 格式化时间 - 显示年月日 时:分
+  const formatTime = (time?: Date) => {
+    if (!time) return '';
+    const date = new Date(time);
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    const hour = String(date.getHours()).padStart(2, '0');
+    const minute = String(date.getMinutes()).padStart(2, '0');
+    return `${year}-${month}-${day} ${hour}:${minute}`;
   };
 
   // 插入镜头
@@ -624,5 +741,153 @@
         }
       }
     }
+  }
+
+  // 留言列表样式（用于 hover 弹窗）
+  .comment-list {
+    width: 100%;
+    background: #fff;
+
+    // 标题栏样式
+    .comment-header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 12px;
+      border-bottom: 1px solid #e5e6eb;
+      background: #f7f8fa;
+
+      .header-icon {
+        width: 16px;
+        height: 16px;
+        color: #5252ff;
+      }
+
+      .header-title {
+        font-size: 12px;
+        font-weight: 500;
+        color: #101828;
+        line-height: 12px;
+      }
+    }
+
+    // 空状态
+    .empty-state {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 40px 16px;
+
+      .empty-text {
+        font-size: 14px;
+        color: #86909c;
+      }
+    }
+
+    // 留言列表
+    .comment-items {
+      padding: 12px;
+
+      .comment-item {
+        display: flex;
+        gap: 12px;
+        align-items: flex-start;
+
+        // 头像样式
+        .avatar {
+          width: 32px;
+          height: 32px;
+          border-radius: 50%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-size: 12px;
+          font-weight: 600;
+          flex-shrink: 0;
+          line-height: 12px;
+          box-shadow: 0 2px 6px rgba(108, 92, 231, 0.2);
+        }
+
+        // 留言内容区
+        .comment-content-wrapper {
+          flex: 1;
+          min-width: 0;
+          display: flex;
+          flex-direction: column;
+          gap: 4px;
+
+          // 用户信息行
+          .comment-info {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+            height: 20px;
+
+            .username {
+              font-size: 12px;
+              font-weight: 600;
+              color: #1d2129;
+              line-height: 12px;
+              margin-right: 16px;
+            }
+
+            .time {
+              font-size: 12px;
+              font-weight: 400;
+              color: #86909c;
+              line-height: 12px;
+            }
+
+            // 删除图标
+            .delete-icon {
+              flex-shrink: 0;
+              width: 14px;
+              height: 14px;
+              color: #86909c;
+              cursor: pointer;
+              transition: color 0.2s;
+              margin-top: 2px;
+
+              &:hover {
+                color: #f53f3f;
+              }
+            }
+          }
+
+          // 留言气泡
+          .comment-bubble {
+            position: relative;
+            background: #f7f8fa;
+            padding: 10px 16px;
+            border-radius: 0 16px 16px 16px;
+            display: flex;
+            align-items: flex-start;
+            gap: 8px;
+
+            .comment-text {
+              flex: 1;
+              font-size: 12px;
+              font-weight: 400;
+              color: #4e5969;
+              line-height: 18px;
+              word-break: break-word;
+              white-space: pre-wrap;
+              margin: 0;
+            }
+          }
+        }
+      }
+    }
+  }
+</style>
+
+<style lang="scss">
+  .comment-list-popover {
+    padding: 0 !important;
+    border-radius: 8px !important;
+    overflow: hidden;
+    box-shadow: 0 4px 6px rgba(224, 231, 255, 0.25), 0 10px 15px rgba(224, 231, 255, 0.5) !important;
+    z-index: 10000 !important;
   }
 </style>

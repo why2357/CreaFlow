@@ -66,7 +66,12 @@
           </div>
 
           <!-- 状态指示圆点 -->
-          <div v-if="scene.imgStatus !== undefined" class="status-dot" :class="getDotClass(scene.imgStatus)"></div>
+          <div
+            v-if="scene.imgStatus !== undefined"
+            class="status-dot"
+            :class="[getDotClass(scene.imgStatus), { clickable: canApproveScene }]"
+            @click.stop="handleDotClick(scene, $event)"
+          ></div>
         </div>
 
         <!-- 留言数量显示 -->
@@ -85,9 +90,10 @@
 
 <script setup lang="ts">
   import type { StoryBoardSceneVo } from '@/api/workbench/storyboard/types';
+  import { hasProjectPermission } from '@/utils/projectPermission';
   import { Loading } from '@element-plus/icons-vue';
   import { ElMessage } from 'element-plus';
-  import { ref } from 'vue';
+  import { computed, ref } from 'vue';
   import SceneActions from '../../components/SceneActions.vue';
 
   interface Props {
@@ -114,6 +120,9 @@
   // 悬浮的卡片ID
   const hoveredCardId = ref<number | null>(null);
   const gridContainerRef = ref<HTMLElement>();
+
+  // 权限检查
+  const canApproveScene = computed(() => hasProjectPermission(['scene-approval']));
 
   // 卡片悬浮 - 使用 requestAnimationFrame 优化性能
   const handleCardHover = (scene: StoryBoardSceneVo) => {
@@ -216,6 +225,15 @@
   // 查看留言列表
   const handleViewComments = (scene: StoryBoardSceneVo, event: MouseEvent) => {
     emit('viewComments', scene, event);
+  };
+
+  // 点击小圆点触发评审
+  const handleDotClick = (scene: StoryBoardSceneVo, event: MouseEvent) => {
+    // 检查权限，没有权限则不触发事件
+    if (!canApproveScene.value) {
+      return;
+    }
+    emit('review', scene, event);
   };
 </script>
 
@@ -352,6 +370,20 @@
             height: 12px;
             border-radius: 50%;
             transition: all 0.3s;
+
+            // 可点击样式
+            &.clickable {
+              cursor: pointer;
+
+              &:hover {
+                transform: scale(1.2);
+                box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+              }
+
+              &:active {
+                transform: scale(1.1);
+              }
+            }
 
             // 状态颜色
             &.status-gray {
