@@ -124,7 +124,7 @@
             </div>
 
             <!-- 留言输入框 -->
-            <div class="comment-input-section" v-show="!props.sceneType">
+            <div class="comment-input-section">
               <el-input
                 v-model="commentText"
                 type="textarea"
@@ -700,6 +700,7 @@
 
       .content-details {
         flex: 1;
+        max-height: 340px;
         overflow-y: auto;
         padding: 0 24px 24px 24px;
 
