@@ -512,8 +512,8 @@
   // 计算生成视频列宽度 - 可以显示两个视频 + 更多按钮空间
   const getGeneratedVideoColumnWidth = () => {
     const singleVideoWidth = getVideoColumnWidth();
-    // 宽度 = 单个视频宽度 * 2 + 70px（更多按钮和间距）
-    return singleVideoWidth * 2 + 70;
+    // 宽度 = 单个视频宽度 * 2 + 第一个视频右边距(12px) + 更多按钮区域(20px右边距 + 24px按钮 + 20px左边距)
+    return singleVideoWidth * 2 + 12 + 64;
   };
 </script>
 

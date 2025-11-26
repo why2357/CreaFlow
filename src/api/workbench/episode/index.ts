@@ -527,3 +527,31 @@ export const editVideoPrompt = (data: EditVideoPromptRequest): AxiosPromise<void
     data
   });
 };
+
+// ==================== 导出功能接口 ====================
+
+/**
+ * 导出剧集图片(压缩包)
+ * @param episodeId 剧集ID
+ */
+export const exportEpisodeImages = (episodeId: number): AxiosPromise<Blob> => {
+  return request({
+    url: `/hivision/system/file-zip/episode`,
+    method: 'post',
+    data: { episodeId },
+    responseType: 'blob'
+  });
+};
+
+/**
+ * 导出剧集Excel表单
+ * @param episodeId 剧集ID
+ */
+export const exportEpisodeExcel = (episodeId: number): AxiosPromise<Blob> => {
+  return request({
+    url: `/hivision/system/episode-excel/export`,
+    method: 'post',
+    data: { episodeId },
+    responseType: 'blob'
+  });
+};

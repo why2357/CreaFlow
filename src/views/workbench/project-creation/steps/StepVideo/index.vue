@@ -876,8 +876,8 @@
         border-radius: 8px;
         background: #5252ff;
         color: #fff;
-
         font-size: 13px;
+        margin-left: 0;
       }
     }
 

@@ -2,7 +2,7 @@
   <div class="video-list-cell" :data-aspect-ratio="aspectRatio">
     <!-- 暂无视频 -->
     <div v-if="videoList.length === 0" class="empty-state">
-      <span class="empty-text">暂无生成视频</span>
+      <svg-icon icon-class="no-sence" style="width: 120px; height: 120px" />
     </div>
 
     <!-- 视频列表 -->

@@ -185,7 +185,7 @@
                 />
               </div>
               <div v-else class="scene-placeholder">
-                <img src="../../../../../../assets/images/no-sence.png" alt="暂无图片" class="placeholder-image" />
+                <svg-icon icon-class="no-sence" style="width: 120px; height: 120px" />
               </div>
             </div>
           </template>
@@ -1256,12 +1256,6 @@
             align-items: center;
             width: 100%;
             height: 100%;
-
-            .placeholder-image {
-              width: 80px;
-              height: 80px;
-              // opacity: 0.5;
-            }
           }
 
           // Hover操作按钮
@@ -1470,6 +1464,8 @@
           justify-content: center;
 
           .placeholder-image {
+            width: 120px;
+            height: 120px;
             object-fit: contain;
             opacity: 0.5;
           }

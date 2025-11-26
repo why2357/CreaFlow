@@ -88,6 +88,25 @@
             <el-icon :size="20"><Bell /></el-icon>
           </el-badge>
         </div> -->
+        <!-- 导出按钮 -->
+        <!-- <el-dropdown trigger="click" placement="bottom-end" @command="handleExportCommand">
+          <div class="export-button">
+            <span class="export-text">导出</span>
+          </div>
+          <template #dropdown>
+            <el-dropdown-menu>
+              <el-dropdown-item command="images">
+                <span>导出图片</span>
+              </el-dropdown-item>
+              <el-dropdown-item command="excel">
+                <span>导出表单</span>
+              </el-dropdown-item>
+              <el-dropdown-item command="video" disabled>
+                <span>导出视频</span>
+              </el-dropdown-item>
+            </el-dropdown-menu>
+          </template>
+        </el-dropdown> -->
         <UserProfileDropdown />
       </div>
     </div>
@@ -119,10 +138,11 @@
 <script setup lang="ts" name="ProjectCreation">
   import { useProjectStore } from '@/store/modules/project';
   import { Loading } from '@element-plus/icons-vue';
-  import { ElMessage } from 'element-plus';
+  import { ElLoading, ElMessage } from 'element-plus';
   import { computed, defineAsyncComponent, onBeforeUnmount, onMounted, ref } from 'vue';
   import { useRoute, useRouter } from 'vue-router';
 
+  import { exportEpisodeExcel, exportEpisodeImages } from '@/api/workbench/episode';
   import RechargeButton from '@/components/RechargeButton/index.vue';
   import UserProfileDropdown from '@/components/UserProfileDropdown/index.vue';
   import { closeProjectSSE, initProjectSSE } from '@/utils/sse';
@@ -323,6 +343,80 @@
   };
 
   /**
+   * 处理导出命令
+   * @param command 导出命令类型: images | excel | video
+   */
+  const handleExportCommand = async (command: string) => {
+    const currentEpisodeId = projectStore.currentEpisodeId;
+
+    if (!currentEpisodeId) {
+      ElMessage.warning('请先选择要导出的剧集');
+      return;
+    }
+
+    const loading = ElLoading.service({
+      lock: true,
+      text: '正在导出，请稍候...',
+      background: 'rgba(0, 0, 0, 0.7)'
+    });
+
+    try {
+      let blob: Blob;
+      let fileName: string;
+      // 从 episodeInfoList 中查找当前剧集的名称
+      const currentEpisodeInfo = projectStore.episodeInfoList.find((ep) => ep.episodeId === Number(currentEpisodeId));
+      const episodeName = currentEpisodeInfo?.episodeName || projectStore.currentEpisode?.name || '剧集';
+      const projectName = projectStore.projectName || '项目';
+      const episodeId = Number(currentEpisodeId);
+
+      if (command === 'images') {
+        // 导出图片压缩包
+        const response = await exportEpisodeImages(episodeId);
+        blob = response as unknown as Blob;
+        fileName = `${projectName}_${episodeName}.zip`;
+      } else if (command === 'excel') {
+        // 导出Excel表单
+        const response = await exportEpisodeExcel(episodeId);
+        blob = response as unknown as Blob;
+        fileName = `${projectName}_${episodeName}.xlsx`;
+      } else {
+        ElMessage.info('该功能暂未开放');
+        loading.close();
+        return;
+      }
+
+      // 创建下载链接并触发下载
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = fileName;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+
+      ElMessage.success('导出成功');
+    } catch (error: any) {
+      console.error('导出失败:', error);
+
+      // 处理blob错误响应
+      if (error.response?.data instanceof Blob) {
+        try {
+          const text = await error.response.data.text();
+          const errorData = JSON.parse(text);
+          ElMessage.error(errorData.msg || '导出失败');
+        } catch {
+          ElMessage.error('导出失败,请稍后重试');
+        }
+      } else {
+        ElMessage.error(error.message || '导出失败,请稍后重试');
+      }
+    } finally {
+      loading.close();
+    }
+  };
+
+  /**
    * 刷新充值按钮积分
    * 在生成图片或扣点后调用此方法
    */
@@ -337,6 +431,71 @@
 </script>
 
 <style scoped lang="scss">
+  .export-button {
+    display: flex;
+    gap: 6px;
+    height: 32px;
+    padding: 8px 16px;
+    justify-content: center;
+    align-items: center;
+    border-radius: 8px;
+    background: #5252ff;
+    color: #fff;
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s;
+
+    &:hover {
+      background: #6b6bff;
+      box-shadow: 0 4px 12px rgba(82, 82, 255, 0.3);
+      transform: translateY(-1px);
+    }
+
+    &:active {
+      transform: translateY(0);
+    }
+
+    .export-icon {
+      width: 14px;
+      height: 14px;
+      color: #fff;
+    }
+
+    .export-text {
+      white-space: nowrap;
+    }
+  }
+
+  // 下拉菜单样式
+  :deep(.el-dropdown-menu__item) {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 16px;
+
+    .menu-icon {
+      width: 16px;
+      height: 16px;
+      font-size: 16px;
+      color: #606266;
+      transition: color 0.3s;
+    }
+
+    &:hover {
+      background-color: #f5f7fa;
+      color: #5252ff;
+
+      .menu-icon {
+        color: #5252ff;
+      }
+    }
+
+    &.is-disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+  }
   .project-creation-container {
     position: relative;
     display: flex;

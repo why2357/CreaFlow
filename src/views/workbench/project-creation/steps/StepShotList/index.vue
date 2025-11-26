@@ -184,6 +184,9 @@
   const batchShotCount = ref(0);
   const batchGenerateLoading = ref(false);
 
+  // 标记是否已经完成首次加载（用于区分 onMounted 和 onActivated）
+  const isFirstLoad = ref(true);
+
   // 初始化
   onMounted(async () => {
     // 初始化默认模型
@@ -195,6 +198,7 @@
       shots.value = [];
       episodeTaskStatus.value = undefined;
       batchStatus.value = undefined;
+      isFirstLoad.value = false; // 标记首次加载完成
       return;
     }
 
@@ -207,10 +211,18 @@
       selectedEpisodeId.value = projectStore.episodes[0].id;
       await loadShots();
     }
+
+    // 标记首次加载完成
+    isFirstLoad.value = false;
   });
 
   // 当组件被 keep-alive 激活时触发（用户切换回该步骤时）
   onActivated(async () => {
+    // 如果是首次加载（onMounted 后立即触发的 onActivated），跳过
+    if (isFirstLoad.value) {
+      return;
+    }
+
     // 检查剧集列表是否为空
     if (projectStore.episodes.length === 0) {
       selectedEpisodeId.value = null;

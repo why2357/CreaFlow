@@ -171,7 +171,7 @@
       <!-- 其他状态/空状态：没有图片数据 -->
       <div v-else class="placeholder-container">
         <img
-          style="width: 80px; height: 80px"
+          style="width: 120px; height: 120px"
           src="../../../../../../assets/images/no-image.png"
           alt="暂无图片"
           class="placeholder-image"

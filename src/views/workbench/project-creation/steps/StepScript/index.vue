@@ -133,7 +133,7 @@
   import { Loading } from '@element-plus/icons-vue';
   import { ElMessage, ElMessageBox } from 'element-plus';
   import { debounce } from 'lodash-es';
-  import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
+  import { computed, onActivated, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 
   // 导入共享组件
   import AddEpisodeDialog from '../../components/AddEpisodeDialog.vue';
@@ -157,6 +157,9 @@
 
   // 新增剧集对话框
   const addEpisodeDialogVisible = ref(false);
+
+  // 标记是否已经完成首次加载（用于区分 onMounted 和 onActivated）
+  const isFirstLoad = ref(true);
 
   // 分页参数
   const pageSize = 20; // 每次加载段落数（增加到20以提升体验）
@@ -206,6 +209,22 @@
 
   // 初始化剧本内容
   onMounted(async () => {
+    // 刷新项目信息，确保获取最新的资源统计、进度等数据
+    if (projectStore.currentProjectId) {
+      await projectStore.loadProjectInfo(Number(projectStore.currentProjectId));
+    }
+    loadScript();
+    // 标记首次加载完成
+    isFirstLoad.value = false;
+  });
+
+  // 每次激活时刷新数据（支持 KeepAlive 缓存）
+  onActivated(async () => {
+    // 如果是首次加载（onMounted 后立即触发的 onActivated），跳过
+    if (isFirstLoad.value) {
+      return;
+    }
+
     // 刷新项目信息，确保获取最新的资源统计、进度等数据
     if (projectStore.currentProjectId) {
       await projectStore.loadProjectInfo(Number(projectStore.currentProjectId));

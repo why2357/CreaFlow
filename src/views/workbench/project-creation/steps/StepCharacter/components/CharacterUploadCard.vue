@@ -302,7 +302,8 @@
       }
     }
 
-    &:hover .upload-icon {
+    &:hover .upload-icon,
+    &.is-dragging .upload-icon {
       transform: translateY(-2px);
     }
 
