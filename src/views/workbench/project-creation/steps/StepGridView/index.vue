@@ -34,6 +34,7 @@
       :basic-id="currentScene?.id || 0"
       :scene-type="1"
       :trigger-ref="commentListTriggerRef"
+      trigger-type="hover"
       @change="handleCommentChange"
     />
 
@@ -65,7 +66,7 @@
   import type { StoryBoardSceneVo } from '@/api/workbench/storyboard/types';
   import { useProjectStore } from '@/store/modules/project';
   import { ElMessage, ElMessageBox } from 'element-plus';
-  import { ref, watch } from 'vue';
+  import { onActivated, ref, watch } from 'vue';
 
   // 导入组件
   import CommentDialog from '../StepShotList/components/CommentDialog.vue';
@@ -84,6 +85,9 @@
 
   // 加载状态
   const loading = ref(false);
+
+  // 防止重复加载的标记
+  let loadingPromise: Promise<void> | null = null;
 
   // 当前操作的场景
   const currentScene = ref<StoryBoardSceneVo | null>(null);
@@ -107,84 +111,49 @@
   const loadStoryBoard = async (silentRefresh = false) => {
     if (!selectedEpisodeId.value) return;
 
+    // 如果已经有正在进行的加载，直接返回该 Promise
+    if (loadingPromise) {
+      return loadingPromise;
+    }
+
     // 只在非静默刷新时显示加载状态
     if (!silentRefresh) {
       loading.value = true;
     }
 
-    try {
-      const res = await queryStoryBoard({
-        episodeId: Number(selectedEpisodeId.value),
-        sceneType: 1 // 根据你提供的参数，镜头类型为 2
-      });
+    // 创建加载 Promise
+    loadingPromise = (async () => {
+      try {
+        const res = await queryStoryBoard({
+          episodeId: Number(selectedEpisodeId.value),
+          sceneType: 1 // 根据你提供的参数，镜头类型为 2
+        });
 
-      if (res.data) {
-        // 确保每个场景的 commentCnt 字段都有初始值
-        const newScenes = res.data.map((scene) => ({
-          ...scene,
-          commentCnt: scene.commentCnt ?? 0
-        }));
-
-        // 如果是静默刷新，进行差异更新
-        if (silentRefresh && scenes.value.length > 0) {
-          // 创建一个 Map 用于快速查找（使用 id 作为 key）
-          const newScenesMap = new Map(newScenes.map((scene) => [scene.id, scene]));
-
-          // 更新现有场景数据
-          scenes.value.forEach((scene) => {
-            const newScene = newScenesMap.get(scene.id);
-            if (newScene) {
-              // 只更新可能变化的字段，保持对象引用
-              scene.imgStatus = newScene.imgStatus;
-              scene.commentCnt = newScene.commentCnt;
-              scene.sceneDesc = newScene.sceneDesc;
-              scene.sceneHint = newScene.sceneHint;
-              scene.dialogues = newScene.dialogues;
-              scene.originOssUrl = newScene.originOssUrl;
-              scene.previewOssUrl = newScene.previewOssUrl;
-              scene.selectImgMaterialId = newScene.selectImgMaterialId;
-              scene.envMaterialId = newScene.envMaterialId;
-            }
-          });
-
-          // 处理新增的场景
-          newScenes.forEach((newScene) => {
-            const existingIndex = scenes.value.findIndex((scene) => scene.id === newScene.id);
-            if (existingIndex === -1) {
-              scenes.value.push(newScene);
-            }
-          });
-
-          // 处理删除的场景
-          scenes.value = scenes.value.filter((scene) => newScenesMap.has(scene.id));
-
-          // 按照新数据的顺序重新排列（保持与服务端一致）
-          const sortedScenes: typeof scenes.value = [];
-          newScenes.forEach((newScene) => {
-            const existingScene = scenes.value.find((scene) => scene.id === newScene.id);
-            if (existingScene) {
-              sortedScenes.push(existingScene);
-            }
-          });
-          scenes.value = sortedScenes;
+        if (res.data) {
+          // 确保每个场景的 commentCnt 字段都有初始值，然后直接替换数据
+          scenes.value = res.data.map((scene) => ({
+            ...scene,
+            commentCnt: scene.commentCnt ?? 0
+          }));
         } else {
-          // 非静默刷新或初次加载，直接替换
-          scenes.value = newScenes;
+          scenes.value = [];
         }
-      } else {
-        scenes.value = [];
+      } catch (error) {
+        console.error('加载故事板失败:', error);
+        // 静默刷新失败时不清空数据
+        if (!silentRefresh) {
+          scenes.value = [];
+        }
+      } finally {
+        if (!silentRefresh) {
+          loading.value = false;
+        }
+        // 清除加载标记
+        loadingPromise = null;
       }
-    } catch (error) {
-      console.error('加载故事板失败:', error);
-      // 静默刷新失败时不清空数据
-      if (!silentRefresh) {
-        scenes.value = [];
-      }
-    } finally {
-      if (!silentRefresh) {
-        loading.value = false;
-      }
-    }
+    })();
+
+    return loadingPromise;
   };
 
   // 监听剧集变化
@@ -198,6 +167,13 @@
     },
     { immediate: true }
   );
+
+  // 当组件从 KeepAlive 缓存中激活时重新加载数据
+  onActivated(() => {
+    if (selectedEpisodeId.value) {
+      loadStoryBoard(true); // 使用静默刷新
+    }
+  });
 
   // 留言
   const handleComment = (scene: StoryBoardSceneVo, event: MouseEvent) => {

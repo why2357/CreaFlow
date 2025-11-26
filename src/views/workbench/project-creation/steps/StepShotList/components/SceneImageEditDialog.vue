@@ -95,7 +95,7 @@
               <!-- Bottom Controls Row -->
               <div class="bottom-controls">
                 <!-- Model Dropdown -->
-                <el-dropdown trigger="click" @command="handleModelChange">
+                <el-dropdown trigger="click" popper-class="scene-edit-model-dropdown" @command="handleModelChange">
                   <el-button class="model-btn">
                     {{ currentModelName }}
                     <svg-icon icon-class="fy-down" style="height: 16px; width: 16px; margin-left: 6px" />
@@ -1165,5 +1165,35 @@
 
   .stack-slide-move {
     transition: transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+
+  // Model button style
+  .model-btn {
+    height: 32px;
+    padding: 8px 12px;
+    background: #f7f8fa;
+    border: 1px solid #e5e6eb;
+    border-radius: 8px;
+    color: #1d2129;
+    font-size: 12px;
+    font-weight: 500;
+    transition: all 0.3s;
+
+    &:hover {
+      border-color: #5252ff;
+      background: #f3f3ff;
+    }
+
+    &:active {
+      border-color: #4242cc;
+      background: #e8e8ff;
+    }
+  }
+</style>
+
+<style lang="scss">
+  // Global style for the model dropdown (not scoped to ensure high z-index)
+  .scene-edit-model-dropdown {
+    z-index: 10000 !important;
   }
 </style>

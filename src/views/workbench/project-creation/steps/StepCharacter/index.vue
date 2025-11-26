@@ -275,9 +275,6 @@
 
   // 初始化
   onMounted(() => {
-    // 标记首次加载完成（在加载数据之前设置，防止onActivated重复调用）
-    isFirstLoad.value = false;
-
     // 等待项目初始化完成后再加载数据
     const waitForInit = () => {
       if (projectStore.isInitializing) {
@@ -285,8 +282,10 @@
         setTimeout(waitForInit, 50);
       } else {
         // 初始化完成，加载数据
-        loadCharacterData();
+        // loadCharacterData();
         setupHorizontalScroll();
+        // 加载数据后再标记首次加载完成，防止onActivated重复调用
+        isFirstLoad.value = false;
       }
     };
     waitForInit();
@@ -862,6 +861,7 @@
     position: relative;
     width: 100%;
     height: 240px;
+    min-width: 100px;
 
     &:hover {
       .costume-actions {
@@ -890,7 +890,7 @@
       position: absolute;
       bottom: 6px;
       left: 6px;
-      max-width: calc(100% - 80px);
+      max-width: 80px;
       padding: 4px 8px;
       overflow: hidden;
       color: #fff;

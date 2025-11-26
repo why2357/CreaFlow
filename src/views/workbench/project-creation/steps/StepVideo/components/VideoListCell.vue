@@ -757,7 +757,6 @@
 
       &:hover:not(.is-disabled) {
         background-color: #f3f3ff !important;
-        color: #5252ff;
 
         .el-icon {
           color: #5252ff;
@@ -767,18 +766,6 @@
       &.is-disabled {
         opacity: 0.5;
         cursor: not-allowed;
-      }
-
-      // 删除项特殊样式
-      &:last-child {
-        &:hover:not(.is-disabled) {
-          background-color: #fff2f0 !important;
-          color: #f5222d;
-
-          .el-icon {
-            color: #f5222d;
-          }
-        }
       }
     }
   }

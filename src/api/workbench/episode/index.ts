@@ -536,22 +536,32 @@ export const editVideoPrompt = (data: EditVideoPromptRequest): AxiosPromise<void
  */
 export const exportEpisodeImages = (episodeId: number): AxiosPromise<Blob> => {
   return request({
-    url: `/hivision/system/file-zip/episode`,
-    method: 'post',
-    data: { episodeId },
+    url: `/hivision/system/episode-export/episode-zip/${episodeId}`,
+    method: 'get',
     responseType: 'blob'
   });
 };
 
 /**
- * 导出剧集Excel表单
+ * 导出剧集Excel表单（图片）
  * @param episodeId 剧集ID
  */
 export const exportEpisodeExcel = (episodeId: number): AxiosPromise<Blob> => {
   return request({
-    url: `/hivision/system/episode-excel/export`,
-    method: 'post',
-    data: { episodeId },
+    url: `/hivision/system/episode-export/export-image-excel/${episodeId}`,
+    method: 'get',
+    responseType: 'blob'
+  });
+};
+
+/**
+ * 导出剧集Excel表单（视频）
+ * @param episodeId 剧集ID
+ */
+export const exportEpisodeVideoExcel = (episodeId: number): AxiosPromise<Blob> => {
+  return request({
+    url: `/hivision/system/episode-export/export-video-excel/${episodeId}`,
+    method: 'get',
     responseType: 'blob'
   });
 };

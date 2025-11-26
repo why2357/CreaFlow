@@ -137,7 +137,7 @@
                     <div
                       ref="commentTriggerRef"
                       class="action-icon comment-btn"
-                      @click.stop="handleShowComments(detail, $event)"
+                      @mouseenter="handleShowComments(detail, $event)"
                     >
                       <svg-icon icon-class="fy-comment" class="comment-icon" />
                       <span class="count-text">{{ detail.commentVoList?.length || 0 }}</span>
@@ -204,6 +204,7 @@
     :basic-id="commentBasicId"
     :scene-type="1"
     :trigger-ref="commentTriggerElement"
+    trigger-type="hover"
     :comment-list="currentCommentList"
     @change="handleCommentChange"
   />

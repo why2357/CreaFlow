@@ -15,34 +15,40 @@
     <div class="right-content">
       <!-- 顶部工具栏 -->
       <div class="toolbar">
-        <div class="left-tools">
-          <!-- 模型选择下拉框 -->
-          <el-dropdown trigger="click" @command="handleModelChange">
-            <el-button class="model-btn">
-              {{ currentModel }}
-              <svg-icon icon-class="fy-down" style="height: 16px; width: 16px; margin-left: 6px" />
-            </el-button>
-            <template #dropdown>
-              <el-dropdown-menu>
-                <el-dropdown-item v-for="model in modelOptions" :key="model.value" :command="model.value">
-                  {{ model.label }}
-                </el-dropdown-item>
-              </el-dropdown-menu>
-            </template>
-          </el-dropdown>
+        <div>
+          <div class="left-tools">
+            <!-- 模型选择下拉框 -->
+            <el-dropdown trigger="click" @command="handleModelChange">
+              <el-button class="model-btn">
+                {{ currentModel }}
+                <svg-icon icon-class="fy-down" style="height: 16px; width: 16px; margin-left: 6px" />
+              </el-button>
+              <template #dropdown>
+                <el-dropdown-menu>
+                  <el-dropdown-item v-for="model in modelOptions" :key="model.value" :command="model.value">
+                    {{ model.label }}
+                  </el-dropdown-item>
+                </el-dropdown-menu>
+              </template>
+            </el-dropdown>
 
-          <!-- 角色编辑按钮 -->
-          <el-button class="edit-role" @click="handleEditCharacters">
-            <svg-icon icon-class="fy-role" style="height: 16px; width: 16px; margin-right: 4px" />
-            角色编辑
-          </el-button>
-
-          <!-- 重新匹配角色按钮 -->
-          <el-tooltip content="重新匹配角色" placement="bottom">
-            <el-button class="refresh-btn" @click="handleRematchCharacters">
-              <svg-icon icon-class="fy-refresh" style="height: 16px; width: 16px" />
+            <!-- 角色编辑按钮 -->
+            <el-button class="edit-role" @click="handleEditCharacters">
+              <svg-icon icon-class="fy-role" style="height: 16px; width: 16px; margin-right: 4px" />
+              角色编辑
             </el-button>
-          </el-tooltip>
+
+            <!-- 重新匹配角色按钮 -->
+            <el-tooltip content="重新匹配角色" placement="bottom">
+              <el-button class="refresh-btn" @click="handleRematchCharacters">
+                <svg-icon icon-class="fy-refresh" style="height: 16px; width: 16px" />
+              </el-button>
+            </el-tooltip>
+          </div>
+        </div>
+        <div class="right-tools">
+          <!-- 导出按钮 -->
+          <ExportDropdown />
         </div>
       </div>
 
@@ -128,6 +134,7 @@
   // 导入组件
   import generatingAnimation from '@/assets/lottie/video-generating.json';
   import AddEpisodeDialog from '../../components/AddEpisodeDialog.vue';
+  import ExportDropdown from '../../components/ExportDropdown.vue';
   import EpisodeListPanel from '../StepScript/components/EpisodeListPanel.vue';
   import CharacterEditDialog from './components/CharacterEditDialog.vue';
   import PointsConfirmDialog from './components/PointsConfirmDialog.vue';

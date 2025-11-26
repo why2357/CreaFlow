@@ -127,6 +127,12 @@ export const useProjectStore = defineStore('project', {
      * @param forceStep 强制跳转到指定步骤（用于新建项目等场景，优先级高于工作流记录）
      */
     async initProject(projectId: string | number, forceStep?: number) {
+      // 清除可能残留的旧项目数据
+      this.currentEpisodeId = null;
+      this.currentEpisode = null;
+      this.episodeInfoList = [];
+      this.episodes = [];
+
       this.currentProjectId = projectId;
       this.loading = true;
       this.isInitializing = true; // 标记正在初始化

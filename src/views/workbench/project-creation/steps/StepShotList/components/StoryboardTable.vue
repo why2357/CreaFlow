@@ -28,7 +28,8 @@
               <div
                 v-if="row.commentCount && row.commentCount > 0"
                 class="comment-count-badge"
-                @click.stop="(event: MouseEvent) => handleViewComments(row, event)"
+                @mouseenter="(event: MouseEvent) => handleViewComments(row, event)"
+                @mouseleave="handleCommentMouseLeave"
               >
                 <svg-icon icon-class="fy-comment" class="comment-icon" />
 
@@ -252,6 +253,7 @@
       :basic-id="currentShotForAction?.basicId || 0"
       :scene-type="1"
       :trigger-ref="commentListTriggerRef"
+      trigger-type="hover"
       :comment-list="
         currentShotForAction?.commentInfo && typeof currentShotForAction.commentInfo === 'object'
           ? [currentShotForAction.commentInfo]
@@ -806,6 +808,11 @@
   // 留言数量变化
   const handleCommentChange = () => {
     emit('refresh');
+  };
+
+  // 鼠标离开留言徽章时关闭弹窗
+  const handleCommentMouseLeave = () => {
+    // hover 模式下不需要手动关闭，el-popover 会自动处理
   };
 
   // 插入镜头

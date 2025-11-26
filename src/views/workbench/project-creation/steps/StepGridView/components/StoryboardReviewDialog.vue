@@ -116,7 +116,7 @@
                 ref="commentTriggerElement"
                 class="comment-count-trigger"
                 :class="{ 'has-comments': commentCount > 0 }"
-                @click="handleShowComments"
+                @mouseenter="handleShowComments"
               >
                 <svg-icon icon-class="fy-comment" class="comment-icon" />
                 <span v-if="commentCount > 0" class="count-badge">{{ commentCount }}</span>
@@ -124,7 +124,7 @@
             </div>
 
             <!-- 留言输入框 -->
-            <div class="comment-input-section">
+            <div class="comment-input-section" v-show="!props.sceneType">
               <el-input
                 v-model="commentText"
                 type="textarea"
@@ -159,6 +159,7 @@
       :basic-id="currentScene?.id || 0"
       :scene-type="props.sceneType"
       :trigger-ref="commentTriggerElement"
+      trigger-type="hover"
       :comment-list="commentList"
       @change="handleCommentListChange"
     />

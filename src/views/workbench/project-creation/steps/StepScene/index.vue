@@ -218,7 +218,7 @@
   import { uploadFile } from '@/utils/uploadFile';
   import { Picture, Plus } from '@element-plus/icons-vue';
   import { ElMessage, ElMessageBox } from 'element-plus';
-  import { nextTick, onMounted, onUnmounted, ref } from 'vue';
+  import { nextTick, onActivated, onMounted, onUnmounted, ref } from 'vue';
   import AddItemDialog from '../StepCharacter/components/AddItemDialog.vue';
   import EpisodeSelector from '../components/EpisodeSelector.vue';
   import HorizontalScrollTabs from '../components/HorizontalScrollTabs.vue';
@@ -257,6 +257,9 @@
   const currentEditLibrary = ref<LibraryItemInfo | null>(null);
   const selectedEpisodeIds = ref<number[]>([]);
 
+  // 标记是否已经完成首次加载（用于区分 onMounted 和 onActivated）
+  const isFirstLoad = ref(true);
+
   // 获取显示的剧集（最多3个）
   const getDisplayEpisodes = (episodes: EpisodeInfo[]) => {
     return episodes.slice(0, 3);
@@ -288,11 +291,26 @@
         setTimeout(waitForInit, 50);
       } else {
         // 初始化完成，加载数据
-        loadSceneData();
+        // loadSceneData();
         setupHorizontalScroll();
+        // 加载数据后再标记首次加载完成，防止onActivated重复调用
+        isFirstLoad.value = false;
       }
     };
     waitForInit();
+  });
+
+  // 每次激活时刷新数据（支持 KeepAlive 缓存）
+  onActivated(() => {
+    // 如果是首次加载（onMounted 后立即触发的 onActivated），跳过
+    if (isFirstLoad.value) {
+      return;
+    }
+
+    // 重新加载场景数据，确保获取最新数据
+    if (!projectStore.isInitializing) {
+      loadSceneData();
+    }
   });
 
   // 设置横向滚动

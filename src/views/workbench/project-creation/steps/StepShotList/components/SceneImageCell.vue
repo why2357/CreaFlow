@@ -270,10 +270,10 @@
     return 'cover' as const;
   });
 
-  // 判断是否是本地上传的图片（不能收藏）
-  // 当只有一张图片且没有 historyDetailId 时，说明是本地上传或者裁剪的图片
+  // 判断是否是本地上传或裁剪的图片（不能收藏）
+  // 没有 historyDetailId 时，说明是本地上传或者裁剪的图片
   const isLocalUploadImage = computed(() => {
-    return props.materialInfoVoList.length === 1 && !props.historyDetailId;
+    return !props.historyDetailId;
   });
 
   // 是否有多张图片
@@ -292,25 +292,30 @@
   });
 
   // 没有图片时，查看历史、下载、剪裁、收藏、编辑操作禁用
-  // 或者 taskStatus === 3 且没有历史图片时，也禁用这些操作
+  // 只要有图片就可以查看历史，即使生成失败也可以
+  // 或者生成失败时(taskStatus === 3)，即使没有图片也可以查看历史
   const isHistoryDisabled = computed(() => {
-    return hasNoImages.value || props.taskStatus === null || (props.taskStatus === 3 && hasNoImages.value);
+    // 如果是生成失败状态，允许查看历史
+    if (props.taskStatus === 3) {
+      return false;
+    }
+    return hasNoImages.value;
   });
 
   const isDownloadDisabled = computed(() => {
-    return hasNoImages.value || props.taskStatus === null || (props.taskStatus === 3 && hasNoImages.value);
+    return hasNoImages.value;
   });
 
   const isCropDisabled = computed(() => {
-    return hasNoImages.value || props.taskStatus === null || (props.taskStatus === 3 && hasNoImages.value);
+    return hasNoImages.value;
   });
 
   const isFavoriteDisabled = computed(() => {
-    return hasNoImages.value || props.taskStatus === null || (props.taskStatus === 3 && hasNoImages.value);
+    return hasNoImages.value || props.taskStatus === null;
   });
 
   const isEditDisabled = computed(() => {
-    return hasNoImages.value || props.taskStatus === null || (props.taskStatus === 3 && hasNoImages.value);
+    return hasNoImages.value;
   });
 
   // 收藏功能是否可用（本地上传图片不能收藏，多张图片时也不能收藏）

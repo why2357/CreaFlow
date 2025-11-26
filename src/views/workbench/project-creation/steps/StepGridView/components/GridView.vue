@@ -79,7 +79,7 @@
         <div
           v-if="scene.commentCnt && scene.commentCnt > 0"
           class="comment-count-badge"
-          @click.stop="(event: MouseEvent) => handleViewComments(scene, event)"
+          @mouseenter="(event: MouseEvent) => handleViewComments(scene, event)"
         >
           <svg-icon icon-class="fy-comment" class="comment-icon" />
           <span class="count-text">{{ scene.commentCnt }}</span>
