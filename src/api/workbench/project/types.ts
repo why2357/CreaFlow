@@ -511,6 +511,7 @@ export interface LibrarySubInfo {
   episodeList?: EpisodeInfo[]; // 剧集标签
   materialVo: {
     id: number;
+    originOssUrl: string;
   };
 }
 

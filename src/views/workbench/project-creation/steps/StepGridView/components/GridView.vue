@@ -11,8 +11,8 @@
     <!-- 空状态 -->
     <div v-else-if="scenes.length === 0" class="empty-state">
       <div class="empty-content">
-        <el-icon :size="100" color="#c0c4cc"><Grid /></el-icon>
-        <p class="empty-text">暂无分镜</p>
+        <img style="width: 200px; height: 200px" src="../../../../../../assets/images/no-image-light.png" alt="" />
+        <p class="empty-text">暂无数据</p>
       </div>
     </div>
 
@@ -35,6 +35,7 @@
             class="shot-image"
             :preview-src-list="[scene.originOssUrl || scene.previewOssUrl]"
             :preview-teleported="true"
+            hide-on-click-modal
             :lazy="true"
           />
           <div v-else class="image-placeholder">
@@ -66,14 +67,19 @@
           </div>
 
           <!-- 状态指示圆点 -->
-          <div v-if="scene.imgStatus !== undefined" class="status-dot" :class="getDotClass(scene.imgStatus)"></div>
+          <div
+            v-if="scene.imgStatus !== undefined"
+            class="status-dot"
+            :class="[getDotClass(scene.imgStatus), { clickable: canApproveScene }]"
+            @click.stop="handleDotClick(scene, $event)"
+          ></div>
         </div>
 
         <!-- 留言数量显示 -->
         <div
           v-if="scene.commentCnt && scene.commentCnt > 0"
           class="comment-count-badge"
-          @click.stop="(event: MouseEvent) => handleViewComments(scene, event)"
+          @mouseenter="(event: MouseEvent) => handleViewComments(scene, event)"
         >
           <svg-icon icon-class="fy-comment" class="comment-icon" />
           <span class="count-text">{{ scene.commentCnt }}</span>
@@ -85,9 +91,10 @@
 
 <script setup lang="ts">
   import type { StoryBoardSceneVo } from '@/api/workbench/storyboard/types';
-  import { Grid, Loading } from '@element-plus/icons-vue';
+  import { hasProjectPermission } from '@/utils/projectPermission';
+  import { Loading } from '@element-plus/icons-vue';
   import { ElMessage } from 'element-plus';
-  import { ref, nextTick } from 'vue';
+  import { computed, ref } from 'vue';
   import SceneActions from '../../components/SceneActions.vue';
 
   interface Props {
@@ -114,6 +121,9 @@
   // 悬浮的卡片ID
   const hoveredCardId = ref<number | null>(null);
   const gridContainerRef = ref<HTMLElement>();
+
+  // 权限检查
+  const canApproveScene = computed(() => hasProjectPermission(['scene-approval']));
 
   // 卡片悬浮 - 使用 requestAnimationFrame 优化性能
   const handleCardHover = (scene: StoryBoardSceneVo) => {
@@ -217,6 +227,15 @@
   const handleViewComments = (scene: StoryBoardSceneVo, event: MouseEvent) => {
     emit('viewComments', scene, event);
   };
+
+  // 点击小圆点触发评审
+  const handleDotClick = (scene: StoryBoardSceneVo, event: MouseEvent) => {
+    // 检查权限，没有权限则不触发事件
+    if (!canApproveScene.value) {
+      return;
+    }
+    emit('review', scene, event);
+  };
 </script>
 
 <style scoped lang="scss">
@@ -266,7 +285,7 @@
       display: flex;
       flex-wrap: wrap;
       align-content: start;
-      gap: 20px;
+      gap: 10px;
       width: 100%;
       height: calc(100vh - 180px);
       overflow-y: auto;
@@ -352,6 +371,20 @@
             height: 12px;
             border-radius: 50%;
             transition: all 0.3s;
+
+            // 可点击样式
+            &.clickable {
+              cursor: pointer;
+
+              &:hover {
+                transform: scale(1.2);
+                box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+              }
+
+              &:active {
+                transform: scale(1.1);
+              }
+            }
 
             // 状态颜色
             &.status-gray {

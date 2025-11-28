@@ -28,7 +28,8 @@
               <div
                 v-if="row.commentCount && row.commentCount > 0"
                 class="comment-count-badge"
-                @click.stop="(event: MouseEvent) => handleViewComments(row, event)"
+                @mouseenter="(event: MouseEvent) => handleViewComments(row, event)"
+                @mouseleave="handleCommentMouseLeave"
               >
                 <svg-icon icon-class="fy-comment" class="comment-icon" />
 
@@ -54,7 +55,7 @@
               @upload="(file:any) => handleImageUpload(row, file)"
               @show-history="handleShowHistory(row)"
               @download="handleImageDownload(row)"
-              @crop="handleImageCrop(row)"
+              @crop="(imageUrl: string) => handleImageCrop(row, imageUrl)"
               @toggle-favorite="(isCollect: boolean) => handleToggleFavorite(row, isCollect)"
               @regenerate="handleImageRegenerate(row)"
               @refresh="emit('refresh')"
@@ -62,7 +63,7 @@
           </template>
         </el-table-column>
 
-        <el-table-column prop="sceneHint" label="画面描述" min-width="350">
+        <el-table-column prop="sceneHint" label="画面描述" min-width="600">
           <template #default="{ row }">
             <div v-if="!isEditing(row, 'sceneDesc')" class="editable-cell" @click="startEdit(row, 'sceneDesc')">
               <div
@@ -70,21 +71,18 @@
                 :class="{ 'empty-placeholder': !row.sceneDesc }"
                 v-html="highlightCharacterNames(row.sceneDesc, row.characters) || '点击输入特写镜头描述'"
               ></div>
-              <el-icon class="edit-icon"><Edit /></el-icon>
             </div>
             <div v-else class="editing-cell">
               <el-input
                 v-model="editingValue"
                 type="textarea"
                 :rows="3"
+                maxlength="300"
                 placeholder="请输入特写镜头描述"
-                @keydown="handleKeydown($event, row)"
+                @blur="handleBlur(row)"
+                @keydown="handleKeydown"
                 autofocus
               />
-              <div class="edit-actions">
-                <el-button size="small" @click.stop="cancelEdit">取消</el-button>
-                <el-button size="small" type="primary" @click.stop="saveEdit(row)">保存</el-button>
-              </div>
             </div>
             <div v-if="!isEditing(row, 'sceneHint')" class="editable-cell" @click="startEdit(row, 'sceneHint')">
               <div
@@ -92,21 +90,18 @@
                 :class="{ 'empty-placeholder': !row.sceneHint }"
                 v-html="highlightCharacterNames(row.sceneHint, row.characters) || '点击输入场景提示'"
               ></div>
-              <el-icon class="edit-icon"><Edit /></el-icon>
             </div>
             <div v-else class="editing-cell">
               <el-input
                 v-model="editingValue"
                 type="textarea"
                 :rows="3"
+                maxlength="300"
                 placeholder="请输入场景提示"
-                @keydown="handleKeydown($event, row)"
+                @blur="handleBlur(row)"
+                @keydown="handleKeydown"
                 autofocus
               />
-              <div class="edit-actions">
-                <el-button size="small" @click.stop="cancelEdit">取消</el-button>
-                <el-button size="small" type="primary" @click.stop="saveEdit(row)">保存</el-button>
-              </div>
             </div>
           </template>
         </el-table-column>
@@ -119,21 +114,18 @@
                 :class="{ 'empty-placeholder': !row.dialogue }"
                 v-html="highlightCharacterNames(row.dialogue, row.characters) || '点击输入台词'"
               ></div>
-              <el-icon class="edit-icon"><Edit /></el-icon>
             </div>
             <div v-else class="editing-cell">
               <el-input
                 v-model="editingValue"
                 type="textarea"
                 :rows="3"
+                maxlength="300"
                 placeholder="请输入台词"
-                @keydown="handleKeydown($event, row)"
+                @blur="handleBlur(row)"
+                @keydown="handleKeydown"
                 autofocus
               />
-              <div class="edit-actions">
-                <el-button size="small" @click.stop="cancelEdit">取消</el-button>
-                <el-button size="small" type="primary" @click.stop="saveEdit(row)">保存</el-button>
-              </div>
             </div>
           </template>
         </el-table-column>
@@ -147,6 +139,7 @@
                 :src="character.materialInfoVo?.previewOssUrl || character.materialInfoVo?.originOssUrl"
                 fit="contain"
                 class="character-avatar character-clickable"
+                hide-on-click-modal
                 @click="handleCharacterClick(row, character)"
               />
             </div>
@@ -157,6 +150,7 @@
           <template #default="{ row }">
             <div
               class="scene-location-cell"
+              :data-aspect-ratio="aspectRatio"
               @mouseenter="handleSceneHover(row, true)"
               @mouseleave="handleSceneHover(row, false)"
             >
@@ -188,10 +182,11 @@
                   fit="contain"
                   class="scene-location-image"
                   :preview-src-list="[row.envMaterialInfoVo.originOssUrl || row.envMaterialInfoVo.previewOssUrl]"
+                  hide-on-click-modal
                 />
               </div>
               <div v-else class="scene-placeholder">
-                <img src="../../../../../../assets/images/no-sence.png" alt="暂无图片" class="placeholder-image" />
+                <svg-icon icon-class="no-sence" style="width: 120px; height: 120px" />
               </div>
             </div>
           </template>
@@ -258,6 +253,7 @@
       :basic-id="currentShotForAction?.basicId || 0"
       :scene-type="1"
       :trigger-ref="commentListTriggerRef"
+      trigger-type="hover"
       :comment-list="
         currentShotForAction?.commentInfo && typeof currentShotForAction.commentInfo === 'object'
           ? [currentShotForAction.commentInfo]
@@ -284,7 +280,7 @@
   import type { EpisodeInfo, LibrarySubInfo, Shot } from '@/api/workbench/project/types';
   import { addScene, deleteScene } from '@/api/workbench/storyboard';
   import { uploadFile } from '@/utils/uploadFile';
-  import { Edit, Loading } from '@element-plus/icons-vue';
+  import { Loading } from '@element-plus/icons-vue';
   import { ElMessage, ElMessageBox } from 'element-plus';
   import { nextTick, ref } from 'vue';
   import CommentDialog from './CommentDialog.vue';
@@ -388,9 +384,9 @@
   };
 
   // 裁剪图片
-  const handleImageCrop = (shot: Shot) => {
+  const handleImageCrop = (shot: Shot, imageUrl: string) => {
     currentCropShot.value = shot;
-    currentCropImage.value = shot.sceneImage || '';
+    currentCropImage.value = imageUrl || shot.sceneImage || '';
     cropDialogVisible.value = true;
   };
 
@@ -565,12 +561,6 @@
     }
 
     try {
-      await ElMessageBox.confirm('确定要删除该场景图片吗？', '删除场景', {
-        confirmButtonText: '确定删除',
-        cancelButtonText: '取消',
-        type: 'warning'
-      });
-
       // 调用清除场景环境接口
       await clearSceneEnv({
         basicId: shot.basicId
@@ -580,10 +570,8 @@
       // 刷新数据
       emit('refresh');
     } catch (error: any) {
-      if (error !== 'cancel') {
-        console.error('删除场景失败:', error);
-        ElMessage.error('删除场景失败，请重试');
-      }
+      console.error('删除场景失败:', error);
+      ElMessage.error('删除场景失败，请重试');
     }
   };
 
@@ -599,14 +587,26 @@
     return editingCell.value?.shotId === shot.id && editingCell.value?.field === field;
   };
 
-  // 保存编辑
-  const saveEdit = async (shot: Shot) => {
+  // 取消编辑
+  const cancelEdit = () => {
+    editingCell.value = null;
+    editingValue.value = '';
+    originalValue.value = '';
+  };
+
+  // 重置所有编辑状态（供父组件调用）
+  const resetEditState = () => {
+    cancelEdit();
+  };
+
+  // 处理失焦事件 - 自动保存
+  const handleBlur = async (shot: Shot) => {
     if (!editingCell.value) return;
 
     const field = editingCell.value.field;
     const newValue = editingValue.value.trim();
 
-    // 如果值没有变化，直接取消编辑
+    // 如果值没有变化，直接退出编辑
     if (newValue === originalValue.value) {
       cancelEdit();
       return;
@@ -646,34 +646,23 @@
         shot.sceneDescription = `${sceneDesc}${sceneDesc && sceneHint ? '\n' : ''}${sceneHint}`;
       }
 
+      // 显示成功提示
+      ElMessage.success('更新成功');
+
       // 清除编辑状态
       editingCell.value = null;
       editingValue.value = '';
       originalValue.value = '';
     } catch (error) {
       console.error('保存失败:', error);
-      ElMessage.error('保存失败，请重试');
+      // 保存失败时不退出编辑状态，让用户可以继续编辑
     }
   };
 
-  // 取消编辑
-  const cancelEdit = () => {
-    editingCell.value = null;
-    editingValue.value = '';
-    originalValue.value = '';
-  };
-
-  // 重置所有编辑状态（供父组件调用）
-  const resetEditState = () => {
-    cancelEdit();
-  };
-
   // 处理键盘事件
-  const handleKeydown = (event: KeyboardEvent, shot: Shot) => {
-    if (event.key === 'Enter' && !event.shiftKey) {
+  const handleKeydown = (event: KeyboardEvent) => {
+    if (event.key === 'Escape') {
       event.preventDefault();
-      saveEdit(shot);
-    } else if (event.key === 'Escape') {
       cancelEdit();
     }
   };
@@ -819,6 +808,11 @@
   // 留言数量变化
   const handleCommentChange = () => {
     emit('refresh');
+  };
+
+  // 鼠标离开留言徽章时关闭弹窗
+  const handleCommentMouseLeave = () => {
+    // hover 模式下不需要手动关闭，el-popover 会自动处理
   };
 
   // 插入镜头
@@ -990,7 +984,7 @@
         position: relative;
         max-height: 100%;
         padding: 8px;
-        cursor: pointer;
+        cursor: text;
         transition: background-color 0.2s;
         overflow: hidden;
         display: flex;
@@ -998,32 +992,11 @@
 
         &:hover {
           background-color: #f5f7fa;
-
-          .edit-icon {
-            opacity: 1;
-          }
-        }
-
-        .edit-icon {
-          position: absolute;
-          top: 8px;
-          right: 8px;
-          opacity: 0;
-          color: #409eff;
-          font-size: 14px;
-          transition: opacity 0.2s;
         }
       }
 
       .editing-cell {
         padding: 8px;
-
-        .edit-actions {
-          display: flex;
-          justify-content: flex-end;
-          gap: 8px;
-          margin-top: 8px;
-        }
       }
 
       .scene-description {
@@ -1290,12 +1263,6 @@
             align-items: center;
             width: 100%;
             height: 100%;
-
-            .placeholder-image {
-              width: 80px;
-              height: 80px;
-              // opacity: 0.5;
-            }
           }
 
           // Hover操作按钮
@@ -1369,8 +1336,26 @@
         justify-content: center;
         align-items: center;
         width: 100%;
-        height: 100%;
+        height: 100%; // 填满父容器（190px）
         overflow: hidden;
+
+        // 根据宽高比设置最大高度限制，与画面列保持一致
+        &[data-aspect-ratio='16:9'],
+        &[data-aspect-ratio='4:3'] {
+          max-height: 190px; // 横版比例保持正常行高
+        }
+
+        &[data-aspect-ratio='9:16'] {
+          max-height: 462px; // 竖版 9:16，260px * (16/9) ≈ 462px
+        }
+
+        &[data-aspect-ratio='1:1'] {
+          max-height: 260px; // 正方形 1:1
+        }
+
+        &[data-aspect-ratio='3:4'] {
+          max-height: 347px; // 竖版 3:4，260px * (4/3) ≈ 347px
+        }
 
         .scene-hover-overlay {
           position: absolute;
@@ -1437,13 +1422,43 @@
           display: flex;
           align-items: center;
           justify-content: center;
+          overflow: hidden;
 
           .scene-location-image {
-            max-width: 100%;
-            max-height: 100%;
-            width: auto;
-            height: auto;
+            width: 100%;
+            height: 100%;
+            object-fit: contain; // 使用contain以完整显示图片，不裁剪
             cursor: pointer;
+          }
+        }
+
+        // 为 scene-image-container 和 scene-location-image 根据比例设置最大高度
+        &[data-aspect-ratio='16:9'],
+        &[data-aspect-ratio='4:3'] {
+          .scene-image-container,
+          .scene-location-image {
+            max-height: 190px; // 横版比例保持正常行高
+          }
+        }
+
+        &[data-aspect-ratio='9:16'] {
+          .scene-image-container,
+          .scene-location-image {
+            max-height: 462px; // 竖版 9:16
+          }
+        }
+
+        &[data-aspect-ratio='1:1'] {
+          .scene-image-container,
+          .scene-location-image {
+            max-height: 260px; // 正方形 1:1
+          }
+        }
+
+        &[data-aspect-ratio='3:4'] {
+          .scene-image-container,
+          .scene-location-image {
+            max-height: 347px; // 竖版 3:4
           }
         }
 
@@ -1456,6 +1471,8 @@
           justify-content: center;
 
           .placeholder-image {
+            width: 120px;
+            height: 120px;
             object-fit: contain;
             opacity: 0.5;
           }

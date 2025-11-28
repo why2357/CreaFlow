@@ -27,6 +27,11 @@ import Layout from '@/layout/index.vue';
 // 公共路由
 export const constantRoutes: RouteOption[] = [
   {
+    path: '/',
+    redirect: '/index',
+    hidden: true
+  },
+  {
     path: '/redirect',
     component: Layout,
     hidden: true,

@@ -38,7 +38,7 @@
                     :class="{ 'is-hovered': isHoveringImages }"
                     :style="getImageStackStyle(index, isHoveringImages)"
                   >
-                    <el-image :src="img.url" fit="cover" class="reference-thumbnail" />
+                    <el-image :src="img.url" fit="cover" class="reference-thumbnail" hide-on-click-modal />
 
                     <!-- Delete Button (shown on hover expand) -->
                     <Transition name="delete-fade">
@@ -60,23 +60,21 @@
                     @click.stop="triggerUpload"
                   >
                     <div class="add-more-content">
-                      <el-icon :size="uploadedImages.length === 0 ? 24 : 20" class="add-icon">
+                      <svg-icon icon-class="fy-add" style="height: 16px; width: 16px" />
+                      <!-- <el-icon :size="uploadedImages.length === 0 ? 16 : 21" class="add-icon">
                         <Plus />
-                      </el-icon>
+                      </el-icon> -->
                     </div>
                   </div>
                 </TransitionGroup>
               </div>
 
-              <!-- Circular Add Button (positioned at bottom-right, shown when collapsed and has images) -->
               <div
                 v-if="uploadedImages.length > 0 && uploadedImages.length < 3 && !isHoveringImages"
                 class="circular-add-button"
                 @click.stop="triggerUpload"
               >
-                <el-icon :size="16">
-                  <Plus />
-                </el-icon>
+                <svg-icon icon-class="fy-add" style="height: 18px; width: 18px" />
               </div>
             </div>
 
@@ -97,7 +95,7 @@
               <!-- Bottom Controls Row -->
               <div class="bottom-controls">
                 <!-- Model Dropdown -->
-                <el-dropdown trigger="click" @command="handleModelChange">
+                <el-dropdown trigger="click" popper-class="scene-edit-model-dropdown" @command="handleModelChange">
                   <el-button class="model-btn">
                     {{ currentModelName }}
                     <svg-icon icon-class="fy-down" style="height: 16px; width: 16px; margin-left: 6px" />
@@ -132,7 +130,7 @@
                       </defs>
                     </svg>
                   </el-icon>
-                  <span class="cost-text">{{ modelPoints }}/张</span>
+                  <span class="cost-text">{{ modelPoints }}/次</span>
                 </div>
 
                 <!-- Generate Button -->
@@ -156,7 +154,7 @@
   import { useProjectStore } from '@/store/modules/project';
   import { useUserStore } from '@/store/modules/user';
   import { uploadFile } from '@/utils/uploadFile';
-  import { Close, Picture, Plus } from '@element-plus/icons-vue';
+  import { Close, Picture } from '@element-plus/icons-vue';
   import { ElMessage } from 'element-plus';
   import { computed, ref, watch } from 'vue';
 
@@ -202,6 +200,7 @@
   const prompt = ref('');
   const fileInputRef = ref<HTMLInputElement>();
   const isHoveringImages = ref(false);
+  let hoverTimer: ReturnType<typeof setTimeout> | null = null;
 
   // Model points (from model list)
   const modelPoints = computed(() => {
@@ -222,32 +221,69 @@
 
   // Get stacked image styles (overlapping effect with expand animation)
   const getImageStackStyle = (index: number, isExpanded: boolean) => {
-    const rotations = [-10.567, -19.954, 0]; // Based on Figma transforms
+    // 旋转角度数组：针对3张图的情况
+    // index 0 (第一张上传) -> 最下面，不旋转 (0deg)
+    // index 1 (第二张上传) -> 中间，旋转 (-10.567deg)
+    // index 2 (第三张上传) -> 最上面，旋转 (-19.954deg)
+    const rotations = [0, -10.567, -19.954];
 
-    // Collapsed state: overlapping positions
-    const collapsedOffsets = [
-      { left: '12.32px', top: '7.38px' },
-      { left: '5.49px', top: '2.55px' },
-      { left: '0px', top: '0px' }
-    ];
+    // 堆叠顺序：第三张(index 2)在最上面，第二张(index 1)在中间，第一张(index 0)在最下面
+    const stackOrder = index + 1; // index 越大，zIndex 越大
 
-    // Expanded state: spread out horizontally with no rotation
-    const expandedOffsets = [
-      { left: '0px', top: '0px' },
-      { left: '75px', top: '0px' },
-      { left: '150px', top: '0px' }
-    ];
+    if (isExpanded) {
+      // 展开状态：横向紧密排列，无间距
+      const expandedOffsets = [
+        { left: '0px', top: '0px' },
+        { left: '60px', top: '0px' },
+        { left: '120px', top: '0px' }
+      ];
 
-    const offsets = isExpanded ? expandedOffsets : collapsedOffsets;
-    const rotation = isExpanded ? 0 : rotations[index];
+      // 展开状态的旋转角度：第一张不旋转，第二张向左旋转20度，第三张向右旋转20度
+      const expandedRotations = [-10, 3, 20];
 
-    return {
-      transform: `rotate(${rotation}deg)`,
-      zIndex: isExpanded ? 10 + index : index,
-      position: 'absolute' as const,
-      ...offsets[index],
-      transition: 'all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)'
-    };
+      return {
+        transform: `rotate(${expandedRotations[index]}deg)`,
+        transformOrigin: 'center center',
+        zIndex: 10 + index,
+        position: 'absolute' as const,
+        ...expandedOffsets[index],
+        transition: 'all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)'
+      };
+    } else {
+      // 收起状态：所有图片都围绕第一张图片的中心点 (30px, 40px) 旋转堆叠
+      // 图片尺寸：60px × 80px，中心点在 (30px, 40px)
+
+      // 位置偏移数组：
+      // index 0 (第一张) -> 最下面，位置基准 (0, 0)
+      // index 1 (第二张) -> 中间，偏移
+      // index 2 (第三张) -> 最上面，偏移更多
+      const collapsedOffsets = [
+        { left: '0px', top: '0px' }, // 第一张：最下面
+        { left: '5.49px', top: '2.55px' }, // 第二张：中间
+        { left: '12.32px', top: '7.38px' } // 第三张：最上面
+      ];
+
+      // 计算变换原点：所有图片都围绕第一张图片的中心点旋转
+      // 第一张图片：围绕自己的中心点 (50%, 50%)
+      // 第二张、第三张：围绕第一张图片的中心点，需要计算相对位置
+      let transformOrigin = 'center center';
+      if (index > 0) {
+        // 计算当前图片相对于第一张图片中心的偏移
+        const offset = collapsedOffsets[index];
+        const offsetX = -parseFloat(offset.left);
+        const offsetY = -parseFloat(offset.top);
+        transformOrigin = `calc(50% + ${offsetX}px) calc(50% + ${offsetY}px)`;
+      }
+
+      return {
+        transform: `rotate(${rotations[index]}deg)`,
+        transformOrigin, // 围绕第一张图片的中心点旋转
+        zIndex: stackOrder, // 第三张 zIndex 最大
+        position: 'absolute' as const,
+        ...collapsedOffsets[index],
+        transition: 'all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)'
+      };
+    }
   };
 
   // Get add button position style
@@ -273,8 +309,8 @@
 
     // Expanded state: position after last image
     const expandedOffsets = [
-      { left: '75px', top: '0px' }, // After 1 image
-      { left: '150px', top: '0px' } // After 2 images
+      { left: '60px', top: '0px' }, // After 1 image
+      { left: '120px', top: '0px' } // After 2 images
     ];
 
     if (isExpanded) {
@@ -328,6 +364,12 @@
 
   // Handle mouse enter on images (only trigger when hovering over actual images)
   const handleImagesMouseEnter = (event: MouseEvent) => {
+    // Clear any pending leave timer
+    if (hoverTimer) {
+      clearTimeout(hoverTimer);
+      hoverTimer = null;
+    }
+
     // Only set hover state if hovering over an actual image item, not the circular button
     const target = event.target as HTMLElement;
     if (!target.closest('.circular-add-button')) {
@@ -337,7 +379,14 @@
 
   // Handle mouse leave from images
   const handleImagesMouseLeave = () => {
-    isHoveringImages.value = false;
+    // Add delay before collapsing to prevent jitter when mouse moves between images
+    if (hoverTimer) {
+      clearTimeout(hoverTimer);
+    }
+    hoverTimer = setTimeout(() => {
+      isHoveringImages.value = false;
+      hoverTimer = null;
+    }, 150); // 150ms delay
   };
 
   // Remove image
@@ -433,28 +482,31 @@
 
     // Upload valid files
     try {
-      loading.value = true;
-
       for (const file of valid) {
-        // Get file suffix
-        const fileSuffix = file.name.substring(file.name.lastIndexOf('.'));
+        try {
+          // Get file suffix
+          const fileSuffix = file.name.substring(file.name.lastIndexOf('.'));
 
-        // Upload to OSS
-        const uploadRes = await uploadFile({
-          file,
-          fileSuffix,
-          originalFileName: file.name,
-          fileType: 'image',
-          resourceType: 2,
-          needSync: 0
-        });
+          // Upload to OSS
+          const uploadRes = await uploadFile({
+            file,
+            fileSuffix,
+            originalFileName: file.name,
+            fileType: 'image',
+            resourceType: 2,
+            needSync: 0
+          });
 
-        // Add to uploaded list
-        uploadedImages.value.push({
-          url: uploadRes.url || '',
-          ossId: Number(uploadRes.ossId),
-          file
-        });
+          // Add uploaded image to list
+          uploadedImages.value.push({
+            url: uploadRes.url || '',
+            ossId: Number(uploadRes.ossId),
+            file
+          });
+        } catch (error) {
+          console.error('上传失败:', error);
+          throw error;
+        }
       }
 
       ElMessage.success(`成功上传${valid.length}张图片`);
@@ -462,7 +514,6 @@
       console.error('上传失败:', error);
       ElMessage.error('上传失败');
     } finally {
-      loading.value = false;
       target.value = '';
     }
   };
@@ -472,11 +523,6 @@
     // Validation
     if (!props.basicId) {
       ElMessage.error('镜头ID不存在');
-      return;
-    }
-
-    if (uploadedImages.value.length === 0) {
-      ElMessage.warning('请至少上传一张图片');
       return;
     }
 
@@ -578,9 +624,12 @@
 
   .main-image-container {
     position: relative;
-    width: 500px;
-    height: 500px;
-    // background: #1a1a1a;
+    width: 39.06vw; // 500px / 1280px ≈ 39.06% 的视口宽度
+    height: 39.06vw; // 保持正方形
+    // max-width: 500px; // 最大宽度限制
+    max-height: 500px; // 最大高度限制
+    min-width: 300px; // 最小宽度保证可用性
+    min-height: 300px; // 最小高度保证可用性
     background: linear-gradient(0deg, rgba(0, 0, 0, 0.4) 0%, rgba(0, 0, 0, 0.4) 100%);
     border-radius: 8px;
     overflow: hidden;
@@ -646,7 +695,9 @@
     display: flex;
     gap: 12px;
     box-shadow: 0 4px 6px rgba(224, 231, 255, 0.25), 0 10px 15px rgba(224, 231, 255, 0.5);
-    width: 500px;
+    width: 39.06vw; // 500px / 1280px ≈ 39.06% 的视口宽度
+    // max-width: 500px; // 最大宽度限制
+    min-width: 300px; // 最小宽度保证可用性
   }
 
   // Reference images section (overlapping)
@@ -677,6 +728,7 @@
         box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
         cursor: pointer;
         transition: transform 0.3s ease;
+        position: relative;
 
         &:hover {
           transform: scale(1.133); // 68px / 60px ≈ 1.133 for 8px increase in width
@@ -711,6 +763,7 @@
           color: white;
           box-shadow: 0 2px 8px rgba(255, 77, 79, 0.4);
           transition: all 0.2s;
+          z-index: 3;
 
           &:hover {
             background: #ff7875;
@@ -1091,26 +1144,56 @@
     transform: scale(0);
   }
 
-  // Stack slide transition for adding/removing images
+  // Stack slide transition for adding/removing images (improved with bounce)
   .stack-slide-enter-active {
-    transition: all 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+    transition: all 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
   }
 
   .stack-slide-leave-active {
-    transition: all 0.3s ease;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.6, 1);
   }
 
   .stack-slide-enter-from {
     opacity: 0;
-    transform: scale(0) rotate(-20deg);
+    transform: scale(0.3) rotate(-15deg) translateY(-20px);
   }
 
   .stack-slide-leave-to {
     opacity: 0;
-    transform: scale(0.5) rotate(20deg);
+    transform: scale(0.5) rotate(10deg) translateY(10px);
   }
 
   .stack-slide-move {
-    transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+    transition: transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+
+  // Model button style
+  .model-btn {
+    height: 32px;
+    padding: 8px 12px;
+    background: #f7f8fa;
+    border: 1px solid #e5e6eb;
+    border-radius: 8px;
+    color: #1d2129;
+    font-size: 12px;
+    font-weight: 500;
+    transition: all 0.3s;
+
+    &:hover {
+      border-color: #5252ff;
+      background: #f3f3ff;
+    }
+
+    &:active {
+      border-color: #4242cc;
+      background: #e8e8ff;
+    }
+  }
+</style>
+
+<style lang="scss">
+  // Global style for the model dropdown (not scoped to ensure high z-index)
+  .scene-edit-model-dropdown {
+    z-index: 10000 !important;
   }
 </style>

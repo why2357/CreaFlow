@@ -37,7 +37,16 @@
             </div>
           </div>
           <!-- 上传按钮 -->
-          <div v-else class="tail-frame-upload" @click="handleTailFrameClick">
+          <div
+            v-else
+            class="tail-frame-upload"
+            :class="{ 'is-dragging': isDragging }"
+            @click="handleTailFrameClick"
+            @dragenter.prevent="handleDragEnter"
+            @dragover.prevent="handleDragOver"
+            @dragleave.prevent="handleDragLeave"
+            @drop.prevent="handleDrop"
+          >
             <el-icon :size="12" class="upload-icon">
               <Plus />
             </el-icon>
@@ -115,7 +124,15 @@
               />
             </el-select>
           </div>
-          <el-button type="primary" size="default" class="generate-btn" @click="handleGenerate"> 生成 </el-button>
+          <el-button
+            type="primary"
+            size="default"
+            class="generate-btn"
+            :disabled="isGenerating"
+            @click="handleGenerate"
+          >
+            生成
+          </el-button>
         </div>
       </div>
     </div>
@@ -132,7 +149,7 @@
   } from '@/api/workbench/episode/types';
   import { uploadFile } from '@/utils/uploadFile';
   import { ArrowDown, ArrowUp, Close, Plus } from '@element-plus/icons-vue';
-  import { ElMessage, ElMessageBox } from 'element-plus';
+  import { ElMessage } from 'element-plus';
   import { computed, nextTick, ref, watch } from 'vue';
 
   interface Props {
@@ -196,22 +213,64 @@
   const tailFrameInputRef = ref<HTMLInputElement>();
   const tailFrameUrl = ref<string>(props.video.endFrameOssUrl || '');
   const tailFrameOssId = ref<number | undefined>(props.video.endFrameOssId);
+  const isDragging = ref(false);
 
   // 点击尾帧按钮
   const handleTailFrameClick = () => {
     tailFrameInputRef.value?.click();
   };
 
-  // 处理尾帧上传
-  const handleTailFrameUpload = async (event: Event) => {
-    const target = event.target as HTMLInputElement;
-    const file = target.files?.[0];
-    if (!file) return;
+  // 拖拽计数器，防止子元素触发 dragleave 导致抖动
+  let dragCounter = 0;
 
+  // 处理拖拽进入
+  const handleDragOver = (event: DragEvent) => {
+    event.preventDefault();
+    event.stopPropagation();
+    isDragging.value = true;
+  };
+
+  // 处理拖拽进入（用于计数）
+  const handleDragEnter = (event: DragEvent) => {
+    event.preventDefault();
+    event.stopPropagation();
+    dragCounter++;
+    isDragging.value = true;
+  };
+
+  // 处理拖拽离开
+  const handleDragLeave = (event: DragEvent) => {
+    event.preventDefault();
+    event.stopPropagation();
+    dragCounter--;
+    // 只有当计数器为 0 时才真正离开
+    if (dragCounter === 0) {
+      isDragging.value = false;
+    }
+  };
+
+  // 处理拖拽放下
+  const handleDrop = async (event: DragEvent) => {
+    event.preventDefault();
+    event.stopPropagation();
+
+    // 重置状态和计数器
+    isDragging.value = false;
+    dragCounter = 0;
+
+    const files = event.dataTransfer?.files;
+    if (!files || files.length === 0) return;
+
+    const file = files[0];
+    // 复用上传逻辑
+    await uploadTailFrame(file);
+  };
+
+  // 上传尾帧的核心逻辑（供点击上传和拖拽上传共用）
+  const uploadTailFrame = async (file: File) => {
     // 验证文件类型
     if (!file.type.startsWith('image/')) {
       ElMessage.error('请上传图片文件');
-      target.value = '';
       return;
     }
 
@@ -219,7 +278,6 @@
     const maxSize = 10 * 1024 * 1024;
     if (file.size > maxSize) {
       ElMessage.error('图片大小不能超过10MB');
-      target.value = '';
       return;
     }
 
@@ -250,7 +308,6 @@
       });
     } catch (error: any) {
       ElMessage.error(error.message || '图片验证失败');
-      target.value = '';
       return;
     }
 
@@ -286,10 +343,19 @@
     } catch (error) {
       console.error('上传尾帧失败:', error);
       ElMessage.error('上传尾帧失败');
-    } finally {
-      // 清空input，允许重复选择同一文件
-      target.value = '';
     }
+  };
+
+  // 处理尾帧上传（点击上传）
+  const handleTailFrameUpload = async (event: Event) => {
+    const target = event.target as HTMLInputElement;
+    const file = target.files?.[0];
+    if (!file) return;
+
+    await uploadTailFrame(file);
+
+    // 清空input，允许重复选择同一文件
+    target.value = '';
   };
 
   // 移除尾帧
@@ -336,16 +402,6 @@
   // 可选的时长列表（根据选中的分辨率）
   const availableDurations = computed<DurationConfig[]>(() => {
     return currentResolution.value?.durationConfigs || [];
-  });
-
-  // 当前选中的时长对象
-  const currentDuration = computed(() => {
-    return availableDurations.value.find((d) => d.duration === selectedDuration.value);
-  });
-
-  // 当前选中配置的积分
-  const currentPoints = computed(() => {
-    return currentDuration.value?.points || 0;
   });
 
   // 格式化分辨率显示
@@ -410,6 +466,20 @@
     { immediate: true }
   );
 
+  // 监听父组件的 modelConfig 变化，同步到当前组件
+  watch(
+    () => props.modelConfig,
+    (newConfig) => {
+      if (newConfig) {
+        // 同步模型、分辨率、时长选择
+        selectedModelCode.value = newConfig.modelCode;
+        selectedResolution.value = newConfig.resolution;
+        selectedDuration.value = newConfig.duration;
+      }
+    },
+    { deep: true }
+  );
+
   // 监听video变化
   watch(
     () => props.video.videoPrompt,
@@ -427,6 +497,16 @@
     }
   );
 
+  // 判断是否正在生成中
+  const isGenerating = computed(() => {
+    // 检查 historyVos 中是否有任何视频正在生成
+    // taskStatus: 0-待执行 1-执行中
+    if (props.video.historyVos && props.video.historyVos.length > 0) {
+      return props.video.historyVos.some((history) => history.taskStatus === 0 || history.taskStatus === 1);
+    }
+    return false;
+  });
+
   // 生成视频
   const handleGenerate = async () => {
     if (!props.video.basicId) {
@@ -439,18 +519,14 @@
       return;
     }
 
-    try {
-      // 显示确认弹窗（显示积分消耗）
-      await ElMessageBox.confirm(
-        `目前共计 1 个镜头，点击"确认"帮您生成视频，预计消耗 ${currentPoints.value} 积分。`,
-        '视频生成确认',
-        {
-          confirmButtonText: '确认',
-          cancelButtonText: '取消',
-          type: 'info'
-        }
-      );
+    // 如果正在生成中，不允许重复生成
+    if (isGenerating.value) {
+      ElMessage.warning('视频生成中，请稍后...');
+      return;
+    }
 
+    try {
+      // 单个生成时直接生成，不弹确认弹窗
       // 先保存提示词（如果有变更）
       if (promptText.value !== (props.video.videoPrompt || '')) {
         emit('update', props.video.basicId, promptText.value);
@@ -468,7 +544,7 @@
       // 调用生成视频API
       await generateVideo(generateRequest);
 
-      ElMessage.success('视频生成任务已提交');
+      ElMessage.success('视频生成中，请稍候...');
 
       // 触发生成事件，通知父组件刷新列表数据
       emit('generate', {
@@ -479,12 +555,6 @@
         tailFrameOssId: tailFrameOssId.value
       });
     } catch (error: any) {
-      // 用户取消操作
-      if (error === 'cancel') {
-        console.log('用户取消了视频生成');
-        return;
-      }
-
       // API调用失败
       console.error('生成视频失败:', error);
       ElMessage.error(error?.message || '生成视频失败，请稍后重试');
@@ -581,15 +651,31 @@
               }
             }
 
+            // 拖拽状态样式
+            &.is-dragging {
+              background: #e8f3ff;
+              border: 2px dashed #5252ff;
+              transform: rotate(-4.971deg) scale(1.05);
+
+              .upload-text {
+                color: #5252ff;
+              }
+              .upload-icon {
+                color: #5252ff;
+                transform: scale(1.2);
+              }
+            }
+
             .upload-icon {
               color: #86909c;
-              transition: color 0.2s;
+              transition: color 0.2s, transform 0.2s;
             }
 
             .upload-text {
               margin-top: 6px;
               font-size: 12px;
               color: #86909c;
+              transition: color 0.2s;
             }
           }
 
@@ -673,9 +759,12 @@
         width: 210px;
       }
 
-      .resolution-selector,
+      .resolution-selector {
+        width: 90px;
+        margin-right: 6px;
+      }
       .duration-selector {
-        width: 75px;
+        width: 70px;
         margin-right: 6px;
       }
 

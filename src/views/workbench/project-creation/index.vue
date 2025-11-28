@@ -38,8 +38,10 @@
           <div class="step-item" style="display: flex; align-items: center">
             <!-- 第4步根据当前步骤动态显示图标和名称 -->
             <template v-if="step.key === 4">
-              <svg-icon class="step-icon" :icon-class="getCurrentStoryboardIcon()" />
-              <span class="step-name">{{ getCurrentStoryboardName() }}</span>
+              <div style="display: flex; align-items: center; cursor: pointer" @click.stop="handleStoryboardClick">
+                <svg-icon class="step-icon" :icon-class="getCurrentStoryboardIcon()" />
+                <span class="step-name" style="margin-left: 6px">{{ getCurrentStoryboardName() }}</span>
+              </div>
               <el-dropdown
                 trigger="hover"
                 placement="bottom-end"
@@ -117,14 +119,14 @@
 <script setup lang="ts" name="ProjectCreation">
   import { useProjectStore } from '@/store/modules/project';
   import { Loading } from '@element-plus/icons-vue';
-  import { ElMessage, ElMessageBox } from 'element-plus';
+  import { ElMessage } from 'element-plus';
   import { computed, defineAsyncComponent, onBeforeUnmount, onMounted, ref } from 'vue';
   import { useRoute, useRouter } from 'vue-router';
 
   import RechargeButton from '@/components/RechargeButton/index.vue';
   import UserProfileDropdown from '@/components/UserProfileDropdown/index.vue';
+  import { closeProjectSSE, initProjectSSE } from '@/utils/sse';
   import AddEpisodeDialog from './components/AddEpisodeDialog.vue';
-  import { initProjectSSE, closeProjectSSE } from '@/utils/sse';
 
   // 懒加载步骤组件
   const StepScript = defineAsyncComponent(() => import('./steps/StepScript/index.vue'));
@@ -219,6 +221,10 @@
         // 处理接收到的 SSE 消息
         projectStore.handleSSEUpdate(data);
       });
+
+      // 注册浏览器/标签页关闭事件监听
+      window.addEventListener('beforeunload', handleBeforeUnload);
+      window.addEventListener('pagehide', handlePageHide);
     } else {
       ElMessage.error('项目ID不存在');
       router.push('/workbench');
@@ -248,24 +254,32 @@
   onBeforeUnmount(async () => {
     // 关闭 SSE 连接
     await closeProjectSSE();
+
+    // 移除事件监听
+    window.removeEventListener('beforeunload', handleBeforeUnload);
+    window.removeEventListener('pagehide', handlePageHide);
   });
+
+  // 处理浏览器/标签页关闭事件
+  const handleBeforeUnload = () => {
+    console.log('检测到标签页/浏览器即将关闭，断开 SSE 连接');
+    // 同步调用关闭连接（beforeunload 中异步操作可能不会完成）
+    closeProjectSSE();
+  };
+
+  // 处理页面隐藏事件（更可靠的方式）
+  const handlePageHide = () => {
+    console.log('检测到页面隐藏/卸载，断开 SSE 连接');
+    closeProjectSSE();
+  };
 
   // 返回工作台
   const handleBack = async () => {
-    // router.push('/index');
-    try {
-      await ElMessageBox.confirm('确定要返回工作台吗?未保存的数据将丢失', '提示', {
-        confirmButtonText: '确定',
-        cancelButtonText: '取消',
-        type: 'warning'
-      });
-      // 关闭 SSE 连接
-      await closeProjectSSE();
-      projectStore.resetProject();
-      router.push('/index');
-    } catch {
-      // 用户取消
-    }
+    // 直接返回工作台，不提示确认
+    // 关闭 SSE 连接
+    await closeProjectSSE();
+    projectStore.resetProject();
+    router.push('/index');
   };
 
   // 新增剧集成功回调
@@ -281,6 +295,13 @@
     if (step === projectStore.currentStep) {
       return;
     }
+
+    // 如果点击的是分镜头步骤(4)，且当前已经在分镜头相关步骤(4/5/6)中，不执行跳转
+    // 用户应该使用下拉菜单来切换具体的视图
+    if (step === 4 && projectStore.isInStoryboardStep) {
+      return;
+    }
+
     await projectStore.goToStep(step);
   };
 
@@ -295,6 +316,30 @@
     const targetStep = stepMap[viewType];
     if (targetStep) {
       await projectStore.goToStep(targetStep);
+    }
+  };
+
+  // 点击分镜表标签的处理逻辑
+  const handleStoryboardClick = async () => {
+    const currentStep = projectStore.currentStep;
+
+    // 如果当前已经在分镜表步骤（4、5、6），则循环切换
+    if (currentStep === 4 || currentStep === 5 || currentStep === 6) {
+      let nextStep: number;
+
+      // 循环切换逻辑
+      if (currentStep === 4) {
+        nextStep = 5; // 分镜头 -> 故事板
+      } else if (currentStep === 5) {
+        nextStep = 6; // 故事板 -> 瀑布流
+      } else {
+        nextStep = 4; // 瀑布流 -> 分镜头
+      }
+
+      await projectStore.goToStep(nextStep);
+    } else {
+      // 如果不在分镜表步骤，则跳转到分镜头（步骤4）
+      await projectStore.goToStep(4);
     }
   };
 

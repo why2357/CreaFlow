@@ -47,24 +47,20 @@ export const usePermissionStore = defineStore('permission', () => {
   const setSidebarRouters = (routes: RouteOption[]): void => {
     // 合并静态菜单和动态菜单
     const mergedRoutes = [...staticMenus.value, ...routes];
-    console.log('Setting sidebar routers:', mergedRoutes);
     sidebarRouters.value = mergedRoutes;
   };
 
   const generateRoutes = async (): Promise<RouteOption[]> => {
     const res = await getRouters();
     const { data } = res;
-    console.log('[generateRoutes] 原始路由数据:', data);
 
     const sdata = JSON.parse(JSON.stringify(data));
     const rdata = JSON.parse(JSON.stringify(data));
     const defaultData = JSON.parse(JSON.stringify(data));
 
     const sidebarRoutes = filterAsyncRouter(sdata);
-    console.log('[generateRoutes] 处理后的侧边栏路由:', sidebarRoutes);
 
     const rewriteRoutes = filterAsyncRouter(rdata, undefined, true);
-    console.log('[generateRoutes] 重写路由:', rewriteRoutes);
 
     const defaultRoutes = filterAsyncRouter(defaultData);
     const asyncRoutes = filterDynamicRoutes(dynamicRoutes);
@@ -74,7 +70,6 @@ export const usePermissionStore = defineStore('permission', () => {
 
     // 将处理后的路由添加到 router
     rewriteRoutes.forEach((route) => {
-      console.log('[generateRoutes] 添加路由到 router:', route.path, route);
       router.addRoute(route);
     });
 
@@ -153,9 +148,7 @@ export const usePermissionStore = defineStore('permission', () => {
   };
   // 初始化静态菜单
   const initStaticMenus = (): void => {
-    console.log('Initializing static menus:', staticMenus.value);
     setSidebarRouters([]);
-    console.log('After init, sidebarRouters:', sidebarRouters.value);
   };
 
   return {
@@ -212,12 +205,6 @@ export const loadView = (view: any) => {
   // 如果找不到对应的组件，输出警告信息
   if (!res) {
     console.warn(`[loadView] 无法找到组件: ${view} (标准化后: ${normalizedView})`);
-    console.log(
-      '[loadView] 可用的组件路径:',
-      Object.keys(modules)
-        .map((p) => p.split('views/')[1]?.split('.vue')[0])
-        .filter(Boolean)
-    );
   }
 
   return res;

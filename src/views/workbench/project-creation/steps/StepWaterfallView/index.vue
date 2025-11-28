@@ -66,7 +66,7 @@
   import { addScene, deleteScene } from '@/api/workbench/storyboard';
   import { useProjectStore } from '@/store/modules/project';
   import { ElMessage, ElMessageBox } from 'element-plus';
-  import { computed, ref, watch } from 'vue';
+  import { computed, onActivated, ref, watch } from 'vue';
 
   // 导入组件
   import CommentDialog from '../StepShotList/components/CommentDialog.vue';
@@ -96,6 +96,9 @@
   // 加载状态
   const loading = ref(false);
 
+  // 防止重复加载的标记
+  let loadingPromise: Promise<void> | null = null;
+
   // 收藏筛选状态
   const isCollectFilter = ref(false);
 
@@ -120,90 +123,53 @@
   const loadWaterfallData = async (silentRefresh = false) => {
     if (!selectedEpisodeId.value) return;
 
+    // 如果已经有正在进行的加载，直接返回该 Promise
+    if (loadingPromise) {
+      return loadingPromise;
+    }
+
     // 只在非静默刷新时显示加载状态
     if (!silentRefresh) {
       loading.value = true;
     }
 
-    try {
-      const params: any = {
-        episodeId: Number(selectedEpisodeId.value)
-      };
+    // 创建加载 Promise
+    loadingPromise = (async () => {
+      try {
+        const params: any = {
+          episodeId: Number(selectedEpisodeId.value)
+        };
 
-      // 如果启用了收藏筛选，添加 isCollect 参数
-      if (isCollectFilter.value) {
-        params.isCollect = true;
-      }
-
-      const res = await getWaterfallList(params);
-
-      if (res.data) {
-        const newData = res.data;
-
-        // 如果是静默刷新，进行差异更新
-        if (silentRefresh && waterfallData.value.length > 0) {
-          // 创建一个 Map 用于快速查找（使用 id 作为 key）
-          const newDataMap = new Map(newData.map((item) => [item.id, item]));
-
-          // 更新现有数据
-          waterfallData.value.forEach((item) => {
-            const newItem = newDataMap.get(item.id);
-            if (newItem) {
-              // 只更新可能变化的字段，保持对象引用
-              item.selectImg = newItem.selectImg; // 重要：更新当前选中的图片
-              item.selectImgMaterialId = newItem.selectImgMaterialId;
-              item.historyImgs = newItem.historyImgs;
-              item.imgStatus = newItem.imgStatus;
-              item.isCollect = newItem.isCollect;
-              item.commentCount = newItem.commentCount;
-              item.commentInfo = newItem.commentInfo;
-              item.sceneDesc = newItem.sceneDesc;
-              item.sceneHint = newItem.sceneHint;
-              item.dialogues = newItem.dialogues;
-              item.characterClothingInfoList = newItem.characterClothingInfoList;
-              item.envMaterialInfoVo = newItem.envMaterialInfoVo;
-            }
-          });
-
-          // 处理新增的项
-          newData.forEach((newItem) => {
-            const existingIndex = waterfallData.value.findIndex((item) => item.id === newItem.id);
-            if (existingIndex === -1) {
-              waterfallData.value.push(newItem);
-            }
-          });
-
-          // 处理删除的项
-          waterfallData.value = waterfallData.value.filter((item) => newDataMap.has(item.id));
-
-          // 按照新数据的顺序重新排列（保持与服务端一致）
-          const sortedData: typeof waterfallData.value = [];
-          newData.forEach((newItem) => {
-            const existingItem = waterfallData.value.find((item) => item.id === newItem.id);
-            if (existingItem) {
-              sortedData.push(existingItem);
-            }
-          });
-          waterfallData.value = sortedData;
-        } else {
-          // 非静默刷新或初次加载，直接替换
-          waterfallData.value = newData;
+        // 如果启用了收藏筛选，添加 isCollect 参数
+        if (isCollectFilter.value) {
+          params.isCollect = true;
         }
-      } else {
-        waterfallData.value = [];
+
+        const res = await getWaterfallList(params);
+
+        if (res.data) {
+          // 直接替换瀑布流数据，确保数据完全同步
+          waterfallData.value = res.data;
+        } else {
+          waterfallData.value = [];
+        }
+      } catch (error) {
+        console.error('加载瀑布流数据失败:', error);
+        // 静默刷新失败时不清空数据
+        if (!silentRefresh) {
+          waterfallData.value = [];
+          ElMessage.error('加载数据失败');
+        }
+      } finally {
+        if (!silentRefresh) {
+          loading.value = false;
+        }
+        // 清除加载标记
+        loadingPromise = null;
       }
-    } catch (error) {
-      console.error('加载瀑布流数据失败:', error);
-      // 静默刷新失败时不清空数据
-      if (!silentRefresh) {
-        waterfallData.value = [];
-        ElMessage.error('加载数据失败');
-      }
-    } finally {
-      if (!silentRefresh) {
-        loading.value = false;
-      }
-    }
+    })();
+
+    return loadingPromise;
   };
 
   // 监听剧集变化
@@ -218,8 +184,15 @@
     { immediate: true }
   );
 
+  // 当组件从 KeepAlive 缓存中激活时重新加载数据
+  onActivated(() => {
+    if (selectedEpisodeId.value) {
+      loadWaterfallData(true); // 使用静默刷新
+    }
+  });
+
   // 替换图片
-  const handleReplace = async (basicId: number, historyDetailId: number) => {
+  const handleReplace = async (_basicId: number, historyDetailId: number) => {
     try {
       await chooseHistoryDetail({ historyDetailId });
       ElMessage.success('替换成功');

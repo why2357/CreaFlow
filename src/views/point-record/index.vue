@@ -176,7 +176,6 @@
     try {
       const res = await getAllProjects();
       projectList.value = res.rows;
-      console.log('Project list loaded:', projectList.value.length);
     } catch (error) {
       console.error('Get project list failed:', error);
       ElMessage.error('获取项目列表失败');

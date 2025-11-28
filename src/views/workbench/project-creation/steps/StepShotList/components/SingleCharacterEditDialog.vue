@@ -30,7 +30,7 @@
               @click="toggleSelection(detail.detailId)"
             >
               <div class="costume-image-wrapper">
-                <el-image :src="detail.previewUrl || detail.originUrl" fit="contain" class="costume-image">
+                <el-image :src="detail.previewUrl || detail.originUrl" fit="contain" class="costume-image" hide-on-click-modal>
                   <template #error>
                     <div class="image-error">
                       <el-icon><Picture /></el-icon>

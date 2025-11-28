@@ -81,6 +81,9 @@
             />
           </el-select>
         </div>
+
+        <!-- 导出按钮 -->
+        <ExportDropdown />
       </div>
     </div>
 
@@ -146,11 +149,12 @@
     VideoSceneItemInfo
   } from '@/api/workbench/episode/types';
   import { queryStoryBoard } from '@/api/workbench/storyboard';
+  import { useVideoUpdateListener } from '@/composables/useSSEListener';
   import { useProjectStore } from '@/store/modules/project';
   import { useUserStore } from '@/store/modules/user';
   import { ElMessage, ElMessageBox } from 'element-plus';
-  import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue';
-  import { useVideoUpdateListener } from '@/composables/useSSEListener';
+  import { computed, nextTick, onActivated, onBeforeUnmount, onMounted, ref, watch } from 'vue';
+  import ExportDropdown from '../../components/ExportDropdown.vue';
   import StoryboardReviewDialog from '../StepGridView/components/StoryboardReviewDialog.vue';
   import ImportTextDialog from './components/ImportTextDialog.vue';
   import VideoPointsConfirmDialog from './components/VideoPointsConfirmDialog.vue';
@@ -186,6 +190,9 @@
 
   // 加载状态
   const loading = ref(false);
+
+  // 防止重复加载的标记
+  let loadingPromise: Promise<void> | null = null;
 
   // ==================== 新的三级联动模型配置 ====================
   // 所有模型配置列表
@@ -279,7 +286,6 @@
   // 时长变化处理
   const handleDurationChange = (duration: number) => {
     // 时长变化后无需额外操作，currentModelConfigObj 会自动更新
-    console.log('Selected config:', currentModelConfigObj.value);
   };
 
   // 全选状态
@@ -311,9 +317,6 @@
     if (tableWrapper) {
       tableWrapper.removeEventListener('scroll', saveScrollPosition);
       tableWrapper.addEventListener('scroll', saveScrollPosition);
-      console.log('已添加滚动监听');
-    } else {
-      console.log('表格容器未找到，无法添加滚动监听');
     }
   };
 
@@ -343,12 +346,24 @@
     }
   });
 
-  // 监听 SSE 视频生成更新
-  useVideoUpdateListener((detail) => {
-    console.log('[视频] 收到 SSE 视频更新:', detail);
-    // 无感刷新视频列表
-    loadVideos(true);
+  // 当组件从 KeepAlive 缓存中激活时重新加载数据
+  onActivated(async () => {
+    if (selectedEpisodeId.value) {
+      await loadVideos(true); // 使用静默刷新
+    }
   });
+
+  // 监听 SSE 视频生成更新
+  useVideoUpdateListener(
+    (detail) => {
+      // 无感刷新视频列表
+      loadVideos(true);
+    },
+    {
+      projectId: projectStore.currentProjectId,
+      episodeId: selectedEpisodeId
+    }
+  );
 
   // 清理
   onBeforeUnmount(() => {
@@ -431,25 +446,21 @@
   const getTableWrapper = () => {
     // 尝试多种方式获取表格滚动容器
     if (!videoTableRef.value) {
-      console.log('videoTableRef 为空');
       return null;
     }
 
     // 方法1: 通过组件的 $refs.tableRef 查找
     let wrapper = (videoTableRef.value as any)?.$refs?.tableRef?.$el?.querySelector('.el-table__body-wrapper');
     if (wrapper) {
-      console.log('通过 $refs.tableRef 找到表格容器');
       return wrapper;
     }
 
     // 方法2: 直接通过类名查找
     wrapper = document.querySelector('.video-table-container .el-table__body-wrapper');
     if (wrapper) {
-      console.log('通过类名找到表格容器');
       return wrapper;
     }
 
-    console.log('未找到表格容器');
     return null;
   };
 
@@ -460,7 +471,6 @@
       const scrollKey = `videolist_scroll_${projectStore.currentProjectId}_${selectedEpisodeId.value}`;
       const scrollTop = tableWrapper.scrollTop;
       sessionStorage.setItem(scrollKey, String(scrollTop));
-      console.log('保存滚动位置:', scrollKey, scrollTop);
     }
   };
 
@@ -470,7 +480,6 @@
 
     const scrollKey = `videolist_scroll_${projectStore.currentProjectId}_${selectedEpisodeId.value}`;
     const savedScroll = sessionStorage.getItem(scrollKey);
-    console.log('尝试恢复滚动位置:', scrollKey, savedScroll);
 
     if (savedScroll) {
       // 使用多次 nextTick 确保 DOM 完全渲染
@@ -478,10 +487,8 @@
         nextTick(() => {
           setTimeout(() => {
             const tableWrapper = getTableWrapper();
-            console.log('表格容器:', tableWrapper);
             if (tableWrapper) {
               tableWrapper.scrollTop = Number(savedScroll);
-              console.log('已恢复滚动位置:', tableWrapper.scrollTop);
             }
           }, 100);
         });
@@ -493,95 +500,67 @@
   const loadVideos = async (silentRefresh = false) => {
     if (!selectedEpisodeId.value) return;
 
+    // 如果已经有正在进行的加载，直接返回该 Promise
+    if (loadingPromise) {
+      return loadingPromise;
+    }
+
     // 只在非静默刷新时显示加载状态
     if (!silentRefresh) {
       loading.value = true;
     }
 
-    try {
-      const res = await getVideoSceneList(Number(selectedEpisodeId.value));
-      const episodeData: VideoEpisodeInfoResponseDto = res.data;
+    // 创建加载 Promise
+    loadingPromise = (async () => {
+      try {
+        const res = await getVideoSceneList(Number(selectedEpisodeId.value));
+        const episodeData: VideoEpisodeInfoResponseDto = res.data;
 
-      if (episodeData && episodeData.episodeSceneItemInfoList && Array.isArray(episodeData.episodeSceneItemInfoList)) {
-        // 过滤掉无效的场景数据
-        const validScenes = episodeData.episodeSceneItemInfoList.filter((scene) => scene && scene.basicId);
+        if (episodeData && episodeData.episodeSceneItemInfoList && Array.isArray(episodeData.episodeSceneItemInfoList)) {
+          // 过滤掉无效的场景数据
+          const validScenes = episodeData.episodeSceneItemInfoList.filter((scene) => scene && scene.basicId);
 
-        // 如果是静默刷新，进行差异更新
-        if (silentRefresh && videos.value.length > 0) {
-          // 创建一个 Map 用于快速查找（使用 basicId 作为 key）
-          const newVideosMap = new Map(validScenes.map((video) => [video.basicId, video]));
-
-          // 更新现有视频数据
-          videos.value.forEach((video) => {
-            const newVideo = newVideosMap.get(video.basicId);
-            if (newVideo) {
-              // 只更新可能变化的字段，保持对象引用
-              video.videoPrompt = newVideo.videoPrompt;
-              video.videoUrl = newVideo.videoUrl;
-              video.historyVos = newVideo.historyVos;
-              video.taskStatus = newVideo.taskStatus;
-              video.sceneStatus = newVideo.sceneStatus;
-              video.sceneDesc = newVideo.sceneDesc;
-              video.sceneHint = newVideo.sceneHint;
-              video.dialogues = newVideo.dialogues;
-              video.characterClothingInfoList = newVideo.characterClothingInfoList;
-              video.materialInfoVoList = newVideo.materialInfoVoList;
-              video.envMaterialInfoVo = newVideo.envMaterialInfoVo;
-              video.commentCnt = newVideo.commentCnt;
-              video.isCollect = newVideo.isCollect;
-              video.endFrameOssId = newVideo.endFrameOssId;
-              video.endFrameOssUrl = newVideo.endFrameOssUrl;
-            }
-          });
-
-          // 处理新增的视频
-          validScenes.forEach((newVideo) => {
-            const existingIndex = videos.value.findIndex((v) => v.basicId === newVideo.basicId);
-            if (existingIndex === -1) {
-              videos.value.push(newVideo);
-            }
-          });
-
-          // 处理删除的视频
-          videos.value = videos.value.filter((video) => newVideosMap.has(video.basicId));
-        } else {
-          // 非静默刷新或初次加载，直接替换
+          // 直接替换视频列表数据，确保数据完全同步
           videos.value = validScenes;
+
+          // 过滤 selectedIds，移除已删除镜头的 ID
+          const validBasicIds = new Set(validScenes.map((scene) => scene.basicId));
+          const filteredSelectedIds = selectedIds.value.filter((id) => validBasicIds.has(id));
+
+          // 只有在选中的 ID 发生变化时才更新（避免不必要的状态更新）
+          if (filteredSelectedIds.length !== selectedIds.value.length) {
+            selectedIds.value = filteredSelectedIds;
+            // 更新全选状态
+            selectAll.value = filteredSelectedIds.length === validScenes.length && validScenes.length > 0;
+            isIndeterminate.value = filteredSelectedIds.length > 0 && filteredSelectedIds.length < validScenes.length;
+          }
+        } else {
+          videos.value = [];
+          // 清空选中状态
+          selectedIds.value = [];
+          selectAll.value = false;
+          isIndeterminate.value = false;
         }
 
-        // 过滤 selectedIds，移除已删除镜头的 ID
-        const validBasicIds = new Set(validScenes.map((scene) => scene.basicId));
-        const filteredSelectedIds = selectedIds.value.filter((id) => validBasicIds.has(id));
-
-        // 只有在选中的 ID 发生变化时才更新（避免不必要的状态更新）
-        if (filteredSelectedIds.length !== selectedIds.value.length) {
-          selectedIds.value = filteredSelectedIds;
-          // 更新全选状态
-          selectAll.value = filteredSelectedIds.length === validScenes.length && validScenes.length > 0;
-          isIndeterminate.value = filteredSelectedIds.length > 0 && filteredSelectedIds.length < validScenes.length;
+        // 恢复滚动位置
+        restoreScrollPosition();
+      } catch (error) {
+        console.error('加载视频列表失败:', error);
+        // 静默刷新失败时不清空数据
+        if (!silentRefresh) {
+          videos.value = [];
+          ElMessage.error('加载视频列表失败');
         }
-      } else {
-        videos.value = [];
-        // 清空选中状态
-        selectedIds.value = [];
-        selectAll.value = false;
-        isIndeterminate.value = false;
+      } finally {
+        if (!silentRefresh) {
+          loading.value = false;
+        }
+        // 清除加载标记
+        loadingPromise = null;
       }
+    })();
 
-      // 恢复滚动位置
-      restoreScrollPosition();
-    } catch (error) {
-      console.error('加载视频列表失败:', error);
-      // 静默刷新失败时不清空数据
-      if (!silentRefresh) {
-        videos.value = [];
-        ElMessage.error('加载视频列表失败');
-      }
-    } finally {
-      if (!silentRefresh) {
-        loading.value = false;
-      }
-    }
+    return loadingPromise;
   };
 
   // 全选按钮点击
@@ -876,8 +855,8 @@
         border-radius: 8px;
         background: #5252ff;
         color: #fff;
-
         font-size: 13px;
+        margin-left: 0;
       }
     }
 

@@ -82,7 +82,12 @@
               >
                 <!-- 图片 -->
                 <div class="costume-image">
-                  <el-image :src="costume.ossUrl || ''" fit="contain" :preview-src-list="[costume.ossUrl || '']">
+                  <el-image
+                    :src="costume.ossUrl || ''"
+                    fit="contain"
+                    :preview-src-list="[costume.ossUrl || '']"
+                    hide-on-click-modal
+                  >
                     <template #error>
                       <div class="image-error">
                         <el-icon :size="40"><Picture /></el-icon>
@@ -119,6 +124,10 @@
                           <el-dropdown-item command="rename">
                             <svg-icon icon-class="fy-pen" style="width: 16px; height: 16px; margin-right: 16px" />
                             重命名
+                          </el-dropdown-item>
+                          <el-dropdown-item command="download">
+                            <svg-icon icon-class="fy-download" style="width: 16px; height: 16px; margin-right: 16px" />
+                            下载
                           </el-dropdown-item>
                           <el-dropdown-item command="delete" divided class="delete-item">
                             <svg-icon icon-class="fy-del" style="width: 16px; height: 16px; margin-right: 16px" />
@@ -204,7 +213,7 @@
   import { uploadFile } from '@/utils/uploadFile';
   import { Picture, Plus } from '@element-plus/icons-vue';
   import { ElMessage, ElMessageBox } from 'element-plus';
-  import { nextTick, onMounted, onUnmounted, ref } from 'vue';
+  import { nextTick, onActivated, onMounted, onUnmounted, ref } from 'vue';
   import EpisodeSelector from '../components/EpisodeSelector.vue';
   import HorizontalScrollTabs from '../components/HorizontalScrollTabs.vue';
   import AddItemDialog from './components/AddItemDialog.vue';
@@ -243,6 +252,9 @@
   const currentEditCostume = ref<LibrarySubInfo | null>(null);
   const selectedEpisodeIds = ref<number[]>([]);
 
+  // 标记是否已经完成首次加载（用于区分 onMounted 和 onActivated）
+  const isFirstLoad = ref(true);
+
   // 获取显示的剧集（最多3个）
   const getDisplayEpisodes = (episodes: EpisodeInfo[]) => {
     return episodes.slice(0, 3);
@@ -271,16 +283,29 @@
     const waitForInit = () => {
       if (projectStore.isInitializing) {
         // 如果还在初始化，延迟50ms后重试
-        console.log('[StepCharacter] 等待项目初始化完成...');
         setTimeout(waitForInit, 50);
       } else {
         // 初始化完成，加载数据
-        console.log('[StepCharacter] 项目初始化完成，开始加载角色数据');
-        loadCharacterData();
+        // loadCharacterData();
         setupHorizontalScroll();
+        // 加载数据后再标记首次加载完成，防止onActivated重复调用
+        isFirstLoad.value = false;
       }
     };
     waitForInit();
+  });
+
+  // 每次激活时刷新数据（支持 KeepAlive 缓存）
+  onActivated(() => {
+    // 如果是首次加载（onMounted 后立即触发的 onActivated），跳过
+    if (isFirstLoad.value) {
+      return;
+    }
+
+    // 重新加载角色数据，确保获取最新数据
+    if (!projectStore.isInitializing) {
+      loadCharacterData();
+    }
   });
 
   // 设置横向滚动
@@ -323,8 +348,6 @@
           delete (wrapper as any).__wheelHandler;
           delete (wrapper as any).__cleanupScroll;
         };
-
-        console.log('已为第', index + 1, '个容器绑定滚轮事件');
       });
     });
   };
@@ -393,6 +416,8 @@
 
       ElMessage.success('角色创建成功');
       addGroupDialog.value = false;
+      // 重置筛选为"全部"
+      selectedEpisodeId.value = null;
       await loadCharacterData();
     } catch (error) {
       console.log('创建角色失败:', error);
@@ -435,6 +460,8 @@
       renameForm.value.name = costume.detailName || '';
       renameTarget.value = { type: 'detail', data: costume };
       renameDialog.value = true;
+    } else if (command === 'download') {
+      handleDownloadImage(costume);
     } else if (command === 'delete') {
       ElMessageBox.confirm(`确定要删除服装"${costume.detailName}"吗？`, '删除确认', {
         confirmButtonText: '确定',
@@ -452,6 +479,41 @@
           }
         })
         .catch(() => {});
+    }
+  };
+
+  // 下载图片
+  const handleDownloadImage = async (costume: LibrarySubInfo) => {
+    // 从 materialVo 中获取原图地址
+    const imageUrl = costume.materialVo?.originOssUrl;
+
+    if (!imageUrl) {
+      ElMessage.warning('图片地址不存在');
+      return;
+    }
+
+    try {
+      // 创建一个隐藏的 a 标签
+      const link = document.createElement('a');
+      link.href = imageUrl;
+
+      // 设置下载文件名，优先使用服装名称，否则从 URL 中提取
+      const fileName = costume.detailName
+        ? `${costume.detailName}.${imageUrl.split('.').pop() || 'jpg'}`
+        : imageUrl.split('/').pop() || 'image.jpg';
+
+      link.download = fileName;
+      // link.target = '_blank';
+
+      // 触发下载
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+
+      ElMessage.success('开始下载');
+    } catch (error) {
+      console.error('下载失败:', error);
+      ElMessage.error('下载失败');
     }
   };
 
@@ -525,15 +587,12 @@
             requiredMd5: true
           });
 
-          console.log('上传结果:', uploadResult);
-
           if (uploadResult.url && uploadResult.ossId) {
             uploadedImages.push({
               url: uploadResult.url,
               ossId: uploadResult.ossId,
               name: fileName
             });
-            console.log('已添加到上传列表:', { url: uploadResult.url, ossId: uploadResult.ossId, name: fileName });
           } else {
             console.warn('上传结果缺少必要字段:', { url: uploadResult.url, ossId: uploadResult.ossId });
           }
@@ -542,18 +601,9 @@
         }
       }
 
-      console.log('准备创建库详情，图片数量:', uploadedImages.length);
-
       if (uploadedImages.length > 0) {
         // 调用创建服装图片的 API
         for (const imgInfo of uploadedImages) {
-          console.log('调用 createLibraryDetail:', {
-            libraryId: Number(library.libraryId),
-            name: imgInfo.name,
-            ossId: Number(imgInfo.ossId),
-            ossUrl: imgInfo.url
-          });
-
           await createLibraryDetail({
             libraryId: Number(library.libraryId),
             name: imgInfo.name,
@@ -852,6 +902,7 @@
     position: relative;
     width: 100%;
     height: 240px;
+    min-width: 100px;
 
     &:hover {
       .costume-actions {
@@ -879,14 +930,16 @@
     .costume-name-overlay {
       position: absolute;
       bottom: 6px;
-      left: 0;
-      max-width: calc(100% - 80px);
+      left: 6px;
+      max-width: 80px;
       padding: 4px 8px;
       overflow: hidden;
       color: #fff;
       font-size: 12px;
       white-space: nowrap;
       text-overflow: ellipsis;
+      border-radius: 12px;
+      background: linear-gradient(0deg, rgba(0, 0, 0, 0.2) 0%, rgba(0, 0, 0, 0.4) 100%);
     }
 
     // 右上角剧集标签

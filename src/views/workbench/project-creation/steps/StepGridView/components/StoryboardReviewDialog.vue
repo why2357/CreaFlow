@@ -1,7 +1,7 @@
 <template>
   <el-dialog
     v-model="visible"
-    title="图片历史"
+    title="审阅"
     width="1200px"
     :close-on-click-modal="false"
     destroy-on-close
@@ -46,6 +46,7 @@
                   class="main-image"
                   :preview-src-list="[currentScene.originOssUrl || currentScene.previewOssUrl]"
                   preview-teleported
+                  hide-on-click-modal
                 />
                 <!-- 空状态 -->
                 <div v-else class="empty-image">
@@ -115,7 +116,7 @@
                 ref="commentTriggerElement"
                 class="comment-count-trigger"
                 :class="{ 'has-comments': commentCount > 0 }"
-                @click="handleShowComments"
+                @mouseenter="handleShowComments"
               >
                 <svg-icon icon-class="fy-comment" class="comment-icon" />
                 <span v-if="commentCount > 0" class="count-badge">{{ commentCount }}</span>
@@ -158,6 +159,7 @@
       :basic-id="currentScene?.id || 0"
       :scene-type="props.sceneType"
       :trigger-ref="commentTriggerElement"
+      trigger-type="hover"
       :comment-list="commentList"
       @change="handleCommentListChange"
     />
@@ -418,7 +420,6 @@
           scene.imgStatus = 2; // 2-绿色(通过)
         }
       }
-      console.log('sceneList.value', sceneList.value);
 
       // 延迟展示状态，让用户看到审阅结果
       await new Promise((resolve) => setTimeout(resolve, 800));
@@ -699,6 +700,7 @@
 
       .content-details {
         flex: 1;
+        max-height: 340px;
         overflow-y: auto;
         padding: 0 24px 24px 24px;
 

@@ -134,6 +134,7 @@
               class="grid-image"
               :preview-src-list="materialInfoVoList.map((i) => i.originOssUrl || i.previewOssUrl || '')"
               :initial-index="index"
+              hide-on-click-modal
             />
           </div>
         </div>
@@ -158,6 +159,7 @@
             class="grid-image"
             :preview-src-list="materialInfoVoList.map((i) => i.originOssUrl || i.previewOssUrl || '')"
             :initial-index="index"
+            hide-on-click-modal
           />
         </div>
         <!-- 收藏标记 -->
@@ -169,7 +171,7 @@
       <!-- 其他状态/空状态：没有图片数据 -->
       <div v-else class="placeholder-container">
         <img
-          style="width: 80px; height: 80px"
+          style="width: 120px; height: 120px"
           src="../../../../../../assets/images/no-image.png"
           alt="暂无图片"
           class="placeholder-image"
@@ -268,10 +270,10 @@
     return 'cover' as const;
   });
 
-  // 判断是否是本地上传的图片（不能收藏）
-  // 当只有一张图片且没有 historyDetailId 时，说明是本地上传或者裁剪的图片
+  // 判断是否是本地上传或裁剪的图片（不能收藏）
+  // 没有 historyDetailId 时，说明是本地上传或者裁剪的图片
   const isLocalUploadImage = computed(() => {
-    return props.materialInfoVoList.length === 1 && !props.historyDetailId;
+    return !props.historyDetailId;
   });
 
   // 是否有多张图片
@@ -290,25 +292,30 @@
   });
 
   // 没有图片时，查看历史、下载、剪裁、收藏、编辑操作禁用
-  // 或者 taskStatus === 3 且没有历史图片时，也禁用这些操作
+  // 只要有图片就可以查看历史，即使生成失败也可以
+  // 或者生成失败时(taskStatus === 3)，即使没有图片也可以查看历史
   const isHistoryDisabled = computed(() => {
-    return hasNoImages.value || props.taskStatus === null || (props.taskStatus === 3 && hasNoImages.value);
+    // 如果是生成失败状态，允许查看历史
+    if (props.taskStatus === 3) {
+      return false;
+    }
+    return hasNoImages.value;
   });
 
   const isDownloadDisabled = computed(() => {
-    return hasNoImages.value || props.taskStatus === null || (props.taskStatus === 3 && hasNoImages.value);
+    return hasNoImages.value;
   });
 
   const isCropDisabled = computed(() => {
-    return hasNoImages.value || props.taskStatus === null || (props.taskStatus === 3 && hasNoImages.value);
+    return hasNoImages.value;
   });
 
   const isFavoriteDisabled = computed(() => {
-    return hasNoImages.value || props.taskStatus === null || (props.taskStatus === 3 && hasNoImages.value);
+    return hasNoImages.value || props.taskStatus === null;
   });
 
   const isEditDisabled = computed(() => {
-    return hasNoImages.value || props.taskStatus === null || (props.taskStatus === 3 && hasNoImages.value);
+    return hasNoImages.value;
   });
 
   // 收藏功能是否可用（本地上传图片不能收藏，多张图片时也不能收藏）
@@ -326,10 +333,10 @@
     return !hasMultipleImages.value;
   });
 
-  // 当前显示的图片URL（用于编辑弹窗）
+  // 当前显示的图片URL（用于编辑弹窗，使用原图以保证质量）
   const currentImageUrl = computed(() => {
     if (props.materialInfoVoList.length > 0) {
-      return props.materialInfoVoList[0].previewOssUrl || props.materialInfoVoList[0].originOssUrl || '';
+      return props.materialInfoVoList[0].originOssUrl || props.materialInfoVoList[0].previewOssUrl || '';
     }
     return props.imageUrl;
   });
@@ -513,11 +520,8 @@
 
   // 裁剪图片
   const handleCrop = () => {
-    // 获取当前显示的图片URL
-    const imageUrl =
-      props.materialInfoVoList.length > 0
-        ? props.materialInfoVoList[0].previewOssUrl || props.materialInfoVoList[0].originOssUrl
-        : props.imageUrl;
+    // 获取原图URL（裁剪必须使用原图以保证质量）
+    const imageUrl = currentImageUrl.value;
 
     if (!imageUrl) {
       ElMessage.warning('暂无图片可裁剪');
@@ -653,11 +657,12 @@
         }
 
         &.disabled {
-          opacity: 0.4;
+          // opacity: 0.4;
+          color: #c9cdd4;
           cursor: not-allowed;
 
           &:hover {
-            background: rgb(255 255 255 / 90%);
+            // background: rgb(255 255 255 / 90%);
             transform: none;
           }
 
@@ -699,11 +704,12 @@
         }
 
         &.is-disabled {
-          opacity: 0.4;
+          // opacity: 0.4;
           cursor: not-allowed;
+          color: #c9cdd4;
 
           &:hover {
-            background: #f7f8fa;
+            color: #c9cdd4;
             transform: none;
           }
 
@@ -739,7 +745,7 @@
           }
 
           &.is-disabled {
-            opacity: 0.4;
+            opacity: 0.8;
             cursor: not-allowed;
 
             &:hover {

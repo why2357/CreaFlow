@@ -123,7 +123,7 @@
                     <div
                       ref="commentTriggerRef"
                       class="action-icon comment-btn"
-                      @click.stop="handleShowComments(detail, $event)"
+                      @mouseenter="handleShowComments(detail, $event)"
                     >
                       <svg-icon icon-class="fy-comment" class="comment-icon" />
                       <span class="count-text">{{ detail.commentVoList?.length || 0 }}</span>
@@ -182,6 +182,7 @@
     :basic-id="commentBasicId"
     :scene-type="1"
     :trigger-ref="commentTriggerElement"
+    trigger-type="hover"
     :comment-list="currentCommentList"
     @change="handleCommentChange"
   />
@@ -236,6 +237,7 @@
   const visible = ref(false);
   const loading = ref(false);
   const selectedVideoDetail = ref<VideoDetail | null>(null);
+  const initialSelectedVideoDetailId = ref<number | null>(null); // 初始选中的视频ID
   const historyList = ref<HistoryGroup[]>([]);
   const showVideoPreview = ref(false);
   const previewVideoUrl = ref('');
@@ -255,6 +257,7 @@
         loadHistory();
       } else {
         selectedVideoDetail.value = null;
+        initialSelectedVideoDetailId.value = null;
       }
     }
   );
@@ -300,6 +303,8 @@
             previewOssUrl: selectedItem.materialVo?.previewOssUrl,
             prompt: data.selectHistory.prompt || ''
           };
+          // 保存初始选中的视频ID
+          initialSelectedVideoDetailId.value = selectedItem.historyDetailId || null;
         }
       }
 
@@ -399,6 +404,12 @@
   const handleConfirm = async () => {
     if (!selectedVideoDetail.value || !selectedVideoDetail.value.historyDetailId) {
       ElMessage.error('请选择视频');
+      return;
+    }
+
+    // 如果选中的视频没有变化，直接关闭弹窗，不调用接口
+    if (selectedVideoDetail.value.historyDetailId === initialSelectedVideoDetailId.value) {
+      handleClose();
       return;
     }
 

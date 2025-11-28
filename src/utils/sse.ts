@@ -1,6 +1,7 @@
 import { getToken } from '@/utils/auth';
 import request from '@/utils/request';
 import { ElNotification } from 'element-plus';
+import { SSETabCoordinator } from './sseTabCoordinator';
 
 interface SSEOptions {
   onMessage?: (data: any) => void;
@@ -10,6 +11,7 @@ interface SSEOptions {
     retries: number;
     delay: number;
     onFailed?: () => void;
+    enabled?: boolean; // 是否启用自动重连
   };
 }
 
@@ -24,15 +26,24 @@ class SSEManager {
   private reconnectTimer: number | null = null;
   private reader: ReadableStreamDefaultReader<Uint8Array> | null = null;
   private isConnected = false;
+  private connectionStartTime = 0; // 连接开始时间
+  private coordinator: SSETabCoordinator | null = null; // 标签页协调器
 
   /**
    * 初始化并连接 SSE
    */
-  connect(baseUrl: string, options: SSEOptions = {}): void {
+  async connect(baseUrl: string, options: SSEOptions = {}): Promise<void> {
+    // 如果已经有连接正在进行，先关闭
+    if (this.isConnected || this.abortController) {
+      console.warn('SSE 连接已存在，先关闭旧连接');
+      this.cleanup();
+    }
+
     this.options = options;
     this.maxReconnectAttempts = options.autoReconnect?.retries ?? 10;
     this.reconnectDelay = options.autoReconnect?.delay ?? 3000;
     this.isManualClose = false;
+    this.reconnectAttempts = 0; // 重置重连次数
 
     const token = getToken();
     if (!token) {
@@ -41,7 +52,26 @@ class SSEManager {
     }
 
     this.url = baseUrl;
-    this.createConnection();
+
+    // 初始化标签页协调器
+    if (!this.coordinator) {
+      this.coordinator = new SSETabCoordinator();
+      this.coordinator.init({
+        onBecameMaster: () => {
+          console.log('[SSE Manager] 🎯 成为主标签页，建立 SSE 连接');
+          this.createConnection();
+        },
+        onBecameSlave: () => {
+          console.log('[SSE Manager] 📡 成为从标签页，关闭本地 SSE 连接');
+          this.cleanup();
+        },
+        onSSEMessage: (data) => {
+          console.log('[SSE Manager] 📨 从主标签页接收到 SSE 消息');
+          // 从标签页收到消息，也要触发处理逻辑
+          this.handleMessage(data);
+        }
+      });
+    }
   }
 
   /**
@@ -49,6 +79,18 @@ class SSEManager {
    */
   private async createConnection(): Promise<void> {
     try {
+      // 只有主标签页才能创建连接
+      if (this.coordinator && !this.coordinator.getIsMaster()) {
+        console.log('[SSE Manager] 非主标签页，不建立 SSE 连接');
+        return;
+      }
+
+      // 防止重复连接
+      if (this.isConnected) {
+        console.warn('SSE 已连接，跳过重复连接');
+        return;
+      }
+
       const token = getToken();
       if (!token) {
         console.error('Token 不存在，无法建立连接');
@@ -57,6 +99,9 @@ class SSEManager {
 
       // 创建新的 AbortController
       this.abortController = new AbortController();
+
+      // 记录连接开始时间
+      this.connectionStartTime = Date.now();
 
       console.log('正在建立 SSE 连接...', this.url);
 
@@ -98,8 +143,9 @@ class SSEManager {
         const { done, value } = await this.reader.read();
 
         if (done) {
-          console.log('SSE 流结束');
+          console.log('SSE 流结束，连接已断开');
           reading = false;
+          this.isConnected = false;
           break;
         }
 
@@ -112,19 +158,46 @@ class SSEManager {
         buffer = lines.pop() || ''; // 保留不完整的行
 
         for (const line of lines) {
-          console.log('[SSE] 处理行:', JSON.stringify(line));
+          console.log('[SSE] 处理行原始内容:', line);
+          console.log('[SSE] 处理行JSON格式:', JSON.stringify(line));
+          console.log('[SSE] 行是否为空:', line.trim() === '');
+          console.log('[SSE] 行是否以data:开头:', line.trim().startsWith('data:'));
 
           // 空行表示消息结束
           if (line.trim() === '') {
+            console.log('[SSE] 遇到空行，当前累积数据:', currentData);
             if (currentData) {
               console.log('[SSE] 解析数据:', currentData);
+
+              // 跳过 "Connection established" 这类服务器确认消息
+              if (currentData === 'Connection established' || currentData.trim() === 'Connection established') {
+                console.log('[SSE] 收到服务器连接确认消息，跳过处理');
+                currentData = '';
+                currentEvent = '';
+                continue;
+              }
+
               try {
-                const data = JSON.parse(currentData);
+                // 尝试反转义 JSON 字符串
+                let jsonStr = currentData;
+                // 如果数据被过度转义，尝试解析
+                if (jsonStr.includes('\\"')) {
+                  console.log('[SSE] 检测到转义的引号，尝试反转义');
+                  jsonStr = jsonStr.replace(/\\"/g, '"');
+                }
+                const data = JSON.parse(jsonStr);
+                console.log('[SSE] JSON 解析成功:', data);
                 this.handleMessage(data);
               } catch (error) {
                 console.error('[SSE] 解析 JSON 失败:', error, currentData);
-                // 如果不是 JSON，尝试直接处理
-                this.handleMessage({ message: currentData });
+                // 如果不是 JSON，检查是否是纯文本消息（如服务器通知）
+                if (typeof currentData === 'string' && !currentData.startsWith('{')) {
+                  console.log('[SSE] 收到纯文本消息:', currentData);
+                  // 跳过纯文本消息，不作为错误处理
+                } else {
+                  // 尝试作为普通消息处理
+                  this.handleMessage({ message: currentData });
+                }
               }
               currentData = '';
               currentEvent = '';
@@ -133,17 +206,20 @@ class SSEManager {
           }
 
           // 处理事件类型
-          if (line.startsWith('event: ')) {
-            currentEvent = line.slice(7).trim();
+          if (line.startsWith('event:')) {
+            currentEvent = line.slice(6).trim();
             console.log('[SSE] 事件类型:', currentEvent);
             continue;
           }
 
-          // 处理数据
-          if (line.startsWith('data: ')) {
-            const dataStr = line.slice(6);
+          // 处理数据（支持有空格和没空格两种格式）
+          if (line.trim().startsWith('data:')) {
+            const dataStr = line.includes('data: ')
+              ? line.slice(line.indexOf('data: ') + 6)
+              : line.slice(line.indexOf('data:') + 5).trim();
             currentData += dataStr;
             console.log('[SSE] 数据片段:', dataStr);
+            console.log('[SSE] 当前累积数据:', currentData);
             continue;
           }
 
@@ -169,7 +245,22 @@ class SSEManager {
 
       // 流正常结束，如果不是手动关闭则尝试重连
       if (!this.isManualClose) {
-        this.handleReconnect();
+        // 检查连接持续时间
+        const connectionDuration = Date.now() - this.connectionStartTime;
+        console.log(`[SSE] 连接持续时间: ${connectionDuration}ms`);
+
+        if (connectionDuration < 1000) {
+          // 如果连接在1秒内就断开，可能是服务端问题
+          console.warn('SSE 连接过早断开（<1秒），可能是服务端在发送确认消息后立即关闭了连接');
+        }
+
+        // 检查是否启用自动重连
+        const autoReconnectEnabled = this.options.autoReconnect?.enabled !== false;
+        if (autoReconnectEnabled) {
+          this.handleReconnect();
+        } else {
+          console.log('[SSE] 自动重连已禁用');
+        }
       }
     } catch (error: any) {
       this.isConnected = false;
@@ -200,19 +291,86 @@ class SSEManager {
     if (!data) return;
 
     console.log('收到 SSE 消息:', data);
+    console.log('[SSE] messageType:', data.messageType);
+    console.log('[SSE] 是否有 message 字段:', !!data.message);
+    console.log('[SSE] message 内容:', data.message);
+
+    // 如果是主标签页，广播消息到其他标签页
+    if (this.coordinator && this.coordinator.getIsMaster()) {
+      console.log('[SSE Manager] 主标签页广播消息到其他标签页');
+      this.coordinator.broadcastSSEData(data);
+    }
 
     // 调用自定义消息处理器
     this.options.onMessage?.(data);
 
-    // 显示通知（如果需要）
-    if (data.message) {
-      ElNotification({
-        title: data.title || '消息',
-        message: data.message,
-        type: data.type || 'success',
-        duration: 3000
-      });
+    // 根据 messageType 分发不同的事件
+    if (data.messageType !== undefined && data.message) {
+      console.log('[SSE] 进入事件分发逻辑，messageType:', data.messageType);
+      const message = data.message;
+
+      // messageType=1: 分镜头脚本生成完成
+      if (data.messageType === 1) {
+        console.log('[SSE] 分镜头脚本生成完成:', message);
+        window.dispatchEvent(
+          new CustomEvent('sse-script-update', {
+            detail: {
+              projectId: message.projectId || data.projectId,
+              episodeId: message.episodeId || data.episodeId,
+              taskStatus: message.taskStatus,
+              message: message
+            }
+          })
+        );
+      }
+
+      // messageType=2: 分镜头图片生成更新
+      if (data.messageType === 2) {
+        console.log('[SSE] 分镜头图片生成更新:', message);
+        const eventDetail = {
+          projectId: message.projectId || data.projectId,
+          episodeId: message.episodeId || data.episodeId,
+          taskStatus: message.taskStatus,
+          batchStatus: message.batchStatus,
+          episodeSceneItemInfoList: message.episodeSceneItemInfoList,
+          message: message
+        };
+        console.log('[SSE] 分发 sse-image-update 事件，detail:', eventDetail);
+        window.dispatchEvent(
+          new CustomEvent('sse-image-update', {
+            detail: eventDetail
+          })
+        );
+        console.log('[SSE] sse-image-update 事件已分发');
+      }
+
+      // messageType=3: 视频生成更新
+      if (data.messageType === 3) {
+        console.log('[SSE] 视频生成更新:', message);
+        window.dispatchEvent(
+          new CustomEvent('sse-video-update', {
+            detail: {
+              projectId: message.projectId || data.projectId,
+              episodeId: message.episodeId || data.episodeId,
+              taskStatus: message.taskStatus,
+              batchStatus: message.batchStatus,
+              episodeSceneItemInfoList: message.episodeSceneItemInfoList,
+              message: message
+            }
+          })
+        );
+      }
     }
+
+    // // 显示通知（如果需要）
+    // if (data.message && typeof data.message === 'string') {
+    //   ElNotification({
+    //     title: data.title || '消息',
+    //     message: data.message,
+    //     type: data.type || 'success',
+    //     duration: 3000
+    //   });
+    // }
   }
 
   /**
@@ -271,7 +429,13 @@ class SSEManager {
     this.cleanup();
     console.log('SSE 连接已关闭');
 
-    // 通知后端关闭连接
+    // 销毁协调器
+    if (this.coordinator) {
+      this.coordinator.destroy();
+      this.coordinator = null;
+    }
+
+    // 通知后端关闭连接（只有主标签页需要通知）
     try {
       await request({
         url: '/hivision/system/sse/close',

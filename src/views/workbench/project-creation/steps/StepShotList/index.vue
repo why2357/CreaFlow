@@ -15,45 +15,51 @@
     <div class="right-content">
       <!-- 顶部工具栏 -->
       <div class="toolbar">
-        <div class="left-tools">
-          <!-- 模型选择下拉框 -->
-          <el-dropdown trigger="click" @command="handleModelChange">
-            <el-button class="model-btn">
-              {{ currentModel }}
-              <svg-icon icon-class="fy-down" style="height: 16px; width: 16px; margin-left: 6px" />
-            </el-button>
-            <template #dropdown>
-              <el-dropdown-menu>
-                <el-dropdown-item v-for="model in modelOptions" :key="model.value" :command="model.value">
-                  {{ model.label }}
-                </el-dropdown-item>
-              </el-dropdown-menu>
-            </template>
-          </el-dropdown>
+        <div>
+          <div class="left-tools">
+            <!-- 模型选择下拉框 -->
+            <el-dropdown trigger="click" @command="handleModelChange">
+              <el-button class="model-btn">
+                {{ currentModel }}
+                <svg-icon icon-class="fy-down" style="height: 16px; width: 16px; margin-left: 6px" />
+              </el-button>
+              <template #dropdown>
+                <el-dropdown-menu>
+                  <el-dropdown-item v-for="model in modelOptions" :key="model.value" :command="model.value">
+                    {{ model.label }}
+                  </el-dropdown-item>
+                </el-dropdown-menu>
+              </template>
+            </el-dropdown>
 
-          <!-- 角色编辑按钮 -->
-          <el-button class="edit-role" @click="handleEditCharacters">
-            <svg-icon icon-class="fy-role" style="height: 16px; width: 16px; margin-right: 4px" />
-            角色编辑
-          </el-button>
-
-          <!-- 重新匹配角色按钮 -->
-          <el-tooltip content="重新匹配角色" placement="bottom">
-            <el-button class="refresh-btn" @click="handleRematchCharacters">
-              <svg-icon icon-class="fy-refresh" style="height: 16px; width: 16px" />
+            <!-- 角色编辑按钮 -->
+            <el-button class="edit-role" @click="handleEditCharacters">
+              <svg-icon icon-class="fy-role" style="height: 16px; width: 16px; margin-right: 4px" />
+              角色编辑
             </el-button>
-          </el-tooltip>
+
+            <!-- 重新匹配角色按钮 -->
+            <el-tooltip content="重新匹配角色" placement="bottom">
+              <el-button class="refresh-btn" @click="handleRematchCharacters">
+                <svg-icon icon-class="fy-refresh" style="height: 16px; width: 16px" />
+              </el-button>
+            </el-tooltip>
+          </div>
+        </div>
+        <div class="right-tools">
+          <!-- 导出按钮 -->
+          <ExportDropdown />
         </div>
       </div>
 
       <!-- 主内容区 - 分镜表视图 -->
       <div class="content-area">
         <!-- 分镜生成中提示 -->
-        <div v-if="episodeTaskStatus === 1" class="generating-overlay">
-          <div class="generating-content">
-            <svg-icon icon-class="fy-loading" class="loading-icon" />
-            <p class="generating-text">分镜生成中，请稍等...</p>
+        <div v-if="episodeTaskStatus === 1" class="loading-overlay">
+          <div class="loading-animation-wrapper">
+            <Vue3Lottie :animation-data="generatingAnimation" :height="80" :width="80" class="loading-icon" />
           </div>
+          <p class="generating-text">分镜生成中，请稍等...</p>
         </div>
 
         <StoryboardTable
@@ -74,7 +80,7 @@
         />
       </div>
       <!-- 右下批量生成按钮 -->
-      <div v-if="batchStatus === 0" class="right-tools">
+      <div v-if="batchStatus === 0" class="right-tools" v-hasPermi="['generate-continue']">
         <el-button class="bottom-btn" :loading="batchGenerateLoading" @click="handleBatchGenerate"> 继续 </el-button>
       </div>
     </div>
@@ -93,14 +99,6 @@
       :episode-id="Number(selectedEpisodeId)"
       :project-id="Number(projectStore.currentProjectId)"
       @success="handleCharacterEditSuccess"
-    />
-
-    <!-- 扣点确认对话框（单个生成） -->
-    <PointsConfirmDialog
-      v-model="pointsConfirmDialogVisible"
-      :shot-count="1"
-      :total-points="getCurrentModelPoints"
-      @confirm="handleConfirmGenerate"
     />
 
     <!-- 批量生成扣点确认对话框 -->
@@ -125,15 +123,18 @@
   } from '@/api/workbench/episode';
   import type { EpisodeInfoResponseDto, EpisodeSceneItemInfo } from '@/api/workbench/episode/types';
   import type { Episode, Shot, ShotForm } from '@/api/workbench/project/types';
-  import { useImageUpdateListener } from '@/composables/useSSEListener';
+  import { useImageUpdateListener, useScriptUpdateListener } from '@/composables/useSSEListener';
   import { useProjectStore } from '@/store/modules/project';
   import { useUserStore } from '@/store/modules/user';
   import { convertModelsToOptions, getDefaultModel, getModelName, ratioToSize } from '@/utils/projectUtils';
   import { ElMessage, ElMessageBox } from 'element-plus';
-  import { computed, onMounted, ref, watch } from 'vue';
+  import { computed, onActivated, onMounted, ref, watch } from 'vue';
+  import { Vue3Lottie } from 'vue3-lottie';
 
   // 导入组件
+  import generatingAnimation from '@/assets/lottie/video-generating.json';
   import AddEpisodeDialog from '../../components/AddEpisodeDialog.vue';
+  import ExportDropdown from '../../components/ExportDropdown.vue';
   import EpisodeListPanel from '../StepScript/components/EpisodeListPanel.vue';
   import CharacterEditDialog from './components/CharacterEditDialog.vue';
   import PointsConfirmDialog from './components/PointsConfirmDialog.vue';
@@ -141,7 +142,6 @@
 
   const projectStore = useProjectStore();
   const userStore = useUserStore();
-  console.log('projectStore.episodes', projectStore.episodes);
 
   // StoryboardTable 组件引用
   const storyboardTableRef = ref<InstanceType<typeof StoryboardTable>>();
@@ -185,15 +185,14 @@
   // 角色编辑对话框
   const characterEditDialogVisible = ref(false);
 
-  // 扣点确认对话框
-  const pointsConfirmDialogVisible = ref(false);
-  const currentRegenerateShot = ref<Shot | null>(null);
-
   // 批量生成相关状态
   const batchGenerateDialogVisible = ref(false);
   const batchTotalPoints = ref(0);
   const batchShotCount = ref(0);
   const batchGenerateLoading = ref(false);
+
+  // 标记是否已经完成首次加载（用于区分 onMounted 和 onActivated）
+  const isFirstLoad = ref(true);
 
   // 初始化
   onMounted(async () => {
@@ -206,6 +205,7 @@
       shots.value = [];
       episodeTaskStatus.value = undefined;
       batchStatus.value = undefined;
+      isFirstLoad.value = false; // 标记首次加载完成
       return;
     }
 
@@ -218,14 +218,95 @@
       selectedEpisodeId.value = projectStore.episodes[0].id;
       await loadShots();
     }
+
+    // 标记首次加载完成
+    isFirstLoad.value = false;
   });
 
-  // 监听 SSE 图片生成更新
-  useImageUpdateListener((detail) => {
-    console.log('[分镜头] 收到 SSE 图片更新:', detail);
-    // 无感刷新分镜头列表
-    loadShots(true);
+  // 当组件被 keep-alive 激活时触发（用户切换回该步骤时）
+  onActivated(async () => {
+    // 如果是首次加载（onMounted 后立即触发的 onActivated），跳过
+    if (isFirstLoad.value) {
+      return;
+    }
+
+    // 检查剧集列表是否为空
+    if (projectStore.episodes.length === 0) {
+      selectedEpisodeId.value = null;
+      shots.value = [];
+      episodeTaskStatus.value = undefined;
+      batchStatus.value = undefined;
+      return;
+    }
+
+    // 每次激活时重新加载数据
+    if (selectedEpisodeId.value) {
+      // 验证当前选中的剧集是否还存在
+      const episodeExists = projectStore.episodes.some((ep) => ep.id === selectedEpisodeId.value);
+      if (episodeExists) {
+        await loadShots(true); // 使用静默刷新
+      } else {
+        // 剧集不存在，清除缓存并选择第一个剧集
+        selectedEpisodeId.value = null;
+        shots.value = [];
+        episodeTaskStatus.value = undefined;
+        batchStatus.value = undefined;
+
+        if (projectStore.episodes.length > 0) {
+          selectedEpisodeId.value = projectStore.episodes[0].id;
+          await loadShots();
+        }
+      }
+    }
   });
+
+  // 监听 SSE 脚本生成完成（messageType=1）
+  // 脚本生成完成后，需要刷新剧集列表和镜头列表
+  useScriptUpdateListener(
+    async (detail) => {
+      // 更新任务状态
+      if (detail.taskStatus !== undefined) {
+        episodeTaskStatus.value = detail.taskStatus;
+      }
+
+      // 刷新剧集列表（更新剧集的任务状态等信息）
+      if (projectStore.currentProjectId) {
+        await projectStore.loadProjectInfo(Number(projectStore.currentProjectId));
+      }
+
+      // 无感刷新分镜头列表
+      loadShots(true);
+    },
+    {
+      // 传入当前的项目ID和剧集ID的响应式引用，自动过滤不匹配的消息
+      projectId: projectStore.currentProjectId,
+      episodeId: selectedEpisodeId
+    }
+  );
+
+  // 监听 SSE 图片生成更新（messageType=2）
+  // 只有当消息的 projectId 和 episodeId 与当前页面匹配时，才会触发回调
+  useImageUpdateListener(
+    (detail) => {
+      // 更新任务状态
+      if (detail.taskStatus !== undefined) {
+        episodeTaskStatus.value = detail.taskStatus;
+      }
+
+      // 更新批量状态
+      if (detail.batchStatus !== undefined) {
+        batchStatus.value = detail.batchStatus;
+      }
+
+      // 无感刷新分镜头列表
+      loadShots(true);
+    },
+    {
+      // 传入当前的项目ID和剧集ID的响应式引用，自动过滤不匹配的消息
+      projectId: projectStore.currentProjectId,
+      episodeId: selectedEpisodeId
+    }
+  );
 
   // 监听剧集变化
   watch(
@@ -503,7 +584,7 @@
   const handleCharacterEditSuccess = async () => {
     ElMessage.success('角色编辑成功');
     // 重新加载分镜列表以显示更新后的数据
-    await loadShots();
+    await loadShots(true);
   };
 
   // 重新匹配角色
@@ -514,7 +595,6 @@
     }
 
     try {
-      loading.value = true;
       const res = await rematchCharacters(Number(selectedEpisodeId.value));
       const errorSceneNums = res.data?.errorSceneNums;
 
@@ -531,12 +611,10 @@
         ElMessage.success('角色匹配成功');
       }
 
-      // 重新加载分镜列表以显示更新后的数据
-      await loadShots();
+      // 静默刷新分镜列表以显示更新后的数据
+      await loadShots(true);
     } catch (error) {
       console.log('重新匹配角色失败:', error);
-    } finally {
-      loading.value = false;
     }
   };
 
@@ -618,17 +696,8 @@
 
   // 重新生成图片
   const handleImageRegenerate = async (shot: Shot) => {
-    // 保存当前要生成的镜头
-    currentRegenerateShot.value = shot;
-    // 打开扣点确认弹窗
-    pointsConfirmDialogVisible.value = true;
-  };
-
-  // 确认生成图片
-  const handleConfirmGenerate = async () => {
-    if (!currentRegenerateShot.value || !selectedEpisodeId.value) return;
-
-    const shot = currentRegenerateShot.value;
+    // 单个生成时直接生成，不弹扣点确认弹窗
+    if (!selectedEpisodeId.value) return;
 
     try {
       // 设置加载状态
@@ -651,8 +720,6 @@
     } catch (error) {
       console.error('生成图片失败:', error);
       shot.imageLoading = false;
-    } finally {
-      currentRegenerateShot.value = null;
     }
   };
 
@@ -853,46 +920,28 @@
       overflow: hidden;
       margin-left: 20px;
 
-      // 分镜生成中遮罩层
-      .generating-overlay {
-        position: absolute;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
+      // 生成中状态样式
+      .loading-overlay {
         display: flex;
+        flex-direction: column;
         justify-content: center;
         align-items: center;
-        z-index: 1000;
-
-        .generating-content {
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          gap: 16px;
-
-          .loading-icon {
-            width: 48px;
-            height: 48px;
-            color: #5b5bff;
-            animation: rotate 1.5s linear infinite;
-          }
-
-          .generating-text {
-            color: #1d2129;
-            font-size: 16px;
-            font-weight: 500;
-            margin: 0;
-          }
+        width: 100%;
+        height: 100%;
+        // background: linear-gradient(180deg, #f0ebff 0%, #fef5ff 100%);
+        .loading-animation-wrapper {
+          animation: fadeInScale 0.4s ease-out;
+        }
+        .loading-icon {
+          width: 80px;
+          height: 80px;
         }
 
-        @keyframes rotate {
-          from {
-            transform: rotate(0deg);
-          }
-          to {
-            transform: rotate(360deg);
-          }
+        .loading-text {
+          margin-top: 12px;
+          color: #4e5969;
+          font-size: 13px;
+          font-weight: 400;
         }
       }
     }

@@ -4,7 +4,7 @@
     :key="`comment-popover-${props.basicId}`"
     v-model:visible="popoverVisible"
     :virtual-ref="triggerRef"
-    trigger="manual"
+    :trigger="props.triggerType || 'manual'"
     virtual-triggering
     placement="bottom-start"
     :width="382"
@@ -70,6 +70,8 @@
     triggerRef?: HTMLElement;
     // 可选的评论列表，如果提供则直接使用，不调用接口
     commentList?: SceneCommentVo[];
+    // 触发方式: 'manual' | 'hover' | 'click'
+    triggerType?: 'manual' | 'hover' | 'click';
   }
 
   const props = defineProps<Props>();

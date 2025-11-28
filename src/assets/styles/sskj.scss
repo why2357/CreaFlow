@@ -348,7 +348,8 @@ h6 {
   opacity: 0;
 }
 .el-dropdown-menu__item--divided {
-  opacity: 0;
+  // opacity: 0;
+  display: none;
 }
 .el-input .el-input__count .el-input__count-inner {
   background: none !important;

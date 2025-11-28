@@ -9,7 +9,9 @@
     <template #header>
       <div class="dialog-header">
         <span class="dialog-title">新建剧集</span>
-        <el-button class="download-template-btn" @click="handleDownloadTemplate"> 下载模版 </el-button>
+        <el-button v-if="inputMode === 'upload'" class="download-template-btn" @click="handleDownloadTemplate">
+          下载模版
+        </el-button>
       </div>
     </template>
     <el-form ref="formRef" :model="form" :rules="rules" label-width="0" @submit.prevent="handleSubmit">
@@ -118,7 +120,15 @@
       <div class="dialog-footer">
         <el-button class="gen-btn" :loading="loading" @click="handleSubmit">
           <el-icon v-if="!loading"><MagicStick /></el-icon>
-          {{ loading ? '生成中...' : '立即生成' }}
+          {{
+            loading
+              ? inputMode === 'upload'
+                ? '上传中'
+                : '生成中...'
+              : inputMode === 'upload'
+              ? '立即上传'
+              : '立即生成'
+          }}
         </el-button>
       </div>
     </template>
@@ -362,9 +372,9 @@
         dialogVisible.value = false;
         // 触发成功事件，通知父组件刷新列表
         emit('success');
-      } catch (error) {
+      } catch (error: any) {
         console.error('创建剧集失败:', error);
-        ElMessage.error('创建剧集失败，请重试');
+        // ElMessage.error(error?.msg || '创建剧集失败');
       } finally {
         loading.value = false;
       }

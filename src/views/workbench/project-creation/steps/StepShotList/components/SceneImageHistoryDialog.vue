@@ -3,7 +3,7 @@
     style="background-color: #f7f8fa"
     v-model="visible"
     title="图片历史"
-    width="70%"
+    width="72%"
     :close-on-click-modal="false"
     @close="handleClose"
   >
@@ -26,7 +26,14 @@
         </div>
         <div v-else class="current-image-container">
           <div class="current-image-wrapper">
-            <el-image :src="selectedHistoryDetail.previewOssUrl || selectedHistoryDetail.originOssUrl" fit="contain" />
+            <el-image
+              :src="selectedHistoryDetail.originOssUrl || selectedHistoryDetail.previewOssUrl"
+              :preview-src-list="[selectedHistoryDetail.originOssUrl || selectedHistoryDetail.previewOssUrl]"
+              fit="contain"
+              style="cursor: pointer"
+              :preview-teleported="true"
+              hide-on-click-modal
+            />
           </div>
           <div class="lb-box">
             <div class="current-image-info">
@@ -70,7 +77,13 @@
             <!-- 历史组标题 -->
             <div class="history-group-header">
               <div class="header-content">
-                <div class="prompt-section">
+                <div class="prompt-section" v-if="history.operationType == 2">
+                  <div class="prompt-line">
+                    <span class="label">·</span>
+                    <span class="text">提示词：{{ history.prompt }}</span>
+                  </div>
+                </div>
+                <div class="prompt-section" v-else>
                   <div v-if="history.sceneDesc" class="prompt-line">
                     <span class="label">·</span>
                     <span class="text">{{ history.sceneDesc }}</span>
@@ -90,10 +103,11 @@
                 :key="detail.historyDetailId"
                 class="image-item"
                 :class="{ selected: selectedHistoryDetail?.historyDetailId === detail.historyDetailId }"
+                :data-ratio="history.ratio"
                 @click="handleSelectImage(detail)"
               >
                 <div class="image-wrapper">
-                  <el-image :src="detail.previewOssUrl || detail.originOssUrl" fit="cover" :preview-src-list="[]" />
+                  <el-image :src="detail.previewOssUrl || detail.originOssUrl" :preview-src-list="[]" />
 
                   <!-- 左上角：放大按钮 -->
                   <div class="action-top-left">
@@ -123,7 +137,7 @@
                     <div
                       ref="commentTriggerRef"
                       class="action-icon comment-btn"
-                      @click.stop="handleShowComments(detail, $event)"
+                      @mouseenter="handleShowComments(detail, $event)"
                     >
                       <svg-icon icon-class="fy-comment" class="comment-icon" />
                       <span class="count-text">{{ detail.commentVoList?.length || 0 }}</span>
@@ -157,6 +171,7 @@
             <!-- 历史组底部信息 -->
             <div class="history-group-footer">
               <div class="footer-info">
+                <span class="info-text" v-if="history.operationType == 2">编辑生成</span>
                 <span v-if="history.modelCode" class="info-text">{{ getModelNameByCode(history.modelCode) }}</span>
                 <span class="info-text">{{ history.ratio }}</span>
                 <span class="info-text">{{ history.createTime }}</span>
@@ -183,23 +198,27 @@
     </div>
   </el-dialog>
 
-  <!-- 图片预览 -->
-  <el-image-viewer
-    v-if="showImageViewer"
-    :url-list="[previewImageUrl]"
-    :initial-index="0"
-    :z-index="9999"
-    @close="showImageViewer = false"
-  />
-
   <!-- 评论列表弹窗 -->
   <CommentListDialog
     v-model="showCommentList"
     :basic-id="commentBasicId"
     :scene-type="1"
     :trigger-ref="commentTriggerElement"
+    trigger-type="hover"
     :comment-list="currentCommentList"
     @change="handleCommentChange"
+  />
+
+  <!-- 隐藏的预览图片（用于点击放大按钮时的预览） -->
+  <el-image
+    v-if="previewImageUrl"
+    ref="previewImageRef"
+    style="display: none"
+    :src="previewImageUrl"
+    :preview-src-list="[previewImageUrl]"
+    :initial-index="0"
+    :preview-teleported="true"
+    hide-on-click-modal
   />
 </template>
 
@@ -216,7 +235,7 @@
   import { useProjectStore } from '@/store/modules/project';
   import { formatDate } from '@/utils';
   import { Delete, Download, Loading, MoreFilled } from '@element-plus/icons-vue';
-  import { ElImageViewer, ElMessage, ElMessageBox } from 'element-plus';
+  import { ElMessage, ElMessageBox } from 'element-plus';
   import { ref, watch } from 'vue';
   import CommentListDialog from './CommentListDialog.vue';
 
@@ -237,9 +256,11 @@
     historyId: number;
     sceneDesc: string;
     sceneHint: string;
+    prompt?: string;
     modelCode: string;
     ratio: string;
     createTime?: string;
+    operationType?: number;
     details: HistoryDetail[];
   }
 
@@ -257,15 +278,18 @@
   const visible = ref(false);
   const loading = ref(false);
   const selectedHistoryDetail = ref<HistoryDetail | null>(null);
+  const initialSelectedHistoryDetailId = ref<number | null>(null); // 初始选中的图片ID
   const historyList = ref<HistoryGroup[]>([]);
-  const showImageViewer = ref(false);
-  const previewImageUrl = ref('');
 
   // 评论相关状态
   const showCommentList = ref(false);
   const commentBasicId = ref(0);
   const commentTriggerElement = ref<HTMLElement>();
   const currentCommentList = ref<any[]>([]);
+
+  // 图片预览相关状态
+  const previewImageRef = ref();
+  const previewImageUrl = ref('');
 
   // 监听 modelValue 变化
   watch(
@@ -276,6 +300,7 @@
         loadHistory();
       } else {
         selectedHistoryDetail.value = null;
+        initialSelectedHistoryDetailId.value = null;
       }
     }
   );
@@ -336,6 +361,8 @@
             createTime: data.selectHistory.createTime ? formatDate(String(data.selectHistory.createTime)) : '',
             isCollected: selectedItem.isCollect
           };
+          // 保存初始选中的图片ID
+          initialSelectedHistoryDetailId.value = selectedItem.historyDetailId || null;
         }
       }
 
@@ -344,15 +371,17 @@
         historyId: history.historyId || 0,
         sceneDesc: history.sceneDesc || '',
         sceneHint: history.sceneHint || '',
+        prompt: history.prompt || '',
         modelCode: history.modelCode || '',
         ratio: getRatioText(history.pictureRatio),
         createTime: history.createTime ? formatDate(String(history.createTime)) : '',
+        operationType: history.operationType,
         details: (history.sceneItemHistoryInfoList || []).map((item) => ({
           ...item,
           historyDetailId: item.historyDetailId || 0,
           originOssUrl: item.materialVo?.originOssUrl,
           previewOssUrl: item.materialVo?.previewOssUrl,
-          prompt: history.sceneHint,
+          prompt: history.prompt || history.sceneHint,
           description: history.sceneDesc,
           ratio: getRatioText(history.pictureRatio),
           createTime: history.createTime ? formatDate(String(history.createTime)) : '',
@@ -372,17 +401,16 @@
     selectedHistoryDetail.value = detail;
   };
 
-  // 预览图片
+  // 预览图片（点击放大按钮时触发）
   const handlePreviewImage = (detail: HistoryDetail) => {
-    const imageUrl = detail.originOssUrl || detail.previewOssUrl;
-    if (!imageUrl) {
-      ElMessage.warning('图片地址不存在');
-      return;
-    }
-
-    // 设置预览图片URL并显示查看器
-    previewImageUrl.value = imageUrl;
-    showImageViewer.value = true;
+    previewImageUrl.value = detail.originOssUrl || detail.previewOssUrl || '';
+    // 等待 DOM 更新后触发预览
+    setTimeout(() => {
+      const imageElement = previewImageRef.value?.$el?.querySelector('.el-image__inner');
+      if (imageElement) {
+        imageElement.click();
+      }
+    }, 50);
   };
 
   // 切换收藏状态
@@ -543,6 +571,12 @@
       return;
     }
 
+    // 如果选中的图片没有变化，直接关闭弹窗，不调用接口
+    if (selectedHistoryDetail.value.historyDetailId === initialSelectedHistoryDetailId.value) {
+      handleClose();
+      return;
+    }
+
     try {
       await chooseHistoryDetail({ historyDetailId: selectedHistoryDetail.value.historyDetailId });
       ElMessage.success('选择成功');
@@ -642,7 +676,7 @@
 
         // 图片容器 - 固定高度180px
         .current-image-wrapper {
-          height: 180px;
+          height: 230px;
           border-radius: 8px;
           background: #f5f7fa;
           overflow: hidden;
@@ -803,9 +837,9 @@
           }
 
           .image-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
-            gap: 12px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 3px;
 
             .image-item {
               position: relative;
@@ -835,16 +869,30 @@
                 box-shadow: 0 4px 12px rgb(97 87 255 / 30%);
               }
 
+              // 根据不同比例设置宽度，高度固定160px
+              &[data-ratio='16:9'] {
+                width: 284px; // 160 * (16/9)
+              }
+              &[data-ratio='9:16'] {
+                width: 90px; // 160 * (9/16)
+              }
+              &[data-ratio='1:1'] {
+                width: 160px; // 160 * 1
+              }
+              &[data-ratio='4:3'] {
+                width: 213px; // 160 * (4/3)
+              }
+              &[data-ratio='3:4'] {
+                width: 120px; // 160 * (3/4)
+              }
+
               .image-wrapper {
                 position: relative;
                 width: 100%;
-                padding-bottom: 100%; // 1:1 ratio
+                height: 160px; // 固定高度160px
                 background: #f5f7fa;
 
                 .el-image {
-                  position: absolute;
-                  top: 0;
-                  left: 0;
                   width: 100%;
                   height: 100%;
                 }
@@ -1018,6 +1066,7 @@
               .info-text {
                 color: #86909c;
                 font-size: 12px;
+                font-family: 'PingFang SC';
               }
             }
 

@@ -329,7 +329,6 @@ const fallbackCopyText = (text: string) => {
     if (successful) {
       ElMessage.success('复制成功');
     }
-    console.log(successful ? '内容已复制到剪贴板 (Fallback 方法):' : '复制失败 (Fallback 方法)', text);
   } catch (err) {
     console.error('复制失败 (Fallback 方法):', err);
   } finally {

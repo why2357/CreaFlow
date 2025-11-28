@@ -242,8 +242,6 @@
     try {
       // 情况1：用户不存在于团队中 - 调用新增接口
       if (!memberInfo || !(memberInfo as any).memberId) {
-        console.log('memberInfo', memberInfo);
-
         await handleAddMember(user.userId, roleInfo.roleId);
         return;
       }

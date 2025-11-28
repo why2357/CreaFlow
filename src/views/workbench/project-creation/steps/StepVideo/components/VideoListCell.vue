@@ -2,7 +2,7 @@
   <div class="video-list-cell" :data-aspect-ratio="aspectRatio">
     <!-- 暂无视频 -->
     <div v-if="videoList.length === 0" class="empty-state">
-      <span class="empty-text">暂无生成视频</span>
+      <svg-icon icon-class="no-sence" style="width: 120px; height: 120px" />
     </div>
 
     <!-- 视频列表 -->
@@ -31,7 +31,51 @@
             <div class="status-text">排队中...</div>
           </div>
 
-          <!-- 完成状态 taskStatus: 2 / 失败状态 taskStatus: 3 -->
+          <!-- 失败状态 taskStatus: 3 -->
+          <div
+            v-else-if="videoItem.status === 3"
+            class="video-card failed"
+            @mouseenter="handleMouseEnter"
+            @mouseleave="handleMouseLeave"
+          >
+            <div class="failure-container">
+              <div class="failure-icon">
+                <svg-icon class="error-icon" icon-class="fy-gen-failed" />
+              </div>
+              <p class="failure-text">生成失败</p>
+            </div>
+
+            <!-- Hover时显示的操作层 -->
+            <div
+              v-if="isHovered || isDropdownOpen"
+              class="hover-actions"
+              @mouseenter="handleActionsMouseEnter"
+              @mouseleave="handleActionsMouseLeave"
+            >
+              <!-- 右下角更多按钮 -->
+              <el-dropdown
+                trigger="click"
+                placement="bottom-end"
+                :popper-options="{ modifiers: [{ name: 'offset', options: { offset: [0, 2] } }] }"
+                @command="handleCommand($event, videoItem)"
+                @visible-change="handleDropdownVisibleChange"
+              >
+                <el-button class="more-btn" text circle @click.stop>
+                  <svg-icon icon-class="fy-more" />
+                </el-button>
+                <template #dropdown>
+                  <el-dropdown-menu>
+                    <el-dropdown-item command="delete" :disabled="isOperating" style="color: #f53f3f">
+                      <svg-icon icon-class="fy-del" style="width: 16px; height: 16px; margin-right: 8px" />
+                      删除
+                    </el-dropdown-item>
+                  </el-dropdown-menu>
+                </template>
+              </el-dropdown>
+            </div>
+          </div>
+
+          <!-- 完成状态 taskStatus: 2 -->
           <div
             v-else
             class="video-card completed"
@@ -79,8 +123,8 @@
                       <el-icon><Download /></el-icon>
                       下载
                     </el-dropdown-item>
-                    <el-dropdown-item command="delete" :disabled="isOperating">
-                      <el-icon><Delete /></el-icon>
+                    <el-dropdown-item command="delete" :disabled="isOperating" style="color: #f53f3f">
+                      <svg-icon icon-class="fy-del" style="width: 16px; height: 16px; margin-right: 8px" />
                       删除
                     </el-dropdown-item>
                   </el-dropdown-menu>
@@ -108,11 +152,11 @@
 </template>
 
 <script setup lang="ts">
-  import { chooseHistoryDetail, deleteHistoryDetail } from '@/api/workbench/episode';
+  import { chooseHistoryDetail, deleteHistory } from '@/api/workbench/episode';
   import type { VideoSceneItemInfo } from '@/api/workbench/episode/types';
   import generatingAnimation from '@/assets/lottie/video-generating.json';
-  import { Delete, Download, RefreshRight } from '@element-plus/icons-vue';
-  import { ElMessage, ElMessageBox } from 'element-plus';
+  import { Download, RefreshRight } from '@element-plus/icons-vue';
+  import { ElMessage } from 'element-plus';
   import { computed, ref } from 'vue';
   import { Vue3Lottie } from 'vue3-lottie';
   import VideoHistoryDialog from './VideoHistoryDialog.vue';
@@ -316,8 +360,6 @@
 
   // 替换视频
   const handleReplace = async (videoItem: any) => {
-    console.log('videoItem', videoItem);
-
     if (!videoItem.historyDetailId) {
       ElMessage.warning('缺少历史记录ID');
       return;
@@ -379,50 +421,25 @@
 
   // 删除视频
   const handleDelete = async (videoItem: any) => {
-    console.log('videoItem', videoItem);
-
-    if (!videoItem.historyDetailId) {
+    if (!videoItem.id) {
       ElMessage.warning('缺少历史记录ID');
       return;
     }
 
+    // 设置操作中状态
+    isOperating.value = true;
+
     try {
-      await ElMessageBox.confirm('确定要删除这个视频吗？此操作不可恢复。', '删除确认', {
-        confirmButtonText: '确定删除',
-        cancelButtonText: '取消',
-        type: 'warning',
-        confirmButtonClass: 'el-button--danger',
-        center: true
-      });
+      // 直接调用删除历史主数据接口，不需要弹窗确认
+      await deleteHistory([videoItem.id]);
 
-      // 设置操作中状态
-      isOperating.value = true;
-      const loadingMessage = ElMessage.info({
-        message: '正在删除视频...',
-        duration: 0
-      });
-
-      try {
-        // 调用删除历史明细接口
-        await deleteHistoryDetail([videoItem.historyDetailId]);
-
-        loadingMessage.close();
-        ElMessage.success('删除成功');
-        emit('refresh');
-      } catch (deleteError: any) {
-        loadingMessage.close();
-        console.error('删除视频失败:', deleteError);
-        ElMessage.error(deleteError.message || '删除失败，请重试');
-      } finally {
-        isOperating.value = false;
-      }
+      ElMessage.success('删除成功');
+      emit('refresh');
     } catch (error: any) {
-      // 用户取消操作
-      if (error === 'cancel' || error === 'close') {
-        return;
-      }
-      console.error('删除操作失败:', error);
-      ElMessage.error('操作失败');
+      console.error('删除视频失败:', error);
+      ElMessage.error(error.message || '删除失败，请重试');
+    } finally {
+      isOperating.value = false;
     }
   };
 
@@ -593,6 +610,90 @@
               color: #ff8800;
               font-weight: 500;
               animation: fadeIn 0.5s ease-out 0.2s both;
+            }
+          }
+
+          // 失败状态
+          &.failed {
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background: #fff;
+            animation: fadeIn 0.3s ease-out;
+
+            &::before {
+              content: '';
+              position: absolute;
+              top: 0;
+              left: 0;
+              right: 0;
+              bottom: 0;
+              background: linear-gradient(0deg, rgba(0, 0, 0, 0.4) 0%, rgba(0, 0, 0, 0.4) 100%);
+              opacity: 0;
+              transition: opacity 0.3s ease;
+              pointer-events: none;
+            }
+
+            &:hover::before {
+              opacity: 1;
+            }
+
+            .failure-container {
+              position: relative;
+              z-index: 1;
+              display: flex;
+              flex-direction: column;
+              align-items: center;
+              justify-content: center;
+              gap: 12px;
+
+              .failure-icon {
+                animation: fadeInScale 0.4s ease-out;
+                .error-icon {
+                  width: 40px;
+                  height: 40px;
+                  color: #f53f3f;
+                }
+              }
+
+              .failure-text {
+                font-size: 13px;
+                color: #f53f3f;
+                font-weight: 500;
+                margin: 0;
+                animation: fadeIn 0.5s ease-out 0.2s both;
+              }
+            }
+
+            // Hover时显示的操作层
+            .hover-actions {
+              position: absolute;
+              bottom: 8px;
+              right: 8px;
+              z-index: 10;
+
+              .more-btn {
+                width: 24px;
+                height: 24px;
+                background: #fff;
+                border-radius: 5px;
+                padding: 0;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+
+                &:hover {
+                  background: #fff;
+                }
+
+                :deep(.svg-icon) {
+                  width: 16px;
+                  height: 16px;
+                  color: #4e5969;
+                }
+              }
             }
           }
 
@@ -784,7 +885,6 @@
 
       &:hover:not(.is-disabled) {
         background-color: #f3f3ff !important;
-        color: #5252ff;
 
         .el-icon {
           color: #5252ff;
@@ -794,18 +894,6 @@
       &.is-disabled {
         opacity: 0.5;
         cursor: not-allowed;
-      }
-
-      // 删除项特殊样式
-      &:last-child {
-        &:hover:not(.is-disabled) {
-          background-color: #fff2f0 !important;
-          color: #f5222d;
-
-          .el-icon {
-            color: #f5222d;
-          }
-        }
       }
     }
   }

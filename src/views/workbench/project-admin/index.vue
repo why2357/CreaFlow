@@ -222,7 +222,6 @@
 
   // ------- 点击项目卡片 --------
   const handleProjectClick = (project: Project) => {
-    console.log('进入项目:', project);
     // 导航到项目制作页
     router.push({ name: 'ProjectCreation', params: { id: project.projectId } });
   };

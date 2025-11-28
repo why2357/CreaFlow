@@ -53,7 +53,6 @@ export const useUploadStore = defineStore('upload', {
         this.updateUploadStatus(index, UpStatus.Success);
         return Promise.resolve(res);
       } catch (err) {
-        console.log('上传报错了：', err);
         this.updateUploadStatus(index, UpStatus.Fail);
         return Promise.reject(err);
       }
