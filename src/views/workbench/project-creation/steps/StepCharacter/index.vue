@@ -125,6 +125,10 @@
                             <svg-icon icon-class="fy-pen" style="width: 16px; height: 16px; margin-right: 16px" />
                             重命名
                           </el-dropdown-item>
+                          <el-dropdown-item command="download">
+                            <svg-icon icon-class="fy-download" style="width: 16px; height: 16px; margin-right: 16px" />
+                            下载
+                          </el-dropdown-item>
                           <el-dropdown-item command="delete" divided class="delete-item">
                             <svg-icon icon-class="fy-del" style="width: 16px; height: 16px; margin-right: 16px" />
                             删除
@@ -456,6 +460,8 @@
       renameForm.value.name = costume.detailName || '';
       renameTarget.value = { type: 'detail', data: costume };
       renameDialog.value = true;
+    } else if (command === 'download') {
+      handleDownloadImage(costume);
     } else if (command === 'delete') {
       ElMessageBox.confirm(`确定要删除服装"${costume.detailName}"吗？`, '删除确认', {
         confirmButtonText: '确定',
@@ -473,6 +479,41 @@
           }
         })
         .catch(() => {});
+    }
+  };
+
+  // 下载图片
+  const handleDownloadImage = async (costume: LibrarySubInfo) => {
+    // 从 materialVo 中获取原图地址
+    const imageUrl = costume.materialVo?.originOssUrl;
+
+    if (!imageUrl) {
+      ElMessage.warning('图片地址不存在');
+      return;
+    }
+
+    try {
+      // 创建一个隐藏的 a 标签
+      const link = document.createElement('a');
+      link.href = imageUrl;
+
+      // 设置下载文件名，优先使用服装名称，否则从 URL 中提取
+      const fileName = costume.detailName
+        ? `${costume.detailName}.${imageUrl.split('.').pop() || 'jpg'}`
+        : imageUrl.split('/').pop() || 'image.jpg';
+
+      link.download = fileName;
+      // link.target = '_blank';
+
+      // 触发下载
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+
+      ElMessage.success('开始下载');
+    } catch (error) {
+      console.error('下载失败:', error);
+      ElMessage.error('下载失败');
     }
   };
 

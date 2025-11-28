@@ -657,11 +657,12 @@
         }
 
         &.disabled {
-          opacity: 0.4;
+          // opacity: 0.4;
+          color: #c9cdd4;
           cursor: not-allowed;
 
           &:hover {
-            background: rgb(255 255 255 / 90%);
+            // background: rgb(255 255 255 / 90%);
             transform: none;
           }
 
@@ -703,11 +704,12 @@
         }
 
         &.is-disabled {
-          opacity: 0.4;
+          // opacity: 0.4;
           cursor: not-allowed;
+          color: #c9cdd4;
 
           &:hover {
-            background: #f7f8fa;
+            color: #c9cdd4;
             transform: none;
           }
 
@@ -743,7 +745,7 @@
           }
 
           &.is-disabled {
-            opacity: 0.4;
+            opacity: 0.8;
             cursor: not-allowed;
 
             &:hover {

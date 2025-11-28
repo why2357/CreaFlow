@@ -158,7 +158,7 @@
                           <svg-icon icon-class="fy-download" />
                           <span style="margin-left: 8px">下载</span>
                         </el-dropdown-item>
-                        <el-dropdown-item command="delete">
+                        <el-dropdown-item command="delete" style="color: #f53f3f">
                           <svg-icon icon-class="fy-del" />
                           <span style="margin-left: 8px">删除</span>
                         </el-dropdown-item>

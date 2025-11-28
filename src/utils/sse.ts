@@ -168,6 +168,15 @@ class SSEManager {
             console.log('[SSE] 遇到空行，当前累积数据:', currentData);
             if (currentData) {
               console.log('[SSE] 解析数据:', currentData);
+
+              // 跳过 "Connection established" 这类服务器确认消息
+              if (currentData === 'Connection established' || currentData.trim() === 'Connection established') {
+                console.log('[SSE] 收到服务器连接确认消息，跳过处理');
+                currentData = '';
+                currentEvent = '';
+                continue;
+              }
+
               try {
                 // 尝试反转义 JSON 字符串
                 let jsonStr = currentData;
@@ -181,8 +190,14 @@ class SSEManager {
                 this.handleMessage(data);
               } catch (error) {
                 console.error('[SSE] 解析 JSON 失败:', error, currentData);
-                // 如果不是 JSON，尝试直接处理
-                this.handleMessage({ message: currentData });
+                // 如果不是 JSON，检查是否是纯文本消息（如服务器通知）
+                if (typeof currentData === 'string' && !currentData.startsWith('{')) {
+                  console.log('[SSE] 收到纯文本消息:', currentData);
+                  // 跳过纯文本消息，不作为错误处理
+                } else {
+                  // 尝试作为普通消息处理
+                  this.handleMessage({ message: currentData });
+                }
               }
               currentData = '';
               currentEvent = '';
