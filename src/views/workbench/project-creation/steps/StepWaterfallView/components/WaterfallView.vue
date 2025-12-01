@@ -17,156 +17,163 @@
     </div>
 
     <!-- 瀑布流容器 -->
-    <div v-else class="waterfall-container">
-      <!-- 每一列对应一个 WaterfallItem -->
+    <div v-else class="waterfall-scroll-wrapper">
       <div
-        v-for="(item, index) in waterfallData"
-        :key="item.id"
-        :ref="(el) => setColumnRef(el, item.id)"
-        class="waterfall-column"
-        :style="{ width: columnWidths[item.id] ? `${columnWidths[item.id]}px` : 'auto' }"
+        class="waterfall-container"
+        :style="{
+          transform: `scale(${scale})`,
+          transformOrigin: 'top left',
+          width: `${100 / scale}%`
+        }"
       >
-        <!-- 第一张图片（当前选中的图片） -->
+        <!-- 每一列对应一个 WaterfallItem -->
         <div
-          class="main-image-wrapper"
-          :style="{ height: `${mainImageHeight}px` }"
-          @mouseenter="handleMainImageHover(item)"
-          @mouseleave="handleMainImageLeave"
+          v-for="(item, index) in waterfallData"
+          :key="item.id"
+          :ref="(el) => setColumnRef(el, item.id)"
+          class="waterfall-column"
+          :style="{ width: columnWidths[item.id] ? `${columnWidths[item.id]}px` : 'auto' }"
         >
-          <!-- 有图片时显示 -->
-          <el-image
-            v-if="item.selectImg?.previewOssUrl || item.selectImg?.originOssUrl"
-            :src="item.selectImg?.previewOssUrl || item.selectImg?.originOssUrl"
-            class="main-image"
-            :preview-src-list="[item.selectImg?.originOssUrl || item.selectImg?.previewOssUrl]"
-            :preview-teleported="true"
-            :z-index="9999"
-            hide-on-click-modal
-            @load="(e: Event) => handleImageLoad(e, item.id)"
-          />
+          <!-- 第一张图片（当前选中的图片） -->
+          <div
+            class="main-image-wrapper"
+            :style="{ height: `${mainImageHeight}px` }"
+            @mouseenter="handleMainImageHover(item)"
+            @mouseleave="handleMainImageLeave"
+          >
+            <!-- 有图片时显示 -->
+            <el-image
+              v-if="item.selectImg?.previewOssUrl || item.selectImg?.originOssUrl"
+              :src="item.selectImg?.previewOssUrl || item.selectImg?.originOssUrl"
+              class="main-image"
+              :preview-src-list="[item.selectImg?.originOssUrl || item.selectImg?.previewOssUrl]"
+              :preview-teleported="true"
+              :z-index="9999"
+              hide-on-click-modal
+              @load="(e: Event) => handleImageLoad(e, item.id)"
+            />
 
-          <!-- 空图片占位符 -->
-          <div v-else class="empty-image-placeholder">
-            <div class="placeholder-content">
-              <svg-icon icon-class="fy-image" class="placeholder-icon" />
-              <p class="placeholder-text">暂无画面</p>
+            <!-- 空图片占位符 -->
+            <div v-else class="empty-image-placeholder">
+              <div class="placeholder-content">
+                <svg-icon icon-class="fy-image" class="placeholder-icon" />
+                <p class="placeholder-text">暂无画面</p>
+              </div>
+            </div>
+
+            <!-- 悬浮操作按钮 -->
+            <transition name="fade">
+              <div v-if="hoveredMainImageId === item.id" class="hover-actions">
+                <SceneActions
+                  button-size="default"
+                  tooltip-placement="top"
+                  :disable-comment="!item.imgTaskId"
+                  @comment="(event: MouseEvent) => handleComment(item, event)"
+                  @insert="handleInsert(item)"
+                  @review="(event: MouseEvent) => handleReview(item, event)"
+                  @delete="handleDeleteScene(item)"
+                />
+              </div>
+            </transition>
+
+            <!-- 镜号区域 -->
+            <div class="card-number-wrapper">
+              <!-- 镜号标签 -->
+              <div class="card-number">
+                <svg-icon icon-class="fy-juji" class="icon" />
+                <span>{{ String(index + 1).padStart(2, '0') }}</span>
+              </div>
+
+              <!-- 状态指示圆点 -->
+              <div
+                v-if="item.imgStatus !== undefined"
+                class="status-dot"
+                :class="[getDotClass(item.imgStatus), { clickable: canApproveScene }]"
+                @click.stop="handleDotClick(item, $event)"
+              ></div>
             </div>
           </div>
 
-          <!-- 悬浮操作按钮 -->
-          <transition name="fade">
-            <div v-if="hoveredMainImageId === item.id" class="hover-actions">
-              <SceneActions
-                button-size="default"
-                tooltip-placement="top"
-                :disable-comment="!item.imgTaskId"
-                @comment="(event: MouseEvent) => handleComment(item, event)"
-                @insert="handleInsert(item)"
-                @review="(event: MouseEvent) => handleReview(item, event)"
-                @delete="handleDeleteScene(item)"
-              />
+          <!-- 镜头提示与台词 -->
+          <div class="scene-info">
+            <div v-if="item.sceneDesc" class="scene-hint">
+              <span class="info-text">{{ item.sceneDesc }}</span>
             </div>
-          </transition>
-
-          <!-- 镜号区域 -->
-          <div class="card-number-wrapper">
-            <!-- 镜号标签 -->
-            <div class="card-number">
-              <svg-icon icon-class="fy-juji" class="icon" />
-              <span>{{ String(index + 1).padStart(2, '0') }}</span>
+            <div v-if="item.dialogues" class="scene-dialogue">
+              <span class="info-text">{{ item.dialogues }}</span>
             </div>
-
-            <!-- 状态指示圆点 -->
-            <div
-              v-if="item.imgStatus !== undefined"
-              class="status-dot"
-              :class="[getDotClass(item.imgStatus), { clickable: canApproveScene }]"
-              @click.stop="handleDotClick(item, $event)"
-            ></div>
           </div>
-        </div>
 
-        <!-- 镜头提示与台词 -->
-        <div class="scene-info">
-          <div v-if="item.sceneDesc" class="scene-hint">
-            <svg-icon icon-class="fy-jingtou" class="info-icon" />
-            <span class="info-text">{{ item.sceneDesc }}</span>
-          </div>
-          <div v-if="item.dialogues" class="scene-dialogue">
-            <svg-icon icon-class="fy-taici" class="info-icon" />
-            <span class="info-text">{{ item.dialogues }}</span>
-          </div>
-        </div>
-
-        <!-- 历史图片列表 -->
-        <div
-          v-if="item.historyImgs && item.historyImgs.length > 0"
-          class="history-images"
-          :style="{ maxHeight: `calc(100vh - ${mainImageHeight + 330}px)` }"
-        >
-          <div class="history-box">
-            <div
-              v-for="historyImg in item.historyImgs"
-              :key="historyImg.id"
-              class="history-image-item"
-              @mouseenter="hoveredHistoryImageId = historyImg.id"
-              @mouseleave="hoveredHistoryImageId = null"
-            >
-              <el-image
-                :src="historyImg.imgMaterial?.previewOssUrl || historyImg.imgMaterial?.originOssUrl"
-                fit="contain"
-                class="history-image"
-                :preview-src-list="[historyImg.imgMaterial?.originOssUrl || historyImg.imgMaterial?.previewOssUrl]"
-                :preview-teleported="true"
-                :z-index="9999"
-                hide-on-click-modal
-              />
-              <!-- 右上角操作按钮 -->
-              <transition name="fade">
-                <div v-if="shouldShowActions(historyImg.id)" class="top-right-actions">
-                  <el-tooltip content="替换" placement="top">
-                    <div class="action-btn replace-btn" @click.stop="handleReplaceConfirm(item.id, historyImg.id)">
-                      <svg-icon icon-class="fy-tihuan" />
-                    </div>
-                  </el-tooltip>
-                  <el-tooltip :content="historyImg.isCollect ? '取消收藏' : '收藏'" placement="top">
-                    <div
-                      class="action-btn collect-btn"
-                      :class="{ active: historyImg.isCollect }"
-                      @click.stop="handleCollect(historyImg.id, historyImg.isCollect)"
+          <!-- 历史图片列表 -->
+          <div
+            v-if="item.historyImgs && item.historyImgs.length > 0"
+            class="history-images"
+            :style="{ maxHeight: `calc((250vh  - ${mainImageHeight + 330}px / ${scale}))` }"
+          >
+            <div class="history-box">
+              <div
+                v-for="historyImg in item.historyImgs"
+                :key="historyImg.id"
+                class="history-image-item"
+                @mouseenter="hoveredHistoryImageId = historyImg.id"
+                @mouseleave="hoveredHistoryImageId = null"
+              >
+                <el-image
+                  :src="historyImg.imgMaterial?.previewOssUrl || historyImg.imgMaterial?.originOssUrl"
+                  fit="contain"
+                  class="history-image"
+                  :preview-src-list="[historyImg.imgMaterial?.originOssUrl || historyImg.imgMaterial?.previewOssUrl]"
+                  :preview-teleported="true"
+                  :z-index="9999"
+                  hide-on-click-modal
+                />
+                <!-- 右上角操作按钮 -->
+                <transition name="fade">
+                  <div v-if="shouldShowActions(historyImg.id)" class="top-right-actions">
+                    <el-tooltip content="替换" placement="top">
+                      <div class="action-btn replace-btn" @click.stop="handleReplaceConfirm(item.id, historyImg.id)">
+                        <svg-icon icon-class="fy-tihuan" />
+                      </div>
+                    </el-tooltip>
+                    <el-tooltip :content="historyImg.isCollect ? '取消收藏' : '收藏'" placement="top">
+                      <div
+                        class="action-btn collect-btn"
+                        :class="{ active: historyImg.isCollect }"
+                        @click.stop="handleCollect(historyImg.id, historyImg.isCollect)"
+                      >
+                        <svg-icon v-if="historyImg.isCollect" icon-class="fy-starfilled" style="color: #ff7d00" />
+                        <svg-icon v-else icon-class="fy-star" />
+                      </div>
+                    </el-tooltip>
+                  </div>
+                </transition>
+                <!-- 右下角更多按钮 -->
+                <transition name="fade">
+                  <div v-if="shouldShowActions(historyImg.id)" class="bottom-right-actions">
+                    <el-dropdown
+                      trigger="click"
+                      @command="(command: string) => handleMoreAction(command, item.id, historyImg)"
+                      @visible-change="(visible: boolean) => (visible ? handleDropdownShow(historyImg.id) : handleDropdownHide())"
                     >
-                      <svg-icon v-if="historyImg.isCollect" icon-class="fy-starfilled" style="color: #ff7d00" />
-                      <svg-icon v-else icon-class="fy-star" />
-                    </div>
-                  </el-tooltip>
-                </div>
-              </transition>
-              <!-- 右下角更多按钮 -->
-              <transition name="fade">
-                <div v-if="shouldShowActions(historyImg.id)" class="bottom-right-actions">
-                  <el-dropdown
-                    trigger="click"
-                    @command="(command: string) => handleMoreAction(command, item.id, historyImg)"
-                    @visible-change="(visible: boolean) => (visible ? handleDropdownShow(historyImg.id) : handleDropdownHide())"
-                  >
-                    <div class="action-btn more-btn" @click.stop>
-                      <svg-icon icon-class="fy-more" />
-                    </div>
-                    <template #dropdown>
-                      <el-dropdown-menu>
-                        <el-dropdown-item command="download">
-                          <svg-icon icon-class="fy-download" />
-                          <span style="margin-left: 8px">下载</span>
-                        </el-dropdown-item>
-                        <el-dropdown-item command="delete" style="color: #f53f3f">
-                          <svg-icon icon-class="fy-del" />
-                          <span style="margin-left: 8px">删除</span>
-                        </el-dropdown-item>
-                      </el-dropdown-menu>
-                    </template>
-                  </el-dropdown>
-                </div>
-              </transition>
+                      <div class="action-btn more-btn" @click.stop>
+                        <svg-icon icon-class="fy-more" />
+                      </div>
+                      <template #dropdown>
+                        <el-dropdown-menu>
+                          <el-dropdown-item command="download">
+                            <svg-icon icon-class="fy-download" />
+                            <span style="margin-left: 8px">下载</span>
+                          </el-dropdown-item>
+                          <el-dropdown-item command="delete" style="color: #f53f3f">
+                            <svg-icon icon-class="fy-del" />
+                            <span style="margin-left: 8px">删除</span>
+                          </el-dropdown-item>
+                        </el-dropdown-menu>
+                      </template>
+                    </el-dropdown>
+                  </div>
+                </transition>
+              </div>
             </div>
           </div>
         </div>
@@ -197,11 +204,13 @@
     waterfallData: WaterfallItem[];
     loading?: boolean;
     aspectRatio?: string; // '1:1' | '16:9' | '9:16' | '4:3' | '3:4'
+    scale?: number; // 缩放比例，默认为 1（100%），0.7 表示 70%
   }
 
   const props = withDefaults(defineProps<Props>(), {
     loading: false,
-    aspectRatio: '16:9'
+    aspectRatio: '16:9',
+    scale: 1
   });
 
   const emit = defineEmits<{
@@ -485,7 +494,7 @@
       event.preventDefault();
       // deltaY 为正表示向下滚动，为负表示向上滚动
       // 在按下 Ctrl 时，向下滚动向右移动，向上滚动向左移动
-      const container = waterfallContainerRef.value.querySelector('.waterfall-container');
+      const container = waterfallContainerRef.value.querySelector('.waterfall-scroll-wrapper');
       if (container) {
         container.scrollLeft += event.deltaY;
       }
@@ -498,28 +507,34 @@
     position: relative;
     width: 100%;
     height: 100%;
-    overflow-x: auto;
-    overflow-y: auto;
+    overflow: hidden;
     // background: #f5f7fa;
 
-    // 滚动条样式
-    &::-webkit-scrollbar {
-      width: 8px;
-      height: 8px;
-    }
+    .waterfall-scroll-wrapper {
+      position: relative;
+      width: 100%;
+      // height: 100%;
+      overflow: auto;
 
-    &::-webkit-scrollbar-thumb {
-      background: #dcdfe6;
-      border-radius: 4px;
-
-      &:hover {
-        background: #c0c4cc;
+      // 滚动条样式
+      &::-webkit-scrollbar {
+        width: 8px;
+        height: 8px;
       }
-    }
 
-    &::-webkit-scrollbar-track {
-      background: #f5f7fa;
-      border-radius: 4px;
+      &::-webkit-scrollbar-thumb {
+        background: #dcdfe6;
+        border-radius: 4px;
+
+        &:hover {
+          background: #c0c4cc;
+        }
+      }
+
+      &::-webkit-scrollbar-track {
+        background: #f5f7fa;
+        border-radius: 4px;
+      }
     }
 
     .loading-container {
@@ -563,27 +578,9 @@
       display: flex;
       gap: 10px;
       padding-bottom: 20px;
-      // min-height: 100%;
-      overflow-x: auto;
-
-      // 水平滚动条样式
-      &::-webkit-scrollbar {
-        height: 8px;
-      }
-
-      &::-webkit-scrollbar-thumb {
-        background: #dcdfe6;
-        border-radius: 4px;
-
-        &:hover {
-          background: #c0c4cc;
-        }
-      }
-
-      &::-webkit-scrollbar-track {
-        background: #f5f7fa;
-        border-radius: 4px;
-      }
+      width: max-content; // 让容器宽度自适应内容
+      min-height: 100%; // 保持最小高度
+      height: fit-content; // 自适应内容高度
 
       .waterfall-column {
         display: flex;
@@ -792,7 +789,7 @@
         }
 
         .scene-info {
-          padding: 12px 16px;
+          padding: 8px;
           border-bottom: 1px solid #f2f3f5;
           max-height: 150px;
           min-height: 150px;
@@ -816,7 +813,7 @@
           .scene-dialogue {
             display: flex;
             align-items: flex-start;
-            gap: 8px;
+            // gap: 8px;
             margin-bottom: 8px;
 
             &:last-child {
@@ -834,7 +831,7 @@
             .info-text {
               flex: 1;
               color: #4e5969;
-              font-size: 14px;
+              font-size: 18px;
               line-height: 1.6;
               word-break: break-word;
             }

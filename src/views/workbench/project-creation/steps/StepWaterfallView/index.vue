@@ -22,6 +22,7 @@
         :waterfall-data="waterfallData"
         :loading="loading"
         :aspect-ratio="aspectRatio"
+        :scale="0.5"
         @replace="handleReplace"
         @collect="handleCollect"
         @download="handleDownload"
