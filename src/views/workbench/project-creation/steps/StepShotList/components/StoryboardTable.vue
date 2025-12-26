@@ -13,7 +13,7 @@
       <el-table ref="tableRef" :data="localShots" border stripe height="100%" class="storyboard-table" row-key="id">
         <el-table-column prop="shotNumber" label="镜号" width="120" align="center" fixed="left">
           <template #default="{ row, $index }">
-            <div class="shot-number-cell drag-handle" :data-row-index="$index">
+            <div class="shot-number-cell" :data-row-index="$index">
               <ShotNumberActions
                 :shot-number="row.shotNumber"
                 :scene-status="row.imgStatus"
@@ -1088,6 +1088,8 @@
           chosenClass: 'chosen-row', // 选中时的样式
           dragClass: 'dragging-row', // 拖拽中的样式
           forceFallback: false, // 使用 HTML5 原生拖拽
+          delay: 500, // 长按延迟时间（毫秒）
+          delayOnTouchOnly: false, // 所有设备都启用延迟，不仅限触摸设备
           // 拖拽开始时，设置滚动容器并添加鼠标移动监听
           onStart: (event: SortableEvent) => {
             // 初始化鼠标位置
