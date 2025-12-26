@@ -296,6 +296,7 @@
 <script setup lang="ts">
   import { nextTick, onMounted, onUnmounted, reactive, ref } from 'vue';
   import { useRouter } from 'vue-router';
+  import { getToken } from '@/utils/auth';
 
   const router = useRouter();
 
@@ -401,7 +402,12 @@
   let isJumping = false; // 标志位：防止跳转时触发多次 transitionend
 
   const goToLogin = () => {
-    router.push('/login');
+    // 智能跳转：如果已登录跳转到应用首页，否则跳转到登录页
+    if (getToken()) {
+      router.push('/');
+    } else {
+      router.push('/login');
+    }
   };
 
   const updateCarousel = (animate = true) => {

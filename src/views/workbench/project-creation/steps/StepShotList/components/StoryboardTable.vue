@@ -142,6 +142,7 @@
                 :src="character.materialInfoVo?.previewOssUrl || character.materialInfoVo?.originOssUrl"
                 fit="contain"
                 class="character-avatar character-clickable"
+                :preview-teleported="true"
                 hide-on-click-modal
                 @click="handleCharacterClick(row, character)"
               />
@@ -153,9 +154,14 @@
           <template #default="{ row }">
             <div
               class="scene-location-cell"
+              :class="{ 'drag-over': isSceneDragOver(row) }"
               :data-aspect-ratio="aspectRatio"
               @mouseenter="handleSceneHover(row, true)"
               @mouseleave="handleSceneHover(row, false)"
+              @drop="(event: DragEvent) => handleSceneDrop(event, row)"
+              @dragover="handleSceneDragOver"
+              @dragenter="(event: DragEvent) => handleSceneDragEnter(event, row)"
+              @dragleave="(event: DragEvent) => handleSceneDragLeave(event, row)"
             >
               <!-- Hover操作遮罩层 -->
               <div v-if="isSceneHovered(row)" class="scene-hover-overlay">
@@ -185,6 +191,7 @@
                   fit="contain"
                   class="scene-location-image"
                   :preview-src-list="[row.envMaterialInfoVo.originOssUrl || row.envMaterialInfoVo.previewOssUrl]"
+                  :preview-teleported="true"
                   hide-on-click-modal
                 />
               </div>
@@ -461,6 +468,119 @@
 
   const isSceneHovered = (shot: Shot) => {
     return shot.basicId ? sceneHoveredMap.value.get(shot.basicId) || false : false;
+  };
+
+  // 场景拖拽状态管理
+  const sceneDragOverMap = ref<Map<number, boolean>>(new Map());
+  const sceneDragCounterMap = ref<Map<number, number>>(new Map());
+
+  const isSceneDragOver = (shot: Shot) => {
+    return shot.basicId ? sceneDragOverMap.value.get(shot.basicId) || false : false;
+  };
+
+  // 场景拖拽进入
+  const handleSceneDragEnter = (event: DragEvent, shot: Shot) => {
+    event.preventDefault();
+    event.stopPropagation();
+
+    if (!shot.basicId) return;
+
+    // 计数器加1
+    const currentCount = sceneDragCounterMap.value.get(shot.basicId) || 0;
+    sceneDragCounterMap.value.set(shot.basicId, currentCount + 1);
+
+    sceneDragOverMap.value.set(shot.basicId, true);
+  };
+
+  // 场景拖拽经过
+  const handleSceneDragOver = (event: DragEvent) => {
+    event.preventDefault();
+    event.stopPropagation();
+  };
+
+  // 场景拖拽离开
+  const handleSceneDragLeave = (event: DragEvent, shot: Shot) => {
+    event.preventDefault();
+    event.stopPropagation();
+
+    if (!shot.basicId) return;
+
+    // 计数器减1
+    const currentCount = sceneDragCounterMap.value.get(shot.basicId) || 0;
+    const newCount = currentCount - 1;
+    sceneDragCounterMap.value.set(shot.basicId, newCount);
+
+    // 只有当计数器为0时，才真正离开
+    if (newCount === 0) {
+      sceneDragOverMap.value.set(shot.basicId, false);
+    }
+  };
+
+  // 场景拖拽放置
+  const handleSceneDrop = async (event: DragEvent, shot: Shot) => {
+    event.preventDefault();
+    event.stopPropagation();
+
+    if (!shot.basicId) return;
+
+    // 重置状态
+    sceneDragOverMap.value.set(shot.basicId, false);
+    sceneDragCounterMap.value.set(shot.basicId, 0);
+
+    // 获取拖拽的文件
+    const files = event.dataTransfer?.files;
+    if (!files || files.length === 0) {
+      return;
+    }
+
+    // 过滤出图片文件
+    const imageFiles = Array.from(files).filter((file) => file.type.startsWith('image/'));
+
+    if (imageFiles.length === 0) {
+      ElMessage.error('请拖拽图片文件');
+      return;
+    }
+
+    // 只保留第一张图片
+    const file = imageFiles[0];
+
+    // 验证文件大小（限制为25MB）
+    const maxSize = 25 * 1024 * 1024;
+    if (file.size > maxSize) {
+      ElMessage.error('图片大小不能超过25MB');
+      return;
+    }
+
+    try {
+      ElMessage.info('正在上传场景图片...');
+
+      // 获取文件后缀
+      const fileSuffix = file.name.substring(file.name.lastIndexOf('.'));
+
+      // 上传文件到OSS
+      const uploadRes = await uploadFile({
+        file,
+        fileSuffix,
+        originalFileName: file.name,
+        fileType: 'image',
+        resourceType: 2,
+        needSync: 0
+      });
+
+      // 调用设置场景环境接口
+      await setSceneEnv({
+        basicId: shot.basicId,
+        envType: 2, // 本地上传
+        ossId: Number(uploadRes.ossId)
+      });
+
+      ElMessage.success('场景上传成功');
+      // 刷新数据
+      emit('refresh');
+    } catch (error) {
+      console.error('上传场景失败:', error);
+      ElMessage.error('上传场景失败');
+    }
   };
 
   const handleSelectSceneLibrary = (shot: Shot) => {
@@ -1441,11 +1561,38 @@
       }
 
       .scene-location-cell {
+        position: relative;
         display: flex;
         align-items: center;
         justify-content: center;
         width: 100%;
         height: 100%;
+        transition: all 0.3s ease;
+
+        // 拖拽悬停状态
+        &.drag-over {
+          background: linear-gradient(135deg, rgba(82, 82, 255, 0.1) 0%, rgba(190, 117, 254, 0.1) 100%);
+          border: 2px dashed #5252ff;
+          box-shadow: inset 0 0 20px rgba(82, 82, 255, 0.15);
+
+          &::after {
+            content: '释放以上传场景图片';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 10;
+            padding: 12px 24px;
+            border-radius: 8px;
+            background: rgba(82, 82, 255, 0.95);
+            color: #fff;
+            font-size: 14px;
+            font-weight: 500;
+            white-space: nowrap;
+            pointer-events: none;
+            box-shadow: 0 4px 12px rgba(82, 82, 255, 0.3);
+          }
+        }
 
         .scene-image-wrapper {
           position: relative;
@@ -1568,16 +1715,16 @@
           z-index: 2;
           display: flex;
           flex-direction: column;
-          justify-content: flex-start;
+          justify-content: center;
+          align-items: center;
           padding: 12px;
           background: linear-gradient(0deg, rgba(0, 0, 0, 0.4) 0%, rgba(0, 0, 0, 0.4) 100%);
+          pointer-events: none; // 允许点击事件穿透到下层图片，触发预览
 
           .scene-top-actions {
             display: flex;
             justify-content: center;
             align-items: center;
-            width: 100%;
-            height: 100%;
             gap: 8px;
 
             .scene-action-btn {
@@ -1590,6 +1737,7 @@
               background: #f7f8fa;
               cursor: pointer;
               transition: all 0.3s;
+              pointer-events: auto; // 恢复按钮的交互能力
 
               &:hover {
                 background: white;

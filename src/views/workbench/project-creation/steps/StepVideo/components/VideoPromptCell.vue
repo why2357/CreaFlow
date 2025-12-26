@@ -675,15 +675,15 @@
             // 拖拽状态样式
             &.is-dragging {
               background: #e8f3ff;
-              border: 2px dashed #5252ff;
-              transform: rotate(-4.971deg) scale(1.05);
+              border: 1px dashed #5252ff;
+              // transform: rotate(-4.971deg) scale(1.05);
 
               .upload-text {
                 color: #5252ff;
               }
               .upload-icon {
                 color: #5252ff;
-                transform: scale(1.2);
+                // transform: scale(1.2);
               }
             }
 

@@ -133,6 +133,7 @@
               class="grid-image"
               :preview-src-list="materialInfoVoList.map((i) => i.originOssUrl || i.previewOssUrl || '')"
               :initial-index="index"
+              :preview-teleported="true"
               hide-on-click-modal
             />
           </div>
@@ -158,6 +159,7 @@
             class="grid-image"
             :preview-src-list="materialInfoVoList.map((i) => i.originOssUrl || i.previewOssUrl || '')"
             :initial-index="index"
+            :preview-teleported="true"
             hide-on-click-modal
           />
         </div>

@@ -262,14 +262,41 @@
     min-height: 240px;
     max-height: 289px;
     overflow: hidden;
-    border: 2px dashed #d9d9d9;
-    border-radius: 8px;
-    background: white;
-    cursor: pointer;
-    transition: all 0.3s;
     border-radius: 8px;
     border: 1px dashed #5252ff;
     background: #f3f3ff;
+    cursor: pointer;
+    transition: all 0.3s;
+
+    // 拖拽悬停状态
+    &.is-dragging {
+      background: linear-gradient(135deg, rgba(82, 82, 255, 0.15) 0%, rgba(190, 117, 254, 0.15) 100%);
+      border: 2px dashed #5252ff;
+      box-shadow: inset 0 0 20px rgba(82, 82, 255, 0.2);
+
+      &::after {
+        // content: '释放以上传图片';
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        z-index: 10;
+        padding: 16px 32px;
+        border-radius: 8px;
+        background: rgba(82, 82, 255, 0.95);
+        color: #fff;
+        font-size: 16px;
+        font-weight: 600;
+        white-space: nowrap;
+        pointer-events: none;
+        box-shadow: 0 4px 16px rgba(82, 82, 255, 0.4);
+        animation: fadeInScale 0.2s ease-out;
+      }
+
+      .upload-content {
+        opacity: 0.3;
+      }
+    }
 
     .upload-content {
       display: flex;
