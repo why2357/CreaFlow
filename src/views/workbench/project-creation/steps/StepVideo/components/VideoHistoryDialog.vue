@@ -24,7 +24,11 @@
         </div>
 
         <div v-else-if="!selectedVideoDetail" class="empty-state">
-          <img src="../../../../../../assets/images/no-sence.png" alt="暂无视频" class="empty-image" />
+          <img
+            src="https://fc-1327887685.cos.ap-guangzhou.myqcloud.com/dev_forge_hivision/image/2025122417/11fb7c9d514e42b0.png"
+            alt="暂无视频"
+            class="empty-image"
+          />
           <p class="empty-text">点击右侧视频进行查看</p>
         </div>
 

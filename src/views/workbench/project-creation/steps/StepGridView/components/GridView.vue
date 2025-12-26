@@ -4,97 +4,126 @@
     <div v-if="loading" v-loading="loading" class="loading-container">
       <div class="loading-content">
         <el-icon class="is-loading" :size="60"><Loading /></el-icon>
-        <p class="loading-text">分镜生成中，请稍等...</p>
+        <p class="loading-text">分镜生成中,请稍等...</p>
       </div>
     </div>
 
     <!-- 空状态 -->
     <div v-else-if="scenes.length === 0" class="empty-state">
       <div class="empty-content">
-        <img style="width: 200px; height: 200px" src="../../../../../../assets/images/no-image-light.png" alt="" />
+        <img
+          style="width: 200px; height: 200px"
+          src="https://fc-1327887685.cos.ap-guangzhou.myqcloud.com/dev_forge_hivision/image/2025122417/1482f35c14ad4f8a.png"
+          alt=""
+        />
         <p class="empty-text">暂无数据</p>
       </div>
     </div>
 
     <!-- 故事板网格 -->
     <div v-else class="grid-container" ref="gridContainerRef">
-      <div
-        v-for="(scene, index) in scenes"
-        :key="scene.id"
-        class="grid-card"
-        :class="getCardClass(scene)"
-        @mouseenter="handleCardHover(scene)"
-        @mouseleave="handleCardLeave"
+      <Draggable
+        v-model="localScenes"
+        :animation="200"
+        :delay="50"
+        :delay-on-touch-only="true"
+        ghost-class="ghost-card"
+        chosen-class="chosen-card"
+        drag-class="dragging-card"
+        :force-fallback="false"
+        handle=".drag-handle"
+        item-key="id"
+        class="draggable-wrapper"
+        @start="handleDragStart"
+        @end="handleDragEnd"
       >
-        <!-- 画面图片 -->
-        <div class="card-image" @click="handleImageClick(scene)">
-          <el-image
-            v-if="scene.previewOssUrl || scene.originOssUrl"
-            :src="scene.previewOssUrl || scene.originOssUrl"
-            fit="cover"
-            class="shot-image"
-            :preview-src-list="[scene.originOssUrl || scene.previewOssUrl]"
-            :preview-teleported="true"
-            hide-on-click-modal
-            :lazy="true"
-          />
-          <div v-else class="image-placeholder">
-            <img src="../../../../../../assets/images/no-sence.png" alt="暂无图片" class="placeholder-img" />
-          </div>
-        </div>
-
-        <!-- 悬浮操作按钮 -->
-        <transition name="fade">
-          <div v-if="hoveredCardId === scene.id" class="hover-actions">
-            <SceneActions
-              button-size="default"
-              tooltip-placement="top"
-              :disable-comment="!scene.imgTaskId"
-              @comment="(event: MouseEvent) => handleComment(scene, event)"
-              @insert="handleInsert(scene)"
-              @review="(event: MouseEvent) => handleReview(scene, event)"
-              @delete="handleDelete(scene)"
-            />
-          </div>
-        </transition>
-
-        <!-- 镜号区域 -->
-        <div class="card-number-wrapper">
-          <!-- 镜号标签 -->
-          <div class="card-number">
-            <svg-icon icon-class="fy-juji" class="icon" />
-            <span>{{ String(index + 1).padStart(2, '0') }}</span>
-          </div>
-
-          <!-- 状态指示圆点 -->
+        <template #item="{ element: scene, index }">
           <div
-            v-if="scene.imgStatus !== undefined"
-            class="status-dot"
-            :class="[getDotClass(scene.imgStatus), { clickable: canApproveScene }]"
-            @click.stop="handleDotClick(scene, $event)"
-          ></div>
-        </div>
+            class="grid-card"
+            :class="getCardClass(scene)"
+            :data-card-index="index"
+            :data-scene-id="scene.id"
+            @mouseenter="handleCardHover(scene)"
+            @mouseleave="handleCardLeave"
+          >
+            <!-- 画面图片 -->
+            <div class="card-image" @click="handleImageClick(scene)">
+              <el-image
+                v-if="scene.previewOssUrl || scene.originOssUrl"
+                :src="scene.previewOssUrl || scene.originOssUrl"
+                fit="cover"
+                class="shot-image"
+                :preview-src-list="[scene.originOssUrl || scene.previewOssUrl]"
+                :preview-teleported="true"
+                hide-on-click-modal
+                :lazy="true"
+              />
+              <div v-else class="image-placeholder">
+                <img
+                  src="https://fc-1327887685.cos.ap-guangzhou.myqcloud.com/dev_forge_hivision/image/2025122417/11fb7c9d514e42b0.png"
+                  alt="暂无图片"
+                  class="placeholder-img"
+                />
+              </div>
+            </div>
 
-        <!-- 留言数量显示 -->
-        <div
-          v-if="scene.commentCnt && scene.commentCnt > 0"
-          class="comment-count-badge"
-          @mouseenter="(event: MouseEvent) => handleViewComments(scene, event)"
-        >
-          <svg-icon icon-class="fy-comment" class="comment-icon" />
-          <span class="count-text">{{ scene.commentCnt }}</span>
-        </div>
-      </div>
+            <!-- 悬浮操作按钮 -->
+            <transition name="fade">
+              <div v-if="hoveredCardId === scene.id" class="hover-actions">
+                <SceneActions
+                  button-size="default"
+                  tooltip-placement="top"
+                  :disable-comment="!scene.imgTaskId"
+                  @comment="(event: MouseEvent) => handleComment(scene, event)"
+                  @insert="handleInsert(scene)"
+                  @review="(event: MouseEvent) => handleReview(scene, event)"
+                  @delete="handleDelete(scene)"
+                />
+              </div>
+            </transition>
+
+            <!-- 镜号区域 -->
+            <div class="card-number-wrapper">
+              <!-- 镜号标签 -->
+              <div class="card-number drag-handle">
+                <svg-icon icon-class="fy-juji" class="icon" />
+                <span>{{ String(index + 1).padStart(2, '0') }}</span>
+              </div>
+
+              <!-- 状态指示圆点 -->
+              <div
+                v-if="scene.imgStatus !== undefined"
+                class="status-dot"
+                :class="[getDotClass(scene.imgStatus), { clickable: canApproveScene }]"
+                @click.stop="handleDotClick(scene, $event)"
+              ></div>
+            </div>
+
+            <!-- 留言数量显示 -->
+            <div
+              v-if="scene.commentCnt && scene.commentCnt > 0"
+              class="comment-count-badge"
+              @mouseenter="(event: MouseEvent) => handleViewComments(scene, event)"
+            >
+              <svg-icon icon-class="fy-comment" class="comment-icon" />
+              <span class="count-text">{{ scene.commentCnt }}</span>
+            </div>
+          </div>
+        </template>
+      </Draggable>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
+  import { dragSortScene } from '@/api/workbench/episode';
   import type { StoryBoardSceneVo } from '@/api/workbench/storyboard/types';
+  import { useAutoScroll } from '@/composables/useAutoScroll';
   import { hasProjectPermission } from '@/utils/projectPermission';
   import { Loading } from '@element-plus/icons-vue';
   import { ElMessage } from 'element-plus';
-  import { computed, ref } from 'vue';
+  import { computed, ref, watch } from 'vue';
+  import Draggable from 'vuedraggable';
   import SceneActions from '../../components/SceneActions.vue';
 
   interface Props {
@@ -102,7 +131,7 @@
     loading?: boolean;
   }
 
-  withDefaults(defineProps<Props>(), {
+  const props = withDefaults(defineProps<Props>(), {
     loading: false
   });
 
@@ -116,11 +145,36 @@
     (e: 'delete', scene: StoryBoardSceneVo): void;
     (e: 'statusChange', scene: StoryBoardSceneVo, status: number): void;
     (e: 'viewComments', scene: StoryBoardSceneVo, event: MouseEvent): void;
+    (e: 'refresh'): void;
   }>();
 
   // 悬浮的卡片ID
   const hoveredCardId = ref<number | null>(null);
   const gridContainerRef = ref<HTMLElement>();
+
+  // 本地场景列表 - 用于 VueDraggable
+  const localScenes = ref<StoryBoardSceneVo[]>([]);
+
+  // 拖拽状态
+  const draggedOldIndex = ref<number>(-1);
+  const draggedNewIndex = ref<number>(-1);
+
+  // 初始化自动滚动 composable（垂直滚动）
+  const autoScroll = useAutoScroll({
+    direction: 'vertical',
+    threshold: 350,
+    minSpeed: 15,
+    maxSpeed: 80
+  });
+
+  // 监听 props.scenes 变化,同步到本地列表
+  watch(
+    () => props.scenes,
+    (newScenes) => {
+      localScenes.value = [...newScenes];
+    },
+    { immediate: true, deep: true }
+  );
 
   // 权限检查
   const canApproveScene = computed(() => hasProjectPermission(['scene-approval']));
@@ -230,11 +284,97 @@
 
   // 点击小圆点触发评审
   const handleDotClick = (scene: StoryBoardSceneVo, event: MouseEvent) => {
-    // 检查权限，没有权限则不触发事件
+    // 检查权限,没有权限则不触发事件
     if (!canApproveScene.value) {
       return;
     }
     emit('review', scene, event);
+  };
+
+  // ==================== VueDraggable 拖拽排序功能 ====================
+
+  // 开始拖拽
+  const handleDragStart = (event: any) => {
+    // 记录拖拽开始时的原始索引
+    draggedOldIndex.value = event.oldIndex;
+
+    // 初始化鼠标位置
+    const initialMouseY = event.originalEvent?.clientY;
+
+    // 启动自动滚动
+    autoScroll.start(gridContainerRef.value || null, initialMouseY);
+  };
+
+  // 拖拽结束
+  const handleDragEnd = async (event: any) => {
+    // 停止自动滚动
+    autoScroll.stop();
+
+    // 获取拖拽结束时的新索引
+    const newIndex = event.newIndex;
+    const oldIndex = draggedOldIndex.value;
+
+    // 如果位置没有变化，直接返回
+    if (oldIndex === newIndex || oldIndex === -1) {
+      draggedOldIndex.value = -1;
+      draggedNewIndex.value = -1;
+      return;
+    }
+
+    try {
+      // 获取被拖拽的场景（使用原始列表中的索引）
+      const draggedScene = props.scenes[oldIndex];
+
+      if (!draggedScene || !draggedScene.id) {
+        ElMessage.error('场景数据无效');
+        localScenes.value = [...props.scenes];
+        draggedOldIndex.value = -1;
+        draggedNewIndex.value = -1;
+        return;
+      }
+
+      // 确定 targetBasicId
+      // 接口定义：targetBasicId 表示"拖到这个镜头的前面"，为 null 表示拖到最后
+      let targetBasicId: number | undefined;
+
+      // 在新位置的列表中，找到拖拽后该场景后面的那个场景
+      if (newIndex + 1 < localScenes.value.length) {
+        // 不是拖到最后
+        const nextScene = localScenes.value[newIndex + 1];
+        targetBasicId = nextScene.id;
+      } else {
+        // 拖到最后
+        targetBasicId = undefined;
+      }
+
+      console.log('拖拽信息:', {
+        dragBasicId: draggedScene.id,
+        targetBasicId: targetBasicId,
+        oldIndex: oldIndex,
+        newIndex: newIndex,
+        draggedScene: draggedScene,
+        nextScene: newIndex + 1 < localScenes.value.length ? localScenes.value[newIndex + 1] : null
+      });
+
+      // 调用接口进行排序
+      await dragSortScene({
+        dragBasicId: draggedScene.id,
+        targetBasicId: targetBasicId
+      });
+
+      ElMessage.success('镜号顺序调整成功');
+      // 刷新列表
+      emit('refresh');
+    } catch (error) {
+      console.error('拖拽排序失败:', error);
+      ElMessage.error('拖拽排序失败,请重试');
+      // 恢复原始顺序
+      localScenes.value = [...props.scenes];
+    } finally {
+      // 重置拖拽索引
+      draggedOldIndex.value = -1;
+      draggedNewIndex.value = -1;
+    }
   };
 </script>
 
@@ -311,15 +451,21 @@
         }
       }
 
+      .draggable-wrapper {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        width: 100%;
+      }
+
       .grid-card {
         position: relative;
         overflow: hidden;
         border-radius: 8px;
-        // background: white;
         border: 1px solid #e4e7ed;
         box-shadow: 0 2px 8px rgb(0 0 0 / 8%);
         cursor: pointer;
-        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
         height: 300px;
         width: 400px;
         flex-shrink: 0;
@@ -359,6 +505,24 @@
             font-size: 12px;
             font-weight: 500;
             line-height: 1.5;
+            user-select: none;
+            transition: all 0.3s ease;
+
+            // 拖拽手柄样式
+            &.drag-handle {
+              cursor: grab;
+
+              &:hover {
+                background: rgba(232, 233, 235, 0.95);
+                transform: scale(1.1);
+                box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+              }
+
+              &:active {
+                cursor: grabbing;
+                transform: scale(1.05);
+              }
+            }
 
             .icon {
               width: 12px;
@@ -402,44 +566,6 @@
             &.status-red {
               background-color: #f53f3f; // 红色 - 驳回
             }
-          }
-        }
-
-        .status-badge {
-          position: absolute;
-          bottom: 8px;
-          left: 8px;
-          z-index: 10;
-          display: flex;
-          align-items: center;
-          gap: 4px;
-          padding: 3px 8px;
-          border-radius: 12px;
-          font-size: 12px;
-          font-weight: 500;
-          backdrop-filter: blur(8px);
-          line-height: 1.5;
-
-          &.status-1 {
-            background: rgba(230, 162, 60, 0.15);
-            color: #e6a23c;
-            border: 1px solid rgba(230, 162, 60, 0.3);
-          }
-
-          &.status-2 {
-            background: rgba(103, 194, 58, 0.15);
-            color: #67c23a;
-            border: 1px solid rgba(103, 194, 58, 0.3);
-          }
-
-          &.status-3 {
-            background: rgba(245, 108, 108, 0.15);
-            color: #f56c6c;
-            border: 1px solid rgba(245, 108, 108, 0.3);
-          }
-
-          .el-icon {
-            font-size: 14px;
           }
         }
 
@@ -559,6 +685,30 @@
             }
           }
         }
+      }
+
+      // VueDraggable 拖拽样式
+      .ghost-card {
+        opacity: 0.4;
+        background: #e0e7ff;
+        border: 2px dashed #5252ff;
+        transform: rotate(5deg);
+      }
+
+      .chosen-card {
+        cursor: grabbing !important;
+        transform: scale(1.05);
+        box-shadow: 0 8px 24px rgba(82, 82, 255, 0.3);
+        border: 2px solid #5252ff;
+        z-index: 1000;
+      }
+
+      .dragging-card {
+        opacity: 0.9;
+        transform: scale(1.08) rotate(3deg);
+        box-shadow: 0 12px 32px rgba(82, 82, 255, 0.4);
+        cursor: grabbing !important;
+        transition: none;
       }
     }
   }

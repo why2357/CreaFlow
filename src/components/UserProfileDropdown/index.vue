@@ -198,7 +198,7 @@
         type: 'warning'
       });
       await userStore.logout();
-      location.href = import.meta.env.VITE_APP_CONTEXT_PATH + 'index';
+      location.href = import.meta.env.VITE_APP_CONTEXT_PATH + 'home';
     } catch (error) {
       // 用户取消操作
     }

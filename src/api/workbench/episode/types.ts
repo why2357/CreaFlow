@@ -288,6 +288,8 @@ export interface VideoModelConfigVo {
   modelName?: string;
   /** 视频模型点数配置 */
   resolutionConfigs?: ResolutionConfig[];
+  /** 是否支持尾帧 */
+  allowTailImg?: boolean;
 }
 
 /**
@@ -345,6 +347,8 @@ export interface HivisionProjectHistoryVo {
   materialId?: number;
   /** 模型码 */
   modelCode?: string;
+  /** 模型名称 */
+  modelName?: string;
   /** 项目id */
   projectId?: number;
   /** 镜头描述 */
@@ -365,6 +369,12 @@ export interface HivisionProjectHistoryVo {
   videoUrl?: string;
   /** 封面图URL */
   imgUrl?: string;
+  /** 分辨率 (如: 1080P) */
+  ratio?: string;
+  /** 时长 (如: 8s) */
+  duration?: string;
+  /** 创建时间 */
+  createTime?: string;
 }
 
 /**

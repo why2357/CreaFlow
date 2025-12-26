@@ -1,5 +1,12 @@
 <template>
-  <div>
+  <div
+    class="scene-image-wrapper"
+    :class="{ 'drag-over': isDragOver }"
+    @drop="handleDrop"
+    @dragover="handleDragOver"
+    @dragenter="handleDragEnter"
+    @dragleave="handleDragLeave"
+  >
     <!-- 悬浮操作层 -->
     <div class="hover-overlay" @click.self="handleOverlayClick">
       <!-- 顶部操作按钮 -->
@@ -45,15 +52,7 @@
         </el-tooltip>
 
         <el-tooltip
-          :content="
-            hasMultipleImages
-              ? '多张图片时不支持收藏'
-              : !canFavorite
-              ? '本地上传图片不支持收藏'
-              : isCollect
-              ? '取消收藏'
-              : '收藏'
-          "
+          :content="hasMultipleImages ? '多张图片时不支持收藏' : isCollect ? '取消收藏' : '收藏'"
           placement="top"
         >
           <div
@@ -134,6 +133,7 @@
               class="grid-image"
               :preview-src-list="materialInfoVoList.map((i) => i.originOssUrl || i.previewOssUrl || '')"
               :initial-index="index"
+              :preview-teleported="true"
               hide-on-click-modal
             />
           </div>
@@ -159,6 +159,7 @@
             class="grid-image"
             :preview-src-list="materialInfoVoList.map((i) => i.originOssUrl || i.previewOssUrl || '')"
             :initial-index="index"
+            :preview-teleported="true"
             hide-on-click-modal
           />
         </div>
@@ -172,7 +173,7 @@
       <div v-else class="placeholder-container">
         <img
           style="width: 120px; height: 120px"
-          src="../../../../../../assets/images/no-image.png"
+          src="https://fc-1327887685.cos.ap-guangzhou.myqcloud.com/dev_forge_hivision/image/2025122417/280aecd608a94a8d.png"
           alt="暂无图片"
           class="placeholder-image"
         />
@@ -264,16 +265,12 @@
   const fileInputRef = ref<HTMLInputElement>();
   const historyDialogVisible = ref(false);
   const editDialogVisible = ref(false);
+  const isDragOver = ref(false);
+  const dragCounter = ref(0); // 拖拽计数器，解决子元素触发dragleave的问题
 
   // 计算图片填充方式 - 始终使用cover填满容器
   const fit = computed(() => {
     return 'cover' as const;
-  });
-
-  // 判断是否是本地上传或裁剪的图片（不能收藏）
-  // 没有 historyDetailId 时，说明是本地上传或者裁剪的图片
-  const isLocalUploadImage = computed(() => {
-    return !props.historyDetailId;
   });
 
   // 是否有多张图片
@@ -311,16 +308,16 @@
   });
 
   const isFavoriteDisabled = computed(() => {
-    return hasNoImages.value || props.taskStatus === null;
+    return hasNoImages.value;
   });
 
   const isEditDisabled = computed(() => {
     return hasNoImages.value;
   });
 
-  // 收藏功能是否可用（本地上传图片不能收藏，多张图片时也不能收藏）
+  // 收藏功能是否可用（只在多张图片时不能收藏）
   const canFavorite = computed(() => {
-    return !isLocalUploadImage.value && !hasMultipleImages.value;
+    return !hasMultipleImages.value;
   });
 
   // 下载功能是否可用（多张图片时不能下载）
@@ -362,10 +359,10 @@
       return;
     }
 
-    // 验证文件大小（限制为10MB）
-    const maxSize = 10 * 1024 * 1024;
+    // 验证文件大小（限制为25MB）
+    const maxSize = 25 * 1024 * 1024;
     if (file.size > maxSize) {
-      ElMessage.error('图片大小不能超过10MB');
+      ElMessage.error('图片大小不能超过25MB');
       target.value = '';
       return;
     }
@@ -417,7 +414,8 @@
         // 调用替换场景图片接口
         await replaceSceneImage({
           basicId: props.basicId,
-          ossId: Number(uploadRes.ossId)
+          ossId: Number(uploadRes.ossId),
+          operationType: 3
         });
 
         ElMessage.success('上传成功');
@@ -440,6 +438,149 @@
   // 获取期望的宽高比（使用统一的工具函数）
   const getExpectedRatio = (ratio: string): number => {
     return sizeToValue(ratio);
+  };
+
+  // ==================== 拖拽上传功能 ====================
+
+  // 拖拽进入
+  const handleDragEnter = (event: DragEvent) => {
+    event.preventDefault();
+    event.stopPropagation();
+
+    // 计数器加1
+    dragCounter.value++;
+
+    // 只在非禁用状态下显示拖拽提示
+    if (!isOperationDisabled.value) {
+      isDragOver.value = true;
+    }
+  };
+
+  // 拖拽经过
+  const handleDragOver = (event: DragEvent) => {
+    event.preventDefault();
+    event.stopPropagation();
+  };
+
+  // 拖拽离开
+  const handleDragLeave = (event: DragEvent) => {
+    event.preventDefault();
+    event.stopPropagation();
+
+    // 计数器减1
+    dragCounter.value--;
+
+    // 只有当计数器为0时，才真正离开
+    if (dragCounter.value === 0) {
+      isDragOver.value = false;
+    }
+  };
+
+  // 放置文件
+  const handleDrop = async (event: DragEvent) => {
+    event.preventDefault();
+    event.stopPropagation();
+    isDragOver.value = false;
+    dragCounter.value = 0; // 重置计数器
+
+    // 检查是否禁用
+    if (isOperationDisabled.value) {
+      ElMessage.warning('当前状态不支持上传');
+      return;
+    }
+
+    // 获取拖拽的文件
+    const files = event.dataTransfer?.files;
+    if (!files || files.length === 0) {
+      return;
+    }
+
+    // 过滤出图片文件
+    const imageFiles = Array.from(files).filter((file) => file.type.startsWith('image/'));
+
+    if (imageFiles.length === 0) {
+      ElMessage.error('请拖拽图片文件');
+      return;
+    }
+
+    // 只保留第一张图片
+    const file = imageFiles[0];
+
+    // 如果拖拽了多张图片，提示用户
+    // if (imageFiles.length > 1) {
+    //   ElMessage.info(`检测到${imageFiles.length}张图片，已自动选择第一张`);
+    // }
+
+    // 验证文件大小（限制为25MB）
+    const maxSize = 25 * 1024 * 1024;
+    if (file.size > maxSize) {
+      ElMessage.error('图片大小不能超过25MB');
+      return;
+    }
+
+    try {
+      // 验证图片比例
+      const img = new Image();
+      const reader = new FileReader();
+
+      await new Promise((resolve, reject) => {
+        reader.onload = (e) => {
+          img.src = e.target?.result as string;
+          img.onload = () => {
+            const imageRatio = img.width / img.height;
+            const expectedRatio = getExpectedRatio(props.aspectRatio);
+
+            // 允许5%的误差
+            if (Math.abs(imageRatio - expectedRatio) / expectedRatio > 0.05) {
+              ElMessage.warning(`请上传比例为 ${props.aspectRatio} 的图片`);
+              reject(new Error('图片比例不符合要求'));
+              return;
+            }
+
+            resolve(true);
+          };
+          img.onerror = () => reject(new Error('图片加载失败'));
+        };
+        reader.onerror = () => reject(new Error('文件读取失败'));
+        reader.readAsDataURL(file);
+      });
+
+      // 如果有 basicId，直接上传并调用替换接口
+      if (props.basicId) {
+        ElMessage.info('正在上传图片...');
+
+        // 获取文件后缀
+        const fileSuffix = file.name.substring(file.name.lastIndexOf('.'));
+
+        // 上传文件到 OSS
+        const uploadRes = await uploadFile({
+          file,
+          fileSuffix,
+          originalFileName: file.name,
+          fileType: 'image',
+          resourceType: 2, // 用户资源
+          needSync: 0
+        });
+
+        // 调用替换场景图片接口
+        await replaceSceneImage({
+          basicId: props.basicId,
+          ossId: Number(uploadRes.ossId),
+          operationType: 3
+        });
+
+        ElMessage.success('上传成功');
+        emit('refresh');
+      } else {
+        // 没有 basicId，使用原来的逻辑（兼容）
+        emit('upload', file);
+      }
+    } catch (error) {
+      console.error('上传图片失败:', error);
+      if (error instanceof Error && error.message !== '图片比例不符合要求') {
+        ElMessage.error('上传图片失败');
+      }
+    }
   };
 
   // 查看历史
@@ -609,6 +750,42 @@
 </script>
 
 <style scoped lang="scss">
+  // 最外层容器，占满整个单元格
+  .scene-image-wrapper {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    transition: all 0.3s ease;
+
+    // 拖拽悬停状态
+    &.drag-over {
+      background: linear-gradient(135deg, rgba(82, 82, 255, 0.1) 0%, rgba(190, 117, 254, 0.1) 100%);
+      border: 2px dashed #5252ff;
+      box-shadow: inset 0 0 20px rgba(82, 82, 255, 0.15);
+
+      &::after {
+        content: '释放以上传图片';
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        z-index: 10;
+        padding: 12px 24px;
+        border-radius: 8px;
+        background: rgba(82, 82, 255, 0.95);
+        color: #fff;
+        font-size: 14px;
+        font-weight: 500;
+        white-space: nowrap;
+        pointer-events: none;
+        box-shadow: 0 4px 12px rgba(82, 82, 255, 0.3);
+      }
+    }
+  }
+
   .hover-overlay {
     position: absolute;
     top: 0;
@@ -621,11 +798,13 @@
     justify-content: space-between;
     padding: 12px;
     background: linear-gradient(0deg, rgba(0, 0, 0, 0.4) 0%, rgba(0, 0, 0, 0.4) 100%);
+    pointer-events: none; // 允许拖拽事件穿透
 
     .top-actions {
       display: flex;
       justify-content: center;
       gap: 8px;
+      pointer-events: auto; // 恢复按钮区域的交互
 
       .action-btn {
         display: flex;
@@ -637,6 +816,7 @@
         background: #f7f8fa;
         cursor: pointer;
         transition: all 0.3s;
+        pointer-events: auto; // 确保按钮可点击
 
         &:hover {
           background: white;
@@ -681,6 +861,8 @@
       display: flex;
       justify-content: center;
       gap: 8px;
+      pointer-events: auto; // 恢复按钮区域的交互
+
       .edit-btn {
         display: flex;
         width: 84px;
@@ -698,6 +880,7 @@
         font-size: 12px;
         transition: all 0.3s;
         cursor: pointer;
+        pointer-events: auto; // 确保按钮可点击
 
         &:active {
           transform: scale(0.95);
@@ -739,6 +922,7 @@
           font-size: 12px;
           transition: all 0.3s;
           cursor: pointer;
+          pointer-events: auto; // 确保按钮可点击
 
           &:active {
             transform: scale(0.95);

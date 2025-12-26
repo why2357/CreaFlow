@@ -109,9 +109,17 @@ export interface ProjectDataProgressVO {
    */
   approvalVideoCount?: number;
   /**
+   * 本集消耗点数
+   */
+  episodeConsumePoints?: number;
+  /**
    * 剧本是否完成
    */
   hasScript?: boolean;
+  /**
+   * 累计消耗点数（项目级别）
+   */
+  projectConsumePoints?: number;
   /**
    * 图片总数量
    */

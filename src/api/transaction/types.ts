@@ -117,3 +117,21 @@ export interface TransactionVO {
    */
   walletTransactionId?: number;
 }
+
+/**
+ * 钱包类型响应数据
+ */
+export interface WalletTypeVO {
+  /**
+   * 类型编码
+   */
+  code: number;
+  /**
+   * 模型编码
+   */
+  modelCode: string;
+  /**
+   * 描述
+   */
+  desc: string;
+}

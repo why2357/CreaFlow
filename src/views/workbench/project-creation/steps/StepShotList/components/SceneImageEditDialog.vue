@@ -23,7 +23,14 @@
           <!-- Control Panel -->
           <div class="control-panel">
             <!-- Reference Images (Overlapping) -->
-            <div class="reference-images-section">
+            <div
+              class="reference-images-section"
+              :class="{ 'drag-over': isDragOver }"
+              @drop="handleDragDrop"
+              @dragover="handleDragOver"
+              @dragenter="handleDragEnter"
+              @dragleave="handleDragLeave"
+            >
               <div
                 class="reference-images-stack"
                 :class="{ 'is-expanded': isHoveringImages }"
@@ -201,6 +208,10 @@
   const fileInputRef = ref<HTMLInputElement>();
   const isHoveringImages = ref(false);
   let hoverTimer: ReturnType<typeof setTimeout> | null = null;
+
+  // 拖拽相关状态
+  const isDragOver = ref(false);
+  const dragCounter = ref(0);
 
   // Model points (from model list)
   const modelPoints = computed(() => {
@@ -414,7 +425,7 @@
   const validateFiles = async (files: File[]): Promise<{ valid: File[]; errors: string[] }> => {
     const valid: File[] = [];
     const errors: string[] = [];
-    const maxSize = 10 * 1024 * 1024; // 10MB
+    const maxSize = 25 * 1024 * 1024; // 25MB
     const allowedTypes = ['.jpg', '.jpeg', '.png', '.gif', '.webp'];
 
     // Check total count limit
@@ -457,6 +468,127 @@
     }
 
     return { valid, errors };
+  };
+
+  // ==================== 拖拽上传功能 ====================
+
+  // 拖拽进入
+  const handleDragEnter = (event: DragEvent) => {
+    event.preventDefault();
+    event.stopPropagation();
+
+    // 计数器加1
+    dragCounter.value++;
+
+    // 显示拖拽提示
+    isDragOver.value = true;
+  };
+
+  // 拖拽经过
+  const handleDragOver = (event: DragEvent) => {
+    event.preventDefault();
+    event.stopPropagation();
+  };
+
+  // 拖拽离开
+  const handleDragLeave = (event: DragEvent) => {
+    event.preventDefault();
+    event.stopPropagation();
+
+    // 计数器减1
+    dragCounter.value--;
+
+    // 只有当计数器为0时，才真正离开
+    if (dragCounter.value === 0) {
+      isDragOver.value = false;
+    }
+  };
+
+  // 放置文件
+  const handleDragDrop = async (event: DragEvent) => {
+    event.preventDefault();
+    event.stopPropagation();
+    isDragOver.value = false;
+    dragCounter.value = 0; // 重置计数器
+
+    // 获取拖拽的文件
+    const files = event.dataTransfer?.files;
+    if (!files || files.length === 0) {
+      return;
+    }
+
+    // 转换为数组并过滤图片文件
+    const imageFiles = Array.from(files).filter((file) => file.type.startsWith('image/'));
+
+    if (imageFiles.length === 0) {
+      ElMessage.error('请拖拽图片文件');
+      return;
+    }
+
+    // 计算剩余可上传数量
+    const remainingSlots = 3 - uploadedImages.value.length;
+    if (remainingSlots <= 0) {
+      ElMessage.warning('最多只能上传3张图片');
+      return;
+    }
+
+    // 只保留前N张（N = 剩余空间）
+    const filesToUpload = imageFiles.slice(0, remainingSlots);
+
+    // 如果拖拽的图片超过剩余空间，提示用户
+    if (imageFiles.length > remainingSlots) {
+      ElMessage.info(
+        `已有${uploadedImages.value.length}张图片，还可以上传${remainingSlots}张，已自动选择前${remainingSlots}张`
+      );
+    }
+
+    // 验证文件
+    const { valid, errors } = await validateFiles(filesToUpload);
+
+    // 显示所有错误消息
+    if (errors.length > 0) {
+      errors.forEach((error: string) => ElMessage.error(error));
+    }
+
+    // 如果没有有效文件，返回
+    if (valid.length === 0) {
+      return;
+    }
+
+    // 上传有效文件
+    try {
+      for (const file of valid) {
+        try {
+          // 获取文件后缀
+          const fileSuffix = file.name.substring(file.name.lastIndexOf('.'));
+
+          // 上传到 OSS
+          const uploadRes = await uploadFile({
+            file,
+            fileSuffix,
+            originalFileName: file.name,
+            fileType: 'image',
+            resourceType: 2,
+            needSync: 0
+          });
+
+          // 添加到列表
+          uploadedImages.value.push({
+            url: uploadRes.url || '',
+            ossId: Number(uploadRes.ossId),
+            file
+          });
+        } catch (error) {
+          console.error('上传失败:', error);
+          throw error;
+        }
+      }
+
+      ElMessage.success(`成功上传${valid.length}张图片`);
+    } catch (error) {
+      console.error('上传失败:', error);
+      ElMessage.error('上传失败');
+    }
   };
 
   // Handle file selection
@@ -1195,5 +1327,10 @@
   // Global style for the model dropdown (not scoped to ensure high z-index)
   .scene-edit-model-dropdown {
     z-index: 10000 !important;
+  }
+
+  // Fix ElMessage z-index to show above the overlay
+  .el-message {
+    z-index: 10001 !important;
   }
 </style>

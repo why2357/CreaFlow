@@ -249,6 +249,21 @@ export const getMemberPointsStat = (data: {
   });
 };
 
+/**
+ * 批量导入成员
+ * @param data 表单数据（包含文件）
+ */
+export const importMembers = (data: FormData) => {
+  return request({
+    url: '/hivision/system/user/member/import',
+    method: 'post',
+    headers: {
+      'Content-Type': 'multipart/form-data'
+    },
+    data
+  });
+};
+
 export default {
   listUser,
   getUser,

@@ -25,9 +25,12 @@
               </el-button>
               <template #dropdown>
                 <el-dropdown-menu>
+                  <!-- 有模型时显示选项 -->
                   <el-dropdown-item v-for="model in modelOptions" :key="model.value" :command="model.value">
                     {{ model.label }}
                   </el-dropdown-item>
+                  <!-- 无模型时显示提示 -->
+                  <el-dropdown-item v-if="modelOptions.length === 0" disabled>暂无可用模型</el-dropdown-item>
                 </el-dropdown-menu>
               </template>
             </el-dropdown>

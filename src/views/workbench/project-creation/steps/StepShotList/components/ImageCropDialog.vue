@@ -156,10 +156,10 @@
         return;
       }
 
-      // 验证文件大小（不能超过10M）
-      const maxSize = 10 * 1024 * 1024; // 10MB
+      // 验证文件大小（不能超过25M）
+      const maxSize = 25 * 1024 * 1024; // 25MB
       if (blob.size > maxSize) {
-        ElMessage.error(`图片大小不能超过10M，当前大小为${(blob.size / 1024 / 1024).toFixed(2)}M`);
+        ElMessage.error(`图片大小不能超过25M，当前大小为${(blob.size / 1024 / 1024).toFixed(2)}M`);
         return;
       }
 

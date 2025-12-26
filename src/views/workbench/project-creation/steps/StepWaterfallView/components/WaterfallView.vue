@@ -11,7 +11,11 @@
     <!-- 空状态 -->
     <div v-else-if="waterfallData.length === 0" class="empty-state">
       <div class="empty-content">
-        <img style="width: 200px; height: 200px" src="../../../../../../assets/images/no-image-light.png" alt="" />
+        <img
+          style="width: 200px; height: 200px"
+          src="https://fc-1327887685.cos.ap-guangzhou.myqcloud.com/dev_forge_hivision/image/2025122417/1482f35c14ad4f8a.png"
+          alt=""
+        />
         <p class="empty-text">暂无数据</p>
       </div>
     </div>
@@ -26,157 +30,177 @@
           width: `${100 / scale}%`
         }"
       >
-        <!-- 每一列对应一个 WaterfallItem -->
-        <div
-          v-for="(item, index) in waterfallData"
-          :key="item.id"
-          :ref="(el) => setColumnRef(el, item.id)"
-          class="waterfall-column"
-          :style="{ width: columnWidths[item.id] ? `${columnWidths[item.id]}px` : 'auto' }"
+        <Draggable
+          v-model="localWaterfallData"
+          :animation="200"
+          :delay="50"
+          :delay-on-touch-only="true"
+          ghost-class="ghost-column"
+          chosen-class="chosen-column"
+          drag-class="dragging-column"
+          :force-fallback="false"
+          handle=".drag-handle"
+          item-key="id"
+          class="draggable-list"
+          @start="handleDragStart"
+          @end="handleDragEnd"
         >
-          <!-- 第一张图片（当前选中的图片） -->
-          <div
-            class="main-image-wrapper"
-            :style="{ height: `${mainImageHeight}px` }"
-            @mouseenter="handleMainImageHover(item)"
-            @mouseleave="handleMainImageLeave"
-          >
-            <!-- 有图片时显示 -->
-            <el-image
-              v-if="item.selectImg?.previewOssUrl || item.selectImg?.originOssUrl"
-              :src="item.selectImg?.previewOssUrl || item.selectImg?.originOssUrl"
-              class="main-image"
-              :preview-src-list="[item.selectImg?.originOssUrl || item.selectImg?.previewOssUrl]"
-              :preview-teleported="true"
-              :z-index="9999"
-              hide-on-click-modal
-              @load="(e: Event) => handleImageLoad(e, item.id)"
-            />
-
-            <!-- 空图片占位符 -->
-            <div v-else class="empty-image-placeholder">
-              <div class="placeholder-content">
-                <svg-icon icon-class="fy-image" class="placeholder-icon" />
-                <p class="placeholder-text">暂无画面</p>
-              </div>
-            </div>
-
-            <!-- 悬浮操作按钮 -->
-            <transition name="fade">
-              <div v-if="hoveredMainImageId === item.id" class="hover-actions">
-                <SceneActions
-                  button-size="default"
-                  tooltip-placement="top"
-                  :disable-comment="!item.imgTaskId"
-                  @comment="(event: MouseEvent) => handleComment(item, event)"
-                  @insert="handleInsert(item)"
-                  @review="(event: MouseEvent) => handleReview(item, event)"
-                  @delete="handleDeleteScene(item)"
-                />
-              </div>
-            </transition>
-
-            <!-- 镜号区域 -->
-            <div class="card-number-wrapper">
-              <!-- 镜号标签 -->
-              <div class="card-number">
-                <svg-icon icon-class="fy-juji" class="icon" />
-                <span>{{ String(index + 1).padStart(2, '0') }}</span>
-              </div>
-
-              <!-- 状态指示圆点 -->
+          <template #item="{ element: item, index }">
+            <div
+              :ref="(el) => setColumnRef(el, item.id)"
+              class="waterfall-column"
+              :style="{ width: columnWidths[item.id] ? `${columnWidths[item.id]}px` : 'auto' }"
+            >
+              <!-- 第一张图片（当前选中的图片） -->
               <div
-                v-if="item.imgStatus !== undefined"
-                class="status-dot"
-                :class="[getDotClass(item.imgStatus), { clickable: canApproveScene }]"
-                @click.stop="handleDotClick(item, $event)"
-              ></div>
-            </div>
-          </div>
-
-          <!-- 镜头提示与台词 -->
-          <div class="scene-info">
-            <div v-if="item.sceneDesc" class="scene-hint">
-              <span class="info-text">{{ item.sceneDesc }}</span>
-            </div>
-            <div v-if="item.dialogues" class="scene-dialogue">
-              <span class="info-text">{{ item.dialogues }}</span>
-            </div>
-          </div>
-
-          <!-- 历史图片列表 -->
-          <div
-            v-if="item.historyImgs && item.historyImgs.length > 0"
-            class="history-images"
-            :style="{ maxHeight: `calc((250vh  - ${mainImageHeight + 330}px / ${scale}))` }"
-          >
-            <div class="history-box">
-              <div
-                v-for="historyImg in item.historyImgs"
-                :key="historyImg.id"
-                class="history-image-item"
-                @mouseenter="hoveredHistoryImageId = historyImg.id"
-                @mouseleave="hoveredHistoryImageId = null"
+                class="main-image-wrapper"
+                :style="{ height: `${mainImageHeight}px` }"
+                @mouseenter="handleMainImageHover(item)"
+                @mouseleave="handleMainImageLeave"
               >
+                <!-- 有图片时显示 -->
                 <el-image
-                  :src="historyImg.imgMaterial?.previewOssUrl || historyImg.imgMaterial?.originOssUrl"
-                  fit="contain"
-                  class="history-image"
-                  :preview-src-list="[historyImg.imgMaterial?.originOssUrl || historyImg.imgMaterial?.previewOssUrl]"
+                  v-if="item.selectImg?.previewOssUrl || item.selectImg?.originOssUrl"
+                  :src="item.selectImg?.previewOssUrl || item.selectImg?.originOssUrl"
+                  class="main-image"
+                  :preview-src-list="[item.selectImg?.originOssUrl || item.selectImg?.previewOssUrl]"
                   :preview-teleported="true"
                   :z-index="9999"
                   hide-on-click-modal
+                  @load="(e: Event) => handleImageLoad(e, item.id)"
                 />
-                <!-- 右上角操作按钮 -->
+
+                <!-- 空图片占位符 -->
+                <div v-else class="empty-image-placeholder">
+                  <div class="placeholder-content">
+                    <svg-icon icon-class="fy-image" class="placeholder-icon" />
+                    <p class="placeholder-text">暂无画面</p>
+                  </div>
+                </div>
+
+                <!-- 悬浮操作按钮 -->
                 <transition name="fade">
-                  <div v-if="shouldShowActions(historyImg.id)" class="top-right-actions">
-                    <el-tooltip content="替换" placement="top">
-                      <div class="action-btn replace-btn" @click.stop="handleReplaceConfirm(item.id, historyImg.id)">
-                        <svg-icon icon-class="fy-tihuan" />
-                      </div>
-                    </el-tooltip>
-                    <el-tooltip :content="historyImg.isCollect ? '取消收藏' : '收藏'" placement="top">
-                      <div
-                        class="action-btn collect-btn"
-                        :class="{ active: historyImg.isCollect }"
-                        @click.stop="handleCollect(historyImg.id, historyImg.isCollect)"
-                      >
-                        <svg-icon v-if="historyImg.isCollect" icon-class="fy-starfilled" style="color: #ff7d00" />
-                        <svg-icon v-else icon-class="fy-star" />
-                      </div>
-                    </el-tooltip>
+                  <div v-if="hoveredMainImageId === item.id" class="hover-actions">
+                    <SceneActions
+                      button-size="default"
+                      tooltip-placement="top"
+                      :disable-comment="!item.imgTaskId"
+                      @comment="(event: MouseEvent) => handleComment(item, event)"
+                      @insert="handleInsert(item)"
+                      @review="(event: MouseEvent) => handleReview(item, event)"
+                      @delete="handleDeleteScene(item)"
+                    />
                   </div>
                 </transition>
-                <!-- 右下角更多按钮 -->
-                <transition name="fade">
-                  <div v-if="shouldShowActions(historyImg.id)" class="bottom-right-actions">
-                    <el-dropdown
-                      trigger="click"
-                      @command="(command: string) => handleMoreAction(command, item.id, historyImg)"
-                      @visible-change="(visible: boolean) => (visible ? handleDropdownShow(historyImg.id) : handleDropdownHide())"
-                    >
-                      <div class="action-btn more-btn" @click.stop>
-                        <svg-icon icon-class="fy-more" />
-                      </div>
-                      <template #dropdown>
-                        <el-dropdown-menu>
-                          <el-dropdown-item command="download">
-                            <svg-icon icon-class="fy-download" />
-                            <span style="margin-left: 8px">下载</span>
-                          </el-dropdown-item>
-                          <el-dropdown-item command="delete" style="color: #f53f3f">
-                            <svg-icon icon-class="fy-del" />
-                            <span style="margin-left: 8px">删除</span>
-                          </el-dropdown-item>
-                        </el-dropdown-menu>
-                      </template>
-                    </el-dropdown>
+
+                <!-- 镜号区域 -->
+                <div class="card-number-wrapper">
+                  <!-- 镜号标签 -->
+                  <div class="card-number drag-handle">
+                    <svg-icon icon-class="fy-juji" class="icon" />
+                    <span>{{ String(index + 1).padStart(2, '0') }}</span>
                   </div>
-                </transition>
+
+                  <!-- 状态指示圆点 -->
+                  <div
+                    v-if="item.imgStatus !== undefined"
+                    class="status-dot"
+                    :class="[getDotClass(item.imgStatus), { clickable: canApproveScene }]"
+                    @click.stop="handleDotClick(item, $event)"
+                  ></div>
+                </div>
+              </div>
+
+              <!-- 镜头提示与台词 -->
+              <div class="scene-info">
+                <div v-if="item.sceneDesc" class="scene-hint">
+                  <span class="info-text">{{ item.sceneDesc }}</span>
+                </div>
+                <div v-if="item.dialogues" class="scene-dialogue">
+                  <span class="info-text">{{ item.dialogues }}</span>
+                </div>
+              </div>
+
+              <!-- 历史图片列表 -->
+              <div
+                v-if="item.historyImgs && item.historyImgs.length > 0"
+                class="history-images"
+                :style="{ maxHeight: `calc((250vh  - ${mainImageHeight + 330}px / ${scale}))` }"
+              >
+                <div class="history-box">
+                  <div
+                    v-for="historyImg in item.historyImgs"
+                    :key="historyImg.id"
+                    class="history-image-item"
+                    @mouseenter="hoveredHistoryImageId = historyImg.id"
+                    @mouseleave="hoveredHistoryImageId = null"
+                  >
+                    <el-image
+                      :src="historyImg.imgMaterial?.previewOssUrl || historyImg.imgMaterial?.originOssUrl"
+                      fit="contain"
+                      class="history-image"
+                      :preview-src-list="[
+                        historyImg.imgMaterial?.originOssUrl || historyImg.imgMaterial?.previewOssUrl
+                      ]"
+                      :preview-teleported="true"
+                      :z-index="9999"
+                      hide-on-click-modal
+                    />
+                    <!-- 右上角操作按钮 -->
+                    <transition name="fade">
+                      <div v-if="shouldShowActions(historyImg.id)" class="top-right-actions">
+                        <el-tooltip content="替换" placement="top">
+                          <div
+                            class="action-btn replace-btn"
+                            @click.stop="handleReplaceConfirm(item.id, historyImg.id)"
+                          >
+                            <svg-icon icon-class="fy-tihuan" />
+                          </div>
+                        </el-tooltip>
+                        <el-tooltip :content="historyImg.isCollect ? '取消收藏' : '收藏'" placement="top">
+                          <div
+                            class="action-btn collect-btn"
+                            :class="{ active: historyImg.isCollect }"
+                            @click.stop="handleCollect(historyImg.id, historyImg.isCollect)"
+                          >
+                            <svg-icon v-if="historyImg.isCollect" icon-class="fy-starfilled" style="color: #ff7d00" />
+                            <svg-icon v-else icon-class="fy-star" />
+                          </div>
+                        </el-tooltip>
+                      </div>
+                    </transition>
+                    <!-- 右下角更多按钮 -->
+                    <transition name="fade">
+                      <div v-if="shouldShowActions(historyImg.id)" class="bottom-right-actions">
+                        <el-dropdown
+                          trigger="click"
+                          @command="(command: string) => handleMoreAction(command, item.id, historyImg)"
+                          @visible-change="(visible: boolean) => (visible ? handleDropdownShow(historyImg.id) : handleDropdownHide())"
+                        >
+                          <div class="action-btn more-btn" @click.stop>
+                            <svg-icon icon-class="fy-more" />
+                          </div>
+                          <template #dropdown>
+                            <el-dropdown-menu>
+                              <el-dropdown-item command="download">
+                                <svg-icon icon-class="fy-download" />
+                                <span style="margin-left: 8px">下载</span>
+                              </el-dropdown-item>
+                              <el-dropdown-item command="delete" style="color: #f53f3f">
+                                <svg-icon icon-class="fy-del" />
+                                <span style="margin-left: 8px">删除</span>
+                              </el-dropdown-item>
+                            </el-dropdown-menu>
+                          </template>
+                        </el-dropdown>
+                      </div>
+                    </transition>
+                  </div>
+                </div>
               </div>
             </div>
-          </div>
-        </div>
+          </template>
+        </Draggable>
       </div>
     </div>
 
@@ -194,10 +218,14 @@
 </template>
 
 <script setup lang="ts">
+  import { dragSortScene } from '@/api/workbench/episode';
   import type { WaterfallItem } from '@/api/workbench/episode/waterfall';
+  import { useAutoScroll } from '@/composables/useAutoScroll';
   import { hasProjectPermission } from '@/utils/projectPermission';
   import { Loading } from '@element-plus/icons-vue';
+  import { ElMessage } from 'element-plus';
   import { computed, onMounted, ref, watch } from 'vue';
+  import Draggable from 'vuedraggable';
   import SceneActions from '../../components/SceneActions.vue';
 
   interface Props {
@@ -222,6 +250,7 @@
     (e: 'insert', item: WaterfallItem): void;
     (e: 'review', item: WaterfallItem, event: MouseEvent): void;
     (e: 'deleteScene', item: WaterfallItem): void;
+    (e: 'refresh'): void;
   }>();
 
   const waterfallContainerRef = ref<HTMLElement>();
@@ -233,6 +262,29 @@
   const columnRefs = new Map<number, HTMLElement>();
   const replaceDialogVisible = ref(false);
   const replaceInfo = ref<{ basicId: number; historyDetailId: number } | null>(null);
+
+  // 本地瀑布流数据 - 用于 VueDraggable
+  const localWaterfallData = ref<WaterfallItem[]>([]);
+
+  // 拖拽状态
+  const draggedOldIndex = ref<number>(-1);
+
+  // 初始化自动滚动 composable（横向滚动）
+  const autoScroll = useAutoScroll({
+    direction: 'horizontal',
+    threshold: 350,
+    minSpeed: 15,
+    maxSpeed: 80
+  });
+
+  // 监听 props.waterfallData 变化,同步到本地列表
+  watch(
+    () => props.waterfallData,
+    (newData) => {
+      localWaterfallData.value = [...newData];
+    },
+    { immediate: true, deep: true }
+  );
 
   // 权限检查
   const canApproveScene = computed(() => hasProjectPermission(['scene-approval']));
@@ -500,6 +552,83 @@
       }
     }
   };
+
+  // ==================== VueDraggable 拖拽排序功能 ====================
+
+  // 开始拖拽
+  const handleDragStart = (event: any) => {
+    // 记录拖拽开始时的原始索引
+    draggedOldIndex.value = event.oldIndex;
+
+    // 设置滚动容器为 waterfall-scroll-wrapper
+    const scrollWrapper = waterfallContainerRef.value?.querySelector('.waterfall-scroll-wrapper');
+
+    // 初始化鼠标位置
+    const initialMouseX = event.originalEvent?.clientX;
+
+    // 启动自动滚动（横向）
+    autoScroll.start((scrollWrapper as HTMLElement) || null, initialMouseX);
+  };
+
+  // 拖拽结束
+  const handleDragEnd = async (event: any) => {
+    // 停止自动滚动
+    autoScroll.stop();
+
+    // 获取拖拽结束时的新索引
+    const newIndex = event.newIndex;
+    const oldIndex = draggedOldIndex.value;
+
+    // 如果位置没有变化，直接返回
+    if (oldIndex === newIndex || oldIndex === -1) {
+      draggedOldIndex.value = -1;
+      return;
+    }
+
+    try {
+      // 获取被拖拽的场景（使用原始列表中的索引）
+      const draggedItem = props.waterfallData[oldIndex];
+
+      if (!draggedItem || !draggedItem.id) {
+        ElMessage.error('场景数据无效');
+        localWaterfallData.value = [...props.waterfallData];
+        draggedOldIndex.value = -1;
+        return;
+      }
+
+      // 确定 targetBasicId
+      // 接口定义：targetBasicId 表示"拖到这个镜头的前面"，为 null 表示拖到最后
+      let targetBasicId: number | undefined;
+
+      // 在新位置的列表中，找到拖拽后该场景后面的那个场景
+      if (newIndex + 1 < localWaterfallData.value.length) {
+        // 不是拖到最后
+        const nextItem = localWaterfallData.value[newIndex + 1];
+        targetBasicId = nextItem.id;
+      } else {
+        // 拖到最后
+        targetBasicId = undefined;
+      }
+
+      // 调用接口进行排序
+      await dragSortScene({
+        dragBasicId: draggedItem.id,
+        targetBasicId: targetBasicId
+      });
+
+      ElMessage.success('镜号顺序调整成功');
+      // 刷新列表
+      emit('refresh');
+    } catch (error) {
+      console.error('拖拽排序失败:', error);
+      ElMessage.error('拖拽排序失败,请重试');
+      // 恢复原始顺序
+      localWaterfallData.value = [...props.waterfallData];
+    } finally {
+      // 重置拖拽索引
+      draggedOldIndex.value = -1;
+    }
+  };
 </script>
 
 <style scoped lang="scss">
@@ -581,6 +710,12 @@
       width: max-content; // 让容器宽度自适应内容
       min-height: 100%; // 保持最小高度
       height: fit-content; // 自适应内容高度
+
+      .draggable-list {
+        display: flex;
+        gap: 10px;
+        width: 100%;
+      }
 
       .waterfall-column {
         display: flex;
@@ -730,6 +865,24 @@
               color: #1d2129;
               font-size: 12px;
               font-weight: 600;
+              user-select: none;
+              transition: all 0.3s ease;
+
+              // 拖拽手柄样式
+              &.drag-handle {
+                cursor: grab;
+
+                &:hover {
+                  background: rgba(232, 233, 235, 0.95);
+                  transform: scale(1.1);
+                  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+                }
+
+                &:active {
+                  cursor: grabbing;
+                  transform: scale(1.05);
+                }
+              }
 
               .icon {
                 width: 16px;
@@ -977,6 +1130,30 @@
             }
           }
         }
+      }
+
+      // VueDraggable 拖拽样式
+      .ghost-column {
+        opacity: 0.4;
+        background: #e0e7ff;
+        border: 2px dashed #5252ff;
+        transform: rotate(2deg);
+      }
+
+      .chosen-column {
+        cursor: grabbing !important;
+        transform: scale(1.03);
+        box-shadow: 0 8px 24px rgba(82, 82, 255, 0.3);
+        border: 2px solid #5252ff;
+        z-index: 1000;
+      }
+
+      .dragging-column {
+        opacity: 0.9;
+        transform: scale(1.05) rotate(2deg);
+        box-shadow: 0 12px 32px rgba(82, 82, 255, 0.4);
+        cursor: grabbing !important;
+        transition: none;
       }
     }
   }

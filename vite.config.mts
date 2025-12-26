@@ -24,9 +24,17 @@ export default defineConfig(({ mode, command }: ConfigEnv): UserConfig => {
       host: '0.0.0.0',
       port: Number(env.VITE_APP_PORT),
       open: true,
+      fs: {
+        strict: false
+      },
       proxy: {
         [env.VITE_APP_BASE_API]: {
-          target: 'http://localhost:8080',
+          // target: 'http://localhost:8080',
+          // target: `http://172.28.38.137:16020`, // 测试
+          // target: `http://172.28.44.206:16020`, // 锐
+          target: `http://172.28.44.150:16020`, // 李智
+          // target: `http://172.28.44.59:16020`, // 玉龙
+          // target: `http://172.28.44.69:16020`, // 小飞
           changeOrigin: true,
           ws: true,
           rewrite: (path) => path.replace(new RegExp('^' + env.VITE_APP_BASE_API), '')
@@ -52,6 +60,20 @@ export default defineConfig(({ mode, command }: ConfigEnv): UserConfig => {
             }
           }
         ]
+      }
+    },
+    // 构建配置
+    build: {
+      chunkSizeWarningLimit: 2000,
+      assetsInlineLimit: 0, // 禁止内联资源，大文件作为独立文件引用
+      rollupOptions: {
+        output: {
+          manualChunks(id) {
+            if (id.includes('node_modules')) {
+              return 'vendor';
+            }
+          }
+        }
       }
     },
     // 预编译

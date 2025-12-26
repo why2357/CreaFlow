@@ -69,6 +69,8 @@ export interface ProjectPageInfoResponseDto {
   roleId?: number; // 角色ID
   roleName?: string; // 角色名称
   updateTime?: Date | string; // 更新时间
+  limitPoints?: number; // 积分总限制
+  consumedPoints?: number; // 已消耗积分
 }
 
 /**
@@ -94,6 +96,8 @@ export interface Project {
   roleName?: string; // 角色名称
   coverOssId?: number; // 封面OSSID
   coverUrl?: string; // 封面URL
+  limitPoints?: number; // 积分总限制
+  consumedPoints?: number; // 已消耗积分
 
   members?: ProjectMember[];
   status?: 'active' | 'archived';
@@ -126,6 +130,14 @@ export interface ProjectCreateRequest {
 export interface ProjectRenameRequest {
   projectId: number; // 项目id
   projectName: string; // 新项目名称
+}
+
+/**
+ * 项目限制积分请求参数
+ */
+export interface ProjectLimitPointsRequest {
+  projectId: number; // 项目id
+  limitPoints?: number | null; // 限制积分，为null时取消积分限制
 }
 
 /**
@@ -188,7 +200,7 @@ export interface UserProcessInfo {
   memberName?: string; // 成员名称
   memberRoleId?: number; // 角色id
   memberRoleKey?: string; // 角色码（新增字段）
-  validImgCount?: number; // 有效分镜图
+  validImgCount?: number; // 有效图片次数
   imgTaskCount?: number; // 生产图片次数
   validVideoCount?: number; // 有效视频次数
   videoTaskCount?: number; // 生成视频次数
@@ -290,6 +302,8 @@ export interface EpisodeCreateRequest {
   projectId: number;
   /** 剧情 */
   storyText: string;
+  /** 提示词前缀 */
+  promptPreFix?: string;
 }
 
 /**

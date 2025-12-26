@@ -67,25 +67,8 @@
             />
             <div class="textarea-footer">
               <div class="footer-box">
-                <!-- 左下角：模型选择 -->
-                <el-dropdown trigger="click" @command="handleModelChange">
-                  <span class="model-selector">
-                    {{ currentModelName }}
-                  </span>
-                  <template #dropdown>
-                    <el-dropdown-menu>
-                      <el-dropdown-item
-                        v-for="model in modelOptions"
-                        :key="model.value"
-                        :command="model.value"
-                        :class="{ 'is-active': form.modelCode === model.value }"
-                      >
-                        <!-- <el-icon v-if="form.modelCode === model.value" class="check-icon"><Check /></el-icon> -->
-                        {{ model.label }}
-                      </el-dropdown-item>
-                    </el-dropdown-menu>
-                  </template>
-                </el-dropdown>
+                <!-- 左下角：预设按钮 -->
+                <el-button class="preset-btn" size="small" @click="handleOpenPreset"> 预设 </el-button>
 
                 <!-- 右下角：字数统计 -->
                 <div class="char-count">{{ form.storyText.length }}/5000</div>
@@ -133,17 +116,22 @@
       </div>
     </template>
   </el-dialog>
+
+  <!-- 预设对话框 -->
+  <PromptPresetDialog v-model="presetDialogVisible" @confirm="handlePresetConfirm" />
 </template>
 
 <script setup lang="ts">
   import { createEpisodeByTemplate, createEpisodeByText } from '@/api/workbench/episode';
   import type { EpisodeCreateRequest } from '@/api/workbench/project/types';
   import { useProjectStore } from '@/store/modules/project';
-  import { convertModelsToOptions, getDefaultModel, getModelName } from '@/utils/projectUtils';
+  import { getDefaultModel } from '@/utils/projectUtils';
   import { ArrowDown, Check, MagicStick } from '@element-plus/icons-vue';
   import type { FormInstance, FormRules, UploadFile } from 'element-plus';
   import { ElMessage, ElMessageBox } from 'element-plus';
-  import { computed, ref, watch } from 'vue';
+  import { ref, watch } from 'vue';
+  import PromptPresetDialog from './PromptPresetDialog.vue';
+  import { DEFAULT_PROMPT } from './promptPresetConstants';
 
   interface Props {
     modelValue: boolean;
@@ -165,17 +153,15 @@
   // 加载状态
   const loading = ref(false);
 
-  // 动态获取模型选项（文生文模型用于剧集生成）
-  const modelOptions = computed(() => {
-    return convertModelsToOptions(projectStore.t2tModelInfoList);
-  });
-
   // 表单引用
   const formRef = ref<FormInstance>();
   const uploadRef = ref();
 
   // 对话框可见性
   const dialogVisible = ref(false);
+
+  // 预设对话框可见性
+  const presetDialogVisible = ref(false);
 
   // 输入模式：text-文本输入, upload-文件上传
   const inputMode = ref<'text' | 'upload'>('text');
@@ -185,17 +171,13 @@
     episodeName: '',
     storyText: '',
     modelCode: 'gemini',
-    projectId: props.projectId
+    projectId: props.projectId,
+    promptPreFix: DEFAULT_PROMPT
   });
 
   // 文件列表
   const fileList = ref<UploadFile[]>([]);
   const uploadedFile = ref<File | undefined>(undefined);
-
-  // 当前模型名称
-  const currentModelName = computed(() => {
-    return getModelName(projectStore.t2tModelInfoList, form.value.modelCode) || '请选择模型';
-  });
 
   // 表单验证规则
   const rules: FormRules = {
@@ -248,7 +230,8 @@
       episodeName: '',
       storyText: '',
       modelCode: getDefaultModel(projectStore.t2tModelInfoList),
-      projectId: props.projectId
+      projectId: props.projectId,
+      promptPreFix: DEFAULT_PROMPT
     };
     inputMode.value = 'text';
     fileList.value = [];
@@ -270,9 +253,14 @@
     formRef.value?.clearValidate('storyText');
   };
 
-  // 切换模型
-  const handleModelChange = (modelCode: string) => {
-    form.value.modelCode = modelCode;
+  // 打开预设对话框
+  const handleOpenPreset = () => {
+    presetDialogVisible.value = true;
+  };
+
+  // 预设对话框确认
+  const handlePresetConfirm = (prompt: string) => {
+    form.value.promptPreFix = prompt;
   };
 
   // 文件变化
@@ -353,7 +341,8 @@
             projectId: form.value.projectId,
             episodeName: form.value.episodeName,
             storyText: form.value.storyText.trim(),
-            modelCode: form.value.modelCode
+            modelCode: form.value.modelCode,
+            promptPreFix: form.value.promptPreFix
           });
         } else {
           // 上传拆分剧集模式：调用 /hivision/story/episode/template/upload
@@ -528,22 +517,19 @@
       }
     }
 
-    .model-selector {
-      display: inline-flex;
-      align-items: center;
-      height: 32px;
-      padding: 2px 12px;
+    .preset-btn {
       margin-left: 12px;
+      height: 32px;
+      padding: 0 16px;
       border-radius: 8px;
       background: #fff;
       color: #1d2129;
       font-size: 12px;
-      cursor: pointer;
+      border: 1px solid #e5e6eb;
       transition: all 0.3s;
-      // border: 1px solid #e5e6eb;
 
       &:hover {
-        background: #fff;
+        background: #f5f5ff;
         color: #5252ff;
         border-color: #5252ff;
       }

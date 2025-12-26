@@ -32,7 +32,7 @@
     <div v-else class="empty-video">
       <img
         style="width: 120px; height: 120px"
-        src="../../../../../../assets/images/no-image.png"
+        src="https://fc-1327887685.cos.ap-guangzhou.myqcloud.com/dev_forge_hivision/image/2025122417/280aecd608a94a8d.png"
         alt="暂无视频"
         class="placeholder-img"
       />

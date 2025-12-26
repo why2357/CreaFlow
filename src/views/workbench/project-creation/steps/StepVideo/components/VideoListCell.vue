@@ -147,7 +147,7 @@
     <VideoHistoryDialog v-model="videoHistoryDialogVisible" :basic-id="video.basicId" @refresh="handleRefresh" />
 
     <!-- 视频预览弹窗 -->
-    <VideoPreviewDialog v-model="videoPreviewVisible" :video-url="currentVideoUrl" />
+    <VideoPreviewDialog v-model="videoPreviewVisible" :video-url="currentVideoUrl" :video-info="currentVideoInfo" />
   </div>
 </template>
 
@@ -181,6 +181,7 @@
   // 视频预览弹窗
   const videoPreviewVisible = ref(false);
   const currentVideoUrl = ref('');
+  const currentVideoInfo = ref<any>(null);
 
   // hover 状态
   const isHovered = ref(false);
@@ -324,8 +325,20 @@
       ElMessage.warning('视频地址不存在');
       return;
     }
+
+    // 从 historyVos 中查找完整的视频信息
+    const historyItem = props.video.historyVos?.find((h: any) => h.id === videoItem.id);
+
     // 打开视频预览弹窗
     currentVideoUrl.value = videoItem.url;
+    currentVideoInfo.value = historyItem
+      ? {
+          modelName: historyItem.modelName,
+          ratio: historyItem.ratio,
+          duration: historyItem.duration,
+          createTime: historyItem.createTime
+        }
+      : null;
     videoPreviewVisible.value = true;
   };
 

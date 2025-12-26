@@ -67,13 +67,21 @@
           v-if="!projectStore.episodeInfoList || projectStore.episodeInfoList.length === 0"
           class="empty-state-large"
         >
-          <img style="width: 200px; height: 200px" src="../../../../../assets/images/no-text.png" alt="" />
+          <img
+            style="width: 200px; height: 200px"
+            src="https://fc-1327887685.cos.ap-guangzhou.myqcloud.com/dev_forge_hivision/image/2025122417/8d5b2bac5d1d409f.png"
+            alt=""
+          />
           <div style="color: #4e5969; font-size: 14px">暂无剧集</div>
         </div>
 
         <!-- 空状态 - 内容由条单上传（没有 storyText 且没有 modelCode） -->
         <div v-else-if="showUploadEmptyState && !loading" class="empty-state-large">
-          <img style="width: 200px; height: 200px" src="../../../../../assets/images/no-text.png" alt="" />
+          <img
+            style="width: 200px; height: 200px"
+            src="https://fc-1327887685.cos.ap-guangzhou.myqcloud.com/dev_forge_hivision/image/2025122417/8d5b2bac5d1d409f.png"
+            alt=""
+          />
           <div style="color: #4e5969; font-size: 14px">内容由表单上传</div>
         </div>
 

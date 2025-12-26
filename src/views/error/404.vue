@@ -2,10 +2,26 @@
   <div class="wscn-http404-container">
     <div class="wscn-http404">
       <div class="pic-404">
-        <img class="pic-404__parent" src="@/assets/404_images/404.png" alt="404" />
-        <img class="pic-404__child left" src="@/assets/404_images/404_cloud.png" alt="404" />
-        <img class="pic-404__child mid" src="@/assets/404_images/404_cloud.png" alt="404" />
-        <img class="pic-404__child right" src="@/assets/404_images/404_cloud.png" alt="404" />
+        <img
+          class="pic-404__parent"
+          src="https://fc-1327887685.cos.ap-guangzhou.myqcloud.com/dev_forge_hivision/image/2025122418/3b599511c7f64f9d.png"
+          alt="404"
+        />
+        <img
+          class="pic-404__child left"
+          src="https://fc-1327887685.cos.ap-guangzhou.myqcloud.com/dev_forge_hivision/image/2025122418/181434e126b64711.png"
+          alt="404"
+        />
+        <img
+          class="pic-404__child mid"
+          src="https://fc-1327887685.cos.ap-guangzhou.myqcloud.com/dev_forge_hivision/image/2025122418/181434e126b64711.png"
+          alt="404"
+        />
+        <img
+          class="pic-404__child right"
+          src="https://fc-1327887685.cos.ap-guangzhou.myqcloud.com/dev_forge_hivision/image/2025122418/181434e126b64711.png"
+          alt="404"
+        />
       </div>
       <div class="bullshit">
         <div class="bullshit__oops">404错误!</div>
