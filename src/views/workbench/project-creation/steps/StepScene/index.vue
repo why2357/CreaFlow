@@ -22,7 +22,11 @@
     <div class="scene-content" v-loading="loading">
       <!-- 空状态 -->
       <div class="empty-box" v-if="libraryList.length === 0 && !loading">
-        <img style="width: 200px; height: 200px" src="../../../../../assets/images/no-text.png" alt="" />
+        <img
+          style="width: 200px; height: 200px"
+          src="https://fc-1327887685.cos.ap-guangzhou.myqcloud.com/dev_forge_hivision/image/2025122417/8d5b2bac5d1d409f.png"
+          alt=""
+        />
         <div>暂无场景，点击新增场景开始创建</div>
         <el-button class="add-sty" type="primary" @click="handleAddSceneGroup">
           <el-icon><Plus /></el-icon>
@@ -243,7 +247,7 @@
     allMaxLen: 10, // 单次最多上传10张
     totalLimit: 10, // 总数限制10张
     suffix: ['.jpg', '.jpeg', '.png', '.gif', '.webp'],
-    singleMaxSize: 10 * 1024 * 1024 // 10MB
+    singleMaxSize: 25 * 1024 * 1024 // 25MB
   };
 
   // 对话框状态

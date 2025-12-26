@@ -21,14 +21,18 @@
         </div>
 
         <div v-else-if="!selectedHistoryDetail" class="empty-state">
-          <img src="../../../../../../assets/images/no-sence.png" alt="暂无图片" class="empty-image" />
+          <img
+            src="https://fc-1327887685.cos.ap-guangzhou.myqcloud.com/dev_forge_hivision/image/2025122417/11fb7c9d514e42b0.png"
+            alt="暂无图片"
+            class="empty-image"
+          />
           <p class="empty-text">点击右侧图片进行查看</p>
         </div>
         <div v-else class="current-image-container">
           <div class="current-image-wrapper">
             <el-image
               :src="selectedHistoryDetail.originOssUrl || selectedHistoryDetail.previewOssUrl"
-              :preview-src-list="[selectedHistoryDetail.originOssUrl || selectedHistoryDetail.previewOssUrl]"
+              :preview-src-list="[selectedHistoryDetail.originOssUrl || selectedHistoryDetail.previewOssUrl || '']"
               fit="contain"
               style="cursor: pointer"
               :preview-teleported="true"
@@ -109,15 +113,6 @@
                 <div class="image-wrapper">
                   <el-image :src="detail.previewOssUrl || detail.originOssUrl" :preview-src-list="[]" />
 
-                  <!-- 左上角：放大按钮 -->
-                  <div class="action-top-left">
-                    <el-tooltip content="放大" placement="top">
-                      <div class="action-icon" @click.stop="handlePreviewImage(detail)">
-                        <svg-icon icon-class="fy-zoomin" />
-                      </div>
-                    </el-tooltip>
-                  </div>
-
                   <!-- 右上角：收藏按钮 -->
                   <div class="action-top-right" :class="{ 'is-collected': detail.isCollected }">
                     <el-tooltip :content="detail.isCollected ? '取消收藏' : '收藏'" placement="top">
@@ -172,7 +167,7 @@
             <div class="history-group-footer">
               <div class="footer-info">
                 <span class="info-text" v-if="history.operationType == 2">编辑生成</span>
-                <span v-if="history.modelCode" class="info-text">{{ getModelNameByCode(history.modelCode) }}</span>
+                <span v-if="history.modelName" class="info-text">{{ history.modelName }}</span>
                 <span class="info-text">{{ history.ratio }}</span>
                 <span class="info-text">{{ history.createTime }}</span>
               </div>
@@ -257,7 +252,7 @@
     sceneDesc: string;
     sceneHint: string;
     prompt?: string;
-    modelCode: string;
+    modelName?: string;
     ratio: string;
     createTime?: string;
     operationType?: number;
@@ -309,13 +304,6 @@
   watch(visible, (val) => {
     emit('update:modelValue', val);
   });
-
-  // 根据modelCode获取modelName
-  const getModelNameByCode = (modelCode?: string): string => {
-    if (!modelCode) return '';
-    const model = projectStore.t2iModelInfoList?.find((m) => m.modelCode === modelCode);
-    return model?.modelName || modelCode;
-  };
 
   // 比例映射
   const getRatioText = (pictureRatio?: number): string => {
@@ -372,7 +360,7 @@
         sceneDesc: history.sceneDesc || '',
         sceneHint: history.sceneHint || '',
         prompt: history.prompt || '',
-        modelCode: history.modelCode || '',
+        modelName: history.modelName || '',
         ratio: getRatioText(history.pictureRatio),
         createTime: history.createTime ? formatDate(String(history.createTime)) : '',
         operationType: history.operationType,
@@ -396,9 +384,15 @@
     }
   };
 
-  // 选择图片
+  // 选择图片（支持二次点击放大）
   const handleSelectImage = (detail: HistoryDetail) => {
-    selectedHistoryDetail.value = detail;
+    // 如果点击的是已选中的图片，则放大预览
+    if (selectedHistoryDetail.value?.historyDetailId === detail.historyDetailId) {
+      handlePreviewImage(detail);
+    } else {
+      // 否则选中该图片
+      selectedHistoryDetail.value = detail;
+    }
   };
 
   // 预览图片（点击放大按钮时触发）
@@ -855,7 +849,6 @@
                 box-shadow: 0 4px 12px rgb(97 87 255 / 20%);
 
                 .image-wrapper {
-                  .action-top-left,
                   .action-top-right,
                   .action-bottom-left,
                   .action-bottom-right {
@@ -895,36 +888,6 @@
                 .el-image {
                   width: 100%;
                   height: 100%;
-                }
-
-                // 左上角：放大按钮
-                .action-top-left {
-                  position: absolute;
-                  top: 8px;
-                  left: 8px;
-                  opacity: 0;
-                  transition: opacity 0.3s;
-
-                  .action-icon {
-                    display: flex;
-                    width: 24px;
-                    height: 24px;
-                    justify-content: center;
-                    align-items: center;
-                    flex-shrink: 0;
-                    border-radius: 4px;
-                    background: var(--text-color-text-5, #f7f8fa);
-                    z-index: 99;
-
-                    &:hover {
-                      background: white;
-                      transform: scale(1.1);
-                    }
-
-                    .el-icon {
-                      font-size: 14px;
-                    }
-                  }
                 }
 
                 // 右上角：收藏按钮

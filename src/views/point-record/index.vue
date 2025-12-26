@@ -51,10 +51,12 @@
             </el-form-item>
             <el-form-item label="流水名称" prop="transName">
               <el-select v-model="queryParams.transName" placeholder="请选择流水名称" clearable style="width: 240px">
-                <el-option label="Gemini2.5pro文生文api" value="Gemini2.5pro文生文api" />
-                <el-option label="即梦4.0生成图片api" value="即梦4.0生成图片api" />
-                <el-option label="即梦3.0生成视频api" value="即梦3.0生成视频api" />
-                <el-option label="生成失败" value="生成失败" />
+                <el-option
+                  v-for="walletType in walletTypeList"
+                  :key="walletType.code"
+                  :label="walletType.desc"
+                  :value="walletType.desc"
+                />
               </el-select>
             </el-form-item>
             <el-form-item label="使用场景" prop="selectedProjectId">
@@ -69,7 +71,7 @@
                   v-for="project in projectList"
                   :key="project.id"
                   :label="project.projectName"
-                  :value="project.id"
+                  :value="project.id || ''"
                 />
               </el-select>
             </el-form-item>
@@ -136,8 +138,8 @@
 </template>
 
 <script setup lang="ts" name="PointRecord">
-  import { listTransaction } from '@/api/transaction';
-  import { TransactionQuery, TransactionVO } from '@/api/transaction/types';
+  import { getWalletTypes, listTransaction } from '@/api/transaction';
+  import { TransactionQuery, TransactionVO, WalletTypeVO } from '@/api/transaction/types';
   import { getAllProjects } from '@/api/workbench/project';
   import { ProjectResponse } from '@/api/workbench/project/types';
   import { ElMessage } from 'element-plus';
@@ -149,8 +151,9 @@
   const showSearch = ref(true);
   const transactionList = ref<TransactionVO[]>([]);
   const projectList = ref<ProjectResponse[]>([]);
+  const walletTypeList = ref<WalletTypeVO[]>([]);
   const total = ref(0);
-  const dateRange = ref<[]>([]);
+  const dateRange = ref<[DateModelType, DateModelType]>(['', '']);
   const ids = ref<number[]>([]);
   const single = ref(true);
   const multiple = ref(true);
@@ -183,6 +186,17 @@
     }
   };
 
+  const getWalletTypeList = async () => {
+    try {
+      const res = await getWalletTypes();
+      walletTypeList.value = res.data || [];
+    } catch (error) {
+      console.error('Get wallet types failed:', error);
+      ElMessage.error('获取流水名称列表失败');
+      walletTypeList.value = [];
+    }
+  };
+
   const getList = async () => {
     loading.value = true;
     try {
@@ -211,7 +225,7 @@
   };
 
   const resetQuery = () => {
-    dateRange.value = [];
+    dateRange.value = ['', ''];
     selectedProjectId.value = undefined;
     queryParams.walletTransactionId = undefined;
     queryParams.transUserId = undefined;
@@ -255,6 +269,7 @@
 
   onMounted(() => {
     getProjectList();
+    getWalletTypeList();
     getList();
   });
 </script>

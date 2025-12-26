@@ -28,8 +28,14 @@ import Layout from '@/layout/index.vue';
 export const constantRoutes: RouteOption[] = [
   {
     path: '/',
-    redirect: '/index',
+    redirect: '/home',
     hidden: true
+  },
+  {
+    path: '/home',
+    component: () => import('@/views/home/index.vue'),
+    hidden: true,
+    meta: { title: '首页', icon: '' }
   },
   {
     path: '/redirect',
@@ -162,6 +168,19 @@ export const constantRoutes: RouteOption[] = [
   //       component: () => import('@/views/system/menu/index.vue'),
   //       name: 'Menu',
   //       meta: { title: '菜单管理', icon: 'logo-menu' }
+  //     }
+  //   ]
+  // },
+  // {
+  //   path: '',
+  //   component: Layout,
+  //   redirect: 'model',
+  //   children: [
+  //     {
+  //       path: '/model',
+  //       component: () => import('@/views/model-admin/index.vue'),
+  //       name: 'Model',
+  //       meta: { title: '模型配置', icon: 'logo-menu' }
   //     }
   //   ]
   // },

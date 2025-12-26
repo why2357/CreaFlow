@@ -17,8 +17,8 @@
       <div v-else class="stats-table">
         <div class="table-header">
           <div class="col col-member">成员</div>
-          <div class="col col-shot">图片</div>
-          <div class="col col-video">视频</div>
+          <div class="col col-shot">有效图片/图片</div>
+          <div class="col col-video">有效视频/视频</div>
           <div class="col col-score">积分</div>
         </div>
         <div class="table-body">
@@ -32,10 +32,10 @@
               </el-tooltip>
             </div>
             <div class="col col-shot">
-              <span class="total"> {{ member.imgTaskCount }}</span>
+              <span class="total">{{ member.validImgCount }} / {{ member.imgTaskCount }}</span>
             </div>
             <div class="col col-video">
-              <span class="total"> {{ member.videoTaskCount }}</span>
+              <span class="total">{{ member.validVideoCount }} / {{ member.videoTaskCount }}</span>
             </div>
             <div class="col col-score" :class="`score-${member.scoreColor}`">
               {{ member.score }}

@@ -29,7 +29,8 @@ export const createEpisodeByText = (data: EpisodeCreateRequest): AxiosPromise<Hi
       projectId: data.projectId,
       episodeName: data.episodeName,
       storyText: data.storyText,
-      modelCode: data.modelCode
+      modelCode: data.modelCode,
+      promptPreFix: data.promptPreFix
     }
   });
 };
@@ -339,6 +340,8 @@ export interface SceneMainHistoryInfo {
   historyId?: number;
   /** 模型码 */
   modelCode?: string;
+  modelName?: string;
+
   /** 操作类型 1-模型生成 2-编辑生成 */
   operationType?: number;
   /** 尺寸比例 1-16:9;2-4:3;3-1:1;4-3:4;5-9:16 */
@@ -422,6 +425,9 @@ export interface ImageReplaceRequestDto {
   basicId: number;
   /** oss文件id */
   ossId: number;
+  // 操作类型 1-模型生成 2-编辑生成 3-本地上传
+  // 增加入参，本地上传的时候给一下3，其他场景不用给
+  operationType?: number;
 }
 
 export const replaceSceneImage = (data: ImageReplaceRequestDto): AxiosPromise<void> => {
@@ -563,5 +569,29 @@ export const exportEpisodeVideoExcel = (episodeId: number): AxiosPromise<Blob> =
     url: `/hivision/system/episode-export/export-video-excel/${episodeId}`,
     method: 'get',
     responseType: 'blob'
+  });
+};
+
+// ==================== 镜头拖动排序接口 ====================
+
+/**
+ * 镜头拖动排序请求参数
+ */
+export interface SceneDragSortRequest {
+  /** 被拖动的镜头ID */
+  dragBasicId: number;
+  /** 目标位置的镜头ID（拖到这个镜头的前面）如果为null，表示拖到最后 */
+  targetBasicId?: number;
+}
+
+/**
+ * 镜头拖动排序
+ * @param data 拖动排序请求数据
+ */
+export const dragSortScene = (data: SceneDragSortRequest): AxiosPromise<void> => {
+  return request({
+    url: '/hivision/story/scene/drag-sort',
+    method: 'post',
+    data
   });
 };

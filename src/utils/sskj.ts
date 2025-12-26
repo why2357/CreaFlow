@@ -335,7 +335,20 @@ const fallbackCopyText = (text: string) => {
     document.body.removeChild(textarea);
   }
 };
-
+/**
+ * 表格时间格式化
+ */
+export const formatDate = (cellValue: string) => {
+  if (cellValue == null || cellValue == '') return '';
+  const date = new Date(cellValue);
+  const year = date.getFullYear();
+  const month = date.getMonth() + 1 < 10 ? '0' + (date.getMonth() + 1) : date.getMonth() + 1;
+  const day = date.getDate() < 10 ? '0' + date.getDate() : date.getDate();
+  const hours = date.getHours() < 10 ? '0' + date.getHours() : date.getHours();
+  const minutes = date.getMinutes() < 10 ? '0' + date.getMinutes() : date.getMinutes();
+  const seconds = date.getSeconds() < 10 ? '0' + date.getSeconds() : date.getSeconds();
+  return year + '-' + month + '-' + day + ' ' + hours + ':' + minutes + ':' + seconds;
+};
 /**
 console.log(formatCommentDate("2025-03-18 14:20:51")); // 03-18（如果今年是 2025 年）
 console.log(formatCommentDate("2024-03-18 14:20:51")); // 2024-03-18

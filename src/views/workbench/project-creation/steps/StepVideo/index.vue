@@ -235,6 +235,7 @@
     resolution: string;
     duration: number;
     points: number;
+    allowTailImg?: boolean;
   } | null>(() => {
     if (!selectedModelCode.value || !selectedResolution.value || !selectedDuration.value) {
       return null;
@@ -244,7 +245,8 @@
       modelName: currentModel.value?.modelName || '',
       resolution: selectedResolution.value,
       duration: selectedDuration.value,
-      points: currentDuration.value?.points || 0
+      points: currentDuration.value?.points || 0,
+      allowTailImg: currentModel.value?.allowTailImg
     };
   });
 

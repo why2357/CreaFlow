@@ -10,10 +10,10 @@
 
     <!-- 分镜表格 -->
     <div v-else class="table-wrapper">
-      <el-table :data="shots" border stripe height="100%" class="storyboard-table">
+      <el-table ref="tableRef" :data="localShots" border stripe height="100%" class="storyboard-table" row-key="id">
         <el-table-column prop="shotNumber" label="镜号" width="120" align="center" fixed="left">
-          <template #default="{ row }">
-            <div class="shot-number-cell">
+          <template #default="{ row, $index }">
+            <div class="shot-number-cell drag-handle" :data-row-index="$index">
               <ShotNumberActions
                 :shot-number="row.shotNumber"
                 :scene-status="row.imgStatus"
@@ -23,7 +23,10 @@
                 @delete="handleShotDelete(row)"
                 @view-comments="handleViewComments(row)"
               />
-              <span class="shot-number-text">{{ row.shotNumber }}</span>
+              <!-- 拖拽手柄 -->
+              <span class="shot-number-text drag-handle">
+                {{ row.shotNumber }}
+              </span>
               <!-- 留言数量显示 -->
               <div
                 v-if="row.commentCount && row.commentCount > 0"
@@ -80,7 +83,7 @@
                 maxlength="300"
                 placeholder="请输入特写镜头描述"
                 @blur="handleBlur(row)"
-                @keydown="handleKeydown"
+                @keydown="(evt: Event) => handleKeydown(evt as KeyboardEvent)"
                 autofocus
               />
             </div>
@@ -99,7 +102,7 @@
                 maxlength="300"
                 placeholder="请输入场景提示"
                 @blur="handleBlur(row)"
-                @keydown="handleKeydown"
+                @keydown="(evt: Event) => handleKeydown(evt as KeyboardEvent)"
                 autofocus
               />
             </div>
@@ -123,7 +126,7 @@
                 maxlength="300"
                 placeholder="请输入台词"
                 @blur="handleBlur(row)"
-                @keydown="handleKeydown"
+                @keydown="(evt: Event) => handleKeydown(evt as KeyboardEvent)"
                 autofocus
               />
             </div>
@@ -198,7 +201,7 @@
             <div class="empty-content">
               <img
                 style="width: 200px; height: 200px"
-                src="../../../../../../assets/images/no-image-light.png"
+                src="https://fc-1327887685.cos.ap-guangzhou.myqcloud.com/dev_forge_hivision/image/2025122417/1482f35c14ad4f8a.png"
                 alt=""
               />
               <p class="empty-text">暂无分镜头</p>
@@ -275,14 +278,16 @@
 </template>
 
 <script setup lang="ts">
-  import { clearSceneEnv, editSceneBasic, setSceneEnv } from '@/api/workbench/episode';
+  import { clearSceneEnv, dragSortScene, editSceneBasic, setSceneEnv } from '@/api/workbench/episode';
   import type { CharacterClothingInfo } from '@/api/workbench/episode/types';
   import type { EpisodeInfo, LibrarySubInfo, Shot } from '@/api/workbench/project/types';
   import { addScene, deleteScene } from '@/api/workbench/storyboard';
+  import { useAutoScroll } from '@/composables/useAutoScroll';
   import { uploadFile } from '@/utils/uploadFile';
   import { Loading } from '@element-plus/icons-vue';
   import { ElMessage, ElMessageBox } from 'element-plus';
-  import { nextTick, ref } from 'vue';
+  import Sortable, { type SortableEvent } from 'sortablejs';
+  import { nextTick, ref, watch } from 'vue';
   import CommentDialog from './CommentDialog.vue';
   import CommentListDialog from './CommentListDialog.vue';
   import ImageCropDialog from './ImageCropDialog.vue';
@@ -314,6 +319,19 @@
     (e: 'refresh'): void;
     (e: 'deleteSuccess', basicId: number): void;
   }>();
+
+  // 表格引用和本地数据
+  const tableRef = ref();
+  const localShots = ref<Shot[]>([]);
+
+  // 监听 props.shots 变化，同步到本地列表
+  watch(
+    () => props.shots,
+    (newShots) => {
+      localShots.value = [...newShots];
+    },
+    { immediate: true, deep: true }
+  );
 
   // 裁剪相关
   const cropDialogVisible = ref(false);
@@ -504,10 +522,10 @@
       return;
     }
 
-    // 验证文件大小（限制为10MB）
-    const maxSize = 10 * 1024 * 1024;
+    // 验证文件大小（限制为25MB）
+    const maxSize = 25 * 1024 * 1024;
     if (file.size > maxSize) {
-      ElMessage.error('图片大小不能超过10MB');
+      ElMessage.error('图片大小不能超过25MB');
       return;
     }
 
@@ -900,6 +918,134 @@
     }
   };
 
+  // ==================== 拖拽排序功能（使用 sortablejs）====================
+
+  // 保存 Sortable 实例
+  let sortableInstance: any = null;
+
+  // 初始化自动滚动 composable（垂直滚动）
+  const autoScroll = useAutoScroll({
+    direction: 'vertical',
+    threshold: 350,
+    minSpeed: 15,
+    maxSpeed: 80
+  });
+
+  // 初始化拖拽功能
+  const initDraggable = () => {
+    nextTick(() => {
+      // 添加延迟确保 Element Plus 的 el-scrollbar__wrap 完全渲染
+      setTimeout(() => {
+        const table = tableRef.value;
+        if (!table) return;
+
+        const tbody = table.$el.querySelector('.el-table__body-wrapper tbody');
+        if (!tbody) return;
+
+        // 获取滚动容器 - 智能选择有滚动条的容器
+        let scrollContainer: HTMLElement | null = null;
+
+        // 尝试1: Element Plus 表格的真实滚动容器（el-scrollbar__wrap）
+        const elScrollbarWrap = table.$el.querySelector('.el-scrollbar__wrap') as HTMLElement;
+
+        // 选择有滚动条的容器（scrollHeight > clientHeight）
+        if (elScrollbarWrap && elScrollbarWrap.scrollHeight > elScrollbarWrap.clientHeight) {
+          scrollContainer = elScrollbarWrap;
+        }
+        if (!scrollContainer) return;
+
+        // 如果已经存在实例，先销毁
+        if (sortableInstance) {
+          sortableInstance.destroy();
+          sortableInstance = null;
+        }
+
+        // 创建新的 Sortable 实例
+        sortableInstance = Sortable.create(tbody, {
+          handle: '.drag-handle', // 指定拖拽手柄
+          animation: 200, // 动画时间
+          ghostClass: 'ghost-row', // 拖拽时的占位样式
+          chosenClass: 'chosen-row', // 选中时的样式
+          dragClass: 'dragging-row', // 拖拽中的样式
+          forceFallback: false, // 使用 HTML5 原生拖拽
+          // 拖拽开始时，设置滚动容器并添加鼠标移动监听
+          onStart: (event: SortableEvent) => {
+            // 初始化鼠标位置
+            const originalEvent = event as any;
+            const initialMouseY = originalEvent.originalEvent?.clientY;
+            // 启动自动滚动
+            autoScroll.start(scrollContainer as HTMLElement, initialMouseY);
+          },
+          // 添加 onMove 回调以实时捕获鼠标位置
+          onMove: (event: any) => {
+            return true; // 返回 true 允许移动
+          },
+          onEnd: async (event: SortableEvent) => {
+            // 停止自动滚动
+            autoScroll.stop();
+            const { oldIndex, newIndex } = event;
+
+            // 如果位置没有变化，直接返回
+            if (oldIndex === newIndex || oldIndex === undefined || newIndex === undefined) {
+              return;
+            }
+
+            try {
+              // 获取被拖拽的场景
+              const draggedShot = localShots.value[oldIndex];
+
+              if (!draggedShot || !draggedShot.basicId) {
+                ElMessage.error('场景数据无效');
+                // 恢复原始顺序
+                localShots.value = [...props.shots];
+                return;
+              }
+
+              // 确定 targetBasicId：接口定义为"拖到这个镜头的前面"，为 undefined 表示拖到最后
+              let targetBasicId: number | undefined;
+
+              if (newIndex + 1 < localShots.value.length) {
+                // 不是拖到最后，获取拖拽后该场景后面的那个场景
+                const nextShot = localShots.value[newIndex + 1];
+                targetBasicId = nextShot.basicId;
+              }
+
+              // 先更新本地数据（乐观更新）
+              const item = localShots.value.splice(oldIndex, 1)[0];
+              localShots.value.splice(newIndex, 0, item);
+
+              // 调用接口进行排序
+              await dragSortScene({
+                dragBasicId: draggedShot.basicId,
+                targetBasicId: targetBasicId
+              });
+
+              ElMessage.success('镜号顺序调整成功');
+              // 刷新列表
+              emit('refresh');
+            } catch (error) {
+              console.error('拖拽排序失败:', error);
+              ElMessage.error('拖拽排序失败，请重试');
+              // 恢复原始顺序
+              localShots.value = [...props.shots];
+            }
+          }
+        });
+      }, 500); // 延迟 500ms 确保 Element Plus 滚动容器已完全渲染
+    });
+  };
+
+  // 监听本地数据变化，数据更新后重新初始化拖拽
+  watch(
+    () => localShots.value.length,
+    () => {
+      // 只有在非加载状态下才重新初始化
+      if (!props.loading && localShots.value.length > 0) {
+        initDraggable();
+      }
+    }
+  );
+
   // 暴露方法给父组件
   defineExpose({
     resetEditState
@@ -1090,10 +1236,48 @@
         height: 190px !important;
         background-color: #fff;
         transition: background-color 0.2s ease;
+        position: relative;
 
         &:hover {
           > td {
             background-color: #f3f3ff !important;
+          }
+        }
+
+        // ==================== Sortable.js 拖拽样式 ====================
+        // 拖拽时的占位符样式（ghost）
+        &.ghost-row {
+          opacity: 0.4;
+          background-color: #e0e7ff !important;
+
+          > td {
+            background-color: #e0e7ff !important;
+            border: 2px dashed #5252ff !important;
+          }
+        }
+
+        // 选中时的样式（chosen）
+        &.chosen-row {
+          background-color: #f0f4ff !important;
+          box-shadow: 0 4px 12px rgba(82, 82, 255, 0.2);
+
+          > td {
+            background-color: #f0f4ff !important;
+            border-color: #5252ff !important;
+          }
+        }
+
+        // 拖拽中的样式（dragging）
+        &.dragging-row {
+          opacity: 0.9;
+          background-color: #fff !important;
+          box-shadow: 0 8px 24px rgba(82, 82, 255, 0.4);
+          transform: scale(1.02);
+          cursor: grabbing !important;
+
+          > td {
+            background-color: #fff !important;
+            border: 2px solid #5252ff !important;
           }
         }
       }
@@ -1148,6 +1332,24 @@
           flex-shrink: 0;
           border-radius: 8px;
           background: #f7f8fa;
+          transition: all 0.3s ease;
+
+          // 拖拽手柄样式
+          &.drag-handle {
+            cursor: grab;
+            user-select: none;
+
+            &:hover {
+              background: #e8e9eb;
+              transform: scale(1.05);
+              box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            }
+
+            &:active {
+              cursor: grabbing;
+              transform: scale(0.98);
+            }
+          }
         }
 
         // 留言数量徽标

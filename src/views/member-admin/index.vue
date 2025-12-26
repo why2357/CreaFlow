@@ -59,6 +59,7 @@
         <el-row :gutter="10">
           <el-col :span="1.5">
             <el-button class="new-add-btn" @click="handleAdd">新增用户</el-button>
+            <el-button class="new-add-btn" @click="handleImportMembers">批量导入成员</el-button>
           </el-col>
         </el-row>
       </template>
@@ -94,6 +95,7 @@
 
     <add-member ref="addMemberRef" @success="getList" />
     <usage-stats-drawer ref="usageStatsDrawerRef" />
+    <import-members-dialog v-model="importDialogVisible" @success="handleImportSuccess" />
   </div>
 </template>
 
@@ -103,6 +105,7 @@
   import { ElMessage, ElMessageBox } from 'element-plus';
   import { getCurrentInstance, onMounted, reactive, ref } from 'vue';
   import AddMember from './components/AddMember.vue';
+  import ImportMembersDialog from './components/ImportMembersDialog.vue';
   import UsageStatsDrawer from './components/UsageStatsDrawer.vue';
 
   const { proxy } = getCurrentInstance() as any;
@@ -111,9 +114,10 @@
   const showSearch = ref(true);
   const memberList = ref<MemberVO[]>([]);
   const total = ref(0);
-  const dateRange = ref<[]>([]);
+  const dateRange = ref<[DateModelType, DateModelType]>(['', '']);
   const addMemberRef = ref();
   const usageStatsDrawerRef = ref();
+  const importDialogVisible = ref(false);
   const ids = ref<number[]>([]);
   const single = ref(true);
   const multiple = ref(true);
@@ -147,7 +151,7 @@
   };
 
   const resetQuery = () => {
-    dateRange.value = [];
+    dateRange.value = ['', ''];
     queryParams.userId = undefined;
     queryParams.userName = undefined;
     queryParams.phoneNumber = undefined;
@@ -174,6 +178,15 @@
 
   const handleAdd = () => {
     addMemberRef.value.open();
+  };
+
+  const handleImportMembers = () => {
+    importDialogVisible.value = true;
+  };
+
+  const handleImportSuccess = () => {
+    ElMessage.success('成员导入成功');
+    getList();
   };
 
   const handleUsageStats = (row: MemberVO) => {

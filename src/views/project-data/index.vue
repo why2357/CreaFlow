@@ -20,7 +20,7 @@
                   v-for="project in projectList"
                   :key="project.projectId"
                   :label="project.projectName"
-                  :value="project.projectId"
+                  :value="project.projectId || ''"
                 />
               </el-select>
             </el-form-item>
@@ -38,7 +38,7 @@
                   v-for="episode in episodeList"
                   :key="episode.id"
                   :label="episode.episodeName"
-                  :value="episode.id"
+                  :value="episode.id || ''"
                 />
               </el-select>
             </el-form-item>
@@ -55,7 +55,7 @@
                   v-for="user in projectUserList"
                   :key="user.userId"
                   :label="user.nickName"
-                  :value="user.userId"
+                  :value="user.userId || ''"
                 />
               </el-select>
             </el-form-item>
@@ -66,6 +66,10 @@
           </el-form>
 
           <div v-if="progressData" class="progress-section">
+            <div class="progress-item">
+              <span class="progress-label">累计消耗点数:</span>
+              <span class="progress-value progress-points">{{ progressData.projectConsumePoints || 0 }}</span>
+            </div>
             <el-divider />
             <div class="progress-header">项目进度</div>
             <div class="progress-content">
@@ -86,6 +90,11 @@
                 <span class="progress-value"
                   >{{ progressData.approvalVideoCount || 0 }}/{{ progressData.totalVideoCount || 0 }}</span
                 >
+              </div>
+
+              <div class="progress-item">
+                <span class="progress-label">本集消耗点数:</span>
+                <span class="progress-value progress-points">{{ progressData.episodeConsumePoints || 0 }}</span>
               </div>
             </div>
           </div>
@@ -337,22 +346,21 @@
       display: flex;
       gap: 24px;
       flex-wrap: wrap;
+    }
+    .progress-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
 
-      .progress-item {
-        display: flex;
-        align-items: center;
-        gap: 8px;
+      .progress-label {
+        font-size: 14px;
+        color: #606266;
+      }
 
-        .progress-label {
-          font-size: 14px;
-          color: #606266;
-        }
-
-        .progress-value {
-          font-size: 14px;
-          font-weight: 500;
-          color: #303133;
-        }
+      .progress-value {
+        font-size: 14px;
+        font-weight: 500;
+        color: #303133;
       }
     }
   }

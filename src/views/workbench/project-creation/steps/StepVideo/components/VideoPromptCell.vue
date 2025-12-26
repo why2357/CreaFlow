@@ -23,8 +23,8 @@
 
     <!-- 底部：尾帧上传、箭头按钮和生成按钮（初始状态） -->
     <div class="bottom-actions-initial">
-      <!-- 左侧：尾帧上传 -->
-      <div class="left-section">
+      <!-- 左侧：尾帧上传（仅当 allowTailImg 为 true 时显示） -->
+      <div class="left-section" :class="{ invisible: !showTailFrame }">
         <div class="tail-frame-wrapper">
           <!-- 已上传尾帧的预览 -->
           <div v-if="tailFrameUrl" class="tail-frame-preview">
@@ -77,7 +77,7 @@
                 v-for="model in modelConfigs"
                 :key="model.modelCode"
                 :label="model.modelName"
-                :value="model.modelCode"
+                :value="model.modelCode || ''"
               />
             </el-select>
           </div>
@@ -105,7 +105,7 @@
                 v-for="resConfig in availableResolutions"
                 :key="resConfig.resolution"
                 :label="formatResolution(resConfig.resolution)"
-                :value="resConfig.resolution"
+                :value="resConfig.resolution || ''"
               />
             </el-select>
 
@@ -120,7 +120,7 @@
                 v-for="durConfig in availableDurations"
                 :key="durConfig.duration"
                 :label="`${durConfig.duration}S`"
-                :value="durConfig.duration"
+                :value="durConfig.duration || 0"
               />
             </el-select>
           </div>
@@ -160,6 +160,7 @@
       resolution: string;
       duration: number;
       points: number;
+      allowTailImg?: boolean;
     } | null;
     allModelConfigs?: Array<{
       resolution?: string;
@@ -187,6 +188,30 @@
   const isExpanded = ref(false);
   const showModelSelector = ref(false);
   const promptInputRef = ref<any>(null);
+
+  // ==================== 模型配置相关 ====================
+  const selectedModelCode = ref<string>('');
+  const selectedResolution = ref<string>('');
+  const selectedDuration = ref<number | undefined>(undefined);
+
+  // 当前选中的模型对象
+  const currentModel = computed(() => {
+    return props.modelConfigs.find((m) => m.modelCode === selectedModelCode.value);
+  });
+
+  // 根据 allowTailImg 控制尾帧显示
+  const showTailFrame = computed(() => {
+    // 优先使用组件内部选中的模型的 allowTailImg
+    if (selectedModelCode.value && currentModel.value) {
+      return currentModel.value.allowTailImg !== false;
+    }
+    // 其次使用父组件传递的 modelConfig 的 allowTailImg
+    if (props.modelConfig?.allowTailImg !== undefined) {
+      return props.modelConfig.allowTailImg;
+    }
+    // 默认为 true（向后兼容）
+    return true;
+  });
 
   // ==================== 提示词相关 ====================
   // 点击只读区域，进入编辑状态并聚焦
@@ -274,10 +299,10 @@
       return;
     }
 
-    // 验证文件大小（限制为10MB）
-    const maxSize = 10 * 1024 * 1024;
+    // 验证文件大小（限制为25MB）
+    const maxSize = 25 * 1024 * 1024;
     if (file.size > maxSize) {
-      ElMessage.error('图片大小不能超过10MB');
+      ElMessage.error('图片大小不能超过25MB');
       return;
     }
 
@@ -378,16 +403,6 @@
       ElMessage.error('移除尾帧失败');
     }
   };
-
-  // ==================== 模型配置相关 ====================
-  const selectedModelCode = ref<string>('');
-  const selectedResolution = ref<string>('');
-  const selectedDuration = ref<number | undefined>(undefined);
-
-  // 当前选中的模型对象
-  const currentModel = computed(() => {
-    return props.modelConfigs.find((m) => m.modelCode === selectedModelCode.value);
-  });
 
   // 可选的分辨率列表（根据选中的模型）
   const availableResolutions = computed<ResolutionConfig[]>(() => {
@@ -620,6 +635,12 @@
       .left-section {
         display: flex;
         align-items: center;
+
+        // 隐藏但占位
+        &.invisible {
+          visibility: hidden;
+          pointer-events: none;
+        }
 
         .tail-frame-wrapper {
           display: flex;

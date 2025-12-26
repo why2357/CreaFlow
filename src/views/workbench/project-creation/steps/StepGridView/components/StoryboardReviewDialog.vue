@@ -44,13 +44,17 @@
                   :src="currentScene.originOssUrl || currentScene.previewOssUrl"
                   fit="contain"
                   class="main-image"
-                  :preview-src-list="[currentScene.originOssUrl || currentScene.previewOssUrl]"
+                  :preview-src-list="[currentScene.originOssUrl || currentScene.previewOssUrl || '']"
                   preview-teleported
                   hide-on-click-modal
                 />
                 <!-- 空状态 -->
                 <div v-else class="empty-image">
-                  <img src="../../../../../../assets/images/no-sence.png" alt="暂无内容" class="placeholder-img" />
+                  <img
+                    src="https://fc-1327887685.cos.ap-guangzhou.myqcloud.com/dev_forge_hivision/image/2025122417/11fb7c9d514e42b0.png"
+                    alt="暂无内容"
+                    class="placeholder-img"
+                  />
                 </div>
               </div>
 

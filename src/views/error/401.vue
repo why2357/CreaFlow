@@ -20,11 +20,13 @@
 </template>
 
 <script setup lang="ts">
-  import errImage from '@/assets/401_images/401.gif';
-
   let { proxy } = getCurrentInstance() as ComponentInternalInstance;
 
-  const errGif = ref(errImage + '?' + +new Date());
+  const errGif = ref(
+    'https://fc-1327887685.cos.ap-guangzhou.myqcloud.com/dev_forge_hivision/image/2025122417/d25ed4ae62434441.gif' +
+      '?' +
+      +new Date()
+  );
 
   function back() {
     if (proxy?.$route.query.noGoBack) {

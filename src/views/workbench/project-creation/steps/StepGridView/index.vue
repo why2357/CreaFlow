@@ -16,6 +16,7 @@
         @image-click="handleImageClick"
         @status-change="handleStatusChange"
         @view-comments="handleViewComments"
+        @refresh="() => loadStoryBoard(true)"
       />
     </div>
 
