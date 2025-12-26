@@ -150,7 +150,7 @@
           </template>
         </el-table-column>
 
-        <el-table-column prop="sceneLocation" label="场景" :width="getImageColumnWidth()">
+        <el-table-column prop="sceneLocation" label="场景" :width="getImageColumnWidth()" fixed="right">
           <template #default="{ row }">
             <div
               class="scene-location-cell"

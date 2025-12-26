@@ -294,9 +294,9 @@
 </template>
 
 <script setup lang="ts">
+  import { getToken } from '@/utils/auth';
   import { nextTick, onMounted, onUnmounted, reactive, ref } from 'vue';
   import { useRouter } from 'vue-router';
-  import { getToken } from '@/utils/auth';
 
   const router = useRouter();
 
@@ -403,8 +403,9 @@
 
   const goToLogin = () => {
     // 智能跳转：如果已登录跳转到应用首页，否则跳转到登录页
+
     if (getToken()) {
-      router.push('/');
+      router.push('/index');
     } else {
       router.push('/login');
     }

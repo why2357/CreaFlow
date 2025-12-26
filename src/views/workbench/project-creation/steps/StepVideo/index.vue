@@ -42,7 +42,7 @@
             @change="handleModelChange"
           >
             <el-option
-              v-for="model in modelConfigs"
+              v-for="model in filteredModelConfigs"
               :key="model.modelCode"
               :label="model.modelName"
               :value="model.modelCode"
@@ -202,6 +202,25 @@
   const selectedModelCode = ref<string>('');
   const selectedResolution = ref<string>('');
   const selectedDuration = ref<number | undefined>(undefined);
+
+  // 检查模型是否支持当前的 pictureRatio
+  // veo-3.1-lingke 模型不支持 pictureRatio 为 2、3、4 的比例（对应 4:3、1:1、3:4）
+  const isModelSupported = (modelCode: string) => {
+    const currentPictureRatio = projectStore.pictureRatio;
+
+    // veo-3.1-lingke 模型不支持 pictureRatio 为 2、3、4
+    if (modelCode === 'veo-3.1-lingke') {
+      return currentPictureRatio !== 2 && currentPictureRatio !== 3 && currentPictureRatio !== 4;
+    }
+
+    // 其他模型默认都支持
+    return true;
+  };
+
+  // 过滤后的模型配置列表（只显示支持当前 pictureRatio 的模型）
+  const filteredModelConfigs = computed<VideoModelConfigVo[]>(() => {
+    return modelConfigs.value.filter((model) => isModelSupported(model.modelCode || ''));
+  });
 
   // 当前选中的模型对象
   const currentModel = computed(() => {
@@ -386,6 +405,26 @@
     }
   );
 
+  // 监听 pictureRatio 变化，自动调整模型选择
+  watch(
+    () => projectStore.pictureRatio,
+    () => {
+      // 如果当前选中的模型不支持新的 pictureRatio，重新选择第一个支持的模型
+      if (selectedModelCode.value && !isModelSupported(selectedModelCode.value)) {
+        if (filteredModelConfigs.value.length > 0) {
+          const firstSupportedModel = filteredModelConfigs.value[0];
+          selectedModelCode.value = firstSupportedModel.modelCode || '';
+          handleModelChange(selectedModelCode.value);
+        } else {
+          // 没有支持的模型，清空选择
+          selectedModelCode.value = '';
+          selectedResolution.value = '';
+          selectedDuration.value = undefined;
+        }
+      }
+    }
+  );
+
   // 加载视频模型配置
   const loadVideoModelConfig = async () => {
     try {
@@ -395,9 +434,11 @@
         if (Array.isArray(res.data)) {
           modelConfigs.value = res.data;
 
-          // 默认选择第一个模型
+          // 默认选择第一个支持当前 pictureRatio 的模型
           if (modelConfigs.value.length > 0) {
-            const firstModel = modelConfigs.value[0];
+            // 优先选择支持当前 pictureRatio 的模型
+            const supportedModels = modelConfigs.value.filter((m) => isModelSupported(m.modelCode || ''));
+            const firstModel = supportedModels.length > 0 ? supportedModels[0] : modelConfigs.value[0];
             selectedModelCode.value = firstModel.modelCode || '';
 
             // 自动选择第一个分辨率
@@ -518,7 +559,11 @@
         const res = await getVideoSceneList(Number(selectedEpisodeId.value));
         const episodeData: VideoEpisodeInfoResponseDto = res.data;
 
-        if (episodeData && episodeData.episodeSceneItemInfoList && Array.isArray(episodeData.episodeSceneItemInfoList)) {
+        if (
+          episodeData &&
+          episodeData.episodeSceneItemInfoList &&
+          Array.isArray(episodeData.episodeSceneItemInfoList)
+        ) {
           // 过滤掉无效的场景数据
           const validScenes = episodeData.episodeSceneItemInfoList.filter((scene) => scene && scene.basicId);
 
