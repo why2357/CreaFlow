@@ -425,7 +425,7 @@
   const validateFiles = async (files: File[]): Promise<{ valid: File[]; errors: string[] }> => {
     const valid: File[] = [];
     const errors: string[] = [];
-    const maxSize = 25 * 1024 * 1024; // 25MB
+    const maxSize = 10 * 1024 * 1024; // 25MB
     const allowedTypes = ['.jpg', '.jpeg', '.png', '.gif', '.webp'];
 
     // Check total count limit

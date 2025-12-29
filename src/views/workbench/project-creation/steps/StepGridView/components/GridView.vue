@@ -24,13 +24,12 @@
     <div v-else class="grid-container" ref="gridContainerRef">
       <Draggable
         v-model="localScenes"
-        :animation="200"
+        :animation="0"
         :delay="50"
         :delay-on-touch-only="true"
         ghost-class="ghost-card"
         chosen-class="chosen-card"
         drag-class="dragging-card"
-        :force-fallback="false"
         handle=".drag-handle"
         item-key="id"
         class="draggable-wrapper"
@@ -689,26 +688,30 @@
 
       // VueDraggable 拖拽样式
       .ghost-card {
-        opacity: 0.4;
-        background: #e0e7ff;
-        border: 2px dashed #5252ff;
-        transform: rotate(5deg);
+        opacity: 0.05 !important; // 原位置几乎完全透明，留白效果
+        background-color: #f5f7fa !important;
+        border: 1px dashed #e4e7ed !important;
+        box-shadow: none !important;
+
+        // 隐藏卡片内容，只保留占位
+        * {
+          opacity: 0 !important;
+          visibility: hidden !important;
+        }
       }
 
       .chosen-card {
         cursor: grabbing !important;
-        transform: scale(1.05);
-        box-shadow: 0 8px 24px rgba(82, 82, 255, 0.3);
-        border: 2px solid #5252ff;
-        z-index: 1000;
       }
 
       .dragging-card {
-        opacity: 0.9;
-        transform: scale(1.08) rotate(3deg);
-        box-shadow: 0 12px 32px rgba(82, 82, 255, 0.4);
+        opacity: 1 !important; // 完全可见，拖出实体效果
+        background-color: #fff !important;
+        box-shadow: 0 20px 60px 0 rgba(0, 0, 0, 0.25), 0 10px 20px 0 rgba(0, 0, 0, 0.15), 0 4px 8px 0 rgba(0, 0, 0, 0.1) !important; // 多层阴影，更立体的悬浮效果
         cursor: grabbing !important;
-        transition: none;
+        z-index: 9999 !important;
+        transition: none !important;
+        border: 1px solid #d9d9d9 !important;
       }
     }
   }

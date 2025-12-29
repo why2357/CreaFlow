@@ -1,7 +1,12 @@
 <template>
   <div class="shot-number-actions">
     <!-- 小圆点 -->
-    <div class="action-dot" :class="{ disabled: !canApproveScene }" @click.stop="handleDotClick">
+    <div
+      class="action-dot"
+      :class="{ disabled: !canApproveScene }"
+      @mouseenter="handleDotHover"
+      @mouseleave="handleDotLeave"
+    >
       <div class="dot-inner" :class="getDotColorClass()"></div>
     </div>
 
@@ -22,9 +27,9 @@
 </template>
 
 <script setup lang="ts">
-  import SceneActions from '../../components/SceneActions.vue';
-  import { computed } from 'vue';
   import { hasProjectPermission } from '@/utils/projectPermission';
+  import { computed } from 'vue';
+  import SceneActions from '../../components/SceneActions.vue';
 
   interface Props {
     shotNumber: number;
@@ -39,6 +44,7 @@
     (e: 'comment', event: MouseEvent): void;
     (e: 'insert'): void;
     (e: 'review', event: MouseEvent): void;
+    (e: 'reviewClose'): void;
     (e: 'delete'): void;
     (e: 'viewComments'): void;
   }>();
@@ -77,13 +83,21 @@
     emit('delete');
   };
 
-  // 点击小圆点触发评审
-  const handleDotClick = (event: MouseEvent) => {
+  // 悬停小圆点触发评审
+  const handleDotHover = (event: MouseEvent) => {
     // 检查权限，没有权限则不触发事件
     if (!canApproveScene.value) {
       return;
     }
     emit('review', event);
+  };
+
+  // 鼠标离开小圆点时触发延迟关闭
+  const handleDotLeave = () => {
+    if (!canApproveScene.value) {
+      return;
+    }
+    emit('reviewClose');
   };
 </script>
 

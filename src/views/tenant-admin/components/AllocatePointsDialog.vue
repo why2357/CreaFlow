@@ -144,27 +144,37 @@
 
   // 表单验证
   const isValid = computed(() => {
-    if (!formData.amount || formData.amount <= 0) {
+    const amount = formData.amount || 0;
+    const points = formData.points || 0;
+
+    // 金额和点数不能同时为零
+    if (amount <= 0 && points <= 0) {
       return false;
     }
-    if (!formData.points || formData.points <= 0) {
+
+    // 扣减模式下，点数不能大于当前余额
+    if (allocMode.value === 'reduce' && props.currentBalance !== undefined && points > props.currentBalance) {
       return false;
     }
-    if (allocMode.value === 'reduce' && props.currentBalance !== undefined && formData.points > props.currentBalance) {
-      return false;
-    }
+
     return true;
   });
 
   // 监听表单变化，更新错误提示
   watch(
-    () => [formData.points, allocMode.value, props.currentBalance],
+    () => [formData.amount, formData.points, allocMode.value, props.currentBalance],
     () => {
-      if (
+      const amount = formData.amount || 0;
+      const points = formData.points || 0;
+
+      // 检查金额和点数是否同时为零
+      if (amount <= 0 && points <= 0) {
+        errorMessage.value = '涉及金额和变动点数不能同时为零，至少填写一项';
+      } else if (
         allocMode.value === 'reduce' &&
         props.currentBalance !== undefined &&
-        formData.points > 0 &&
-        formData.points > props.currentBalance
+        points > 0 &&
+        points > props.currentBalance
       ) {
         errorMessage.value = '扣减点数不能大于当前余额';
       } else {

@@ -54,6 +54,9 @@ interface ProjectState {
   t2iModelInfoList: AiModelInfoDto[];
   t2tModelInfoList: AiModelInfoDto[];
 
+  // 用户选择的模型代码
+  selectedModeCode: string | null;
+
   // 统计数据
   progress: ProjectProgress | null;
   stats: ProductionStats | null;
@@ -95,6 +98,7 @@ export const useProjectStore = defineStore('project', {
     i2vModelInfoList: [],
     t2iModelInfoList: [],
     t2tModelInfoList: [],
+    selectedModeCode: null,
     progress: null,
     stats: null,
     projectPermissions: [],
@@ -234,6 +238,9 @@ export const useProjectStore = defineStore('project', {
         this.i2vModelInfoList = data.i2vModelInfoList || [];
         this.t2iModelInfoList = data.t2iModelInfoList || [];
         this.t2tModelInfoList = data.t2tModelInfoList || [];
+
+        // 更新用户选择的模型代码
+        this.selectedModeCode = data.selectedModeCode || null;
 
         // 更新项目权限
         this.projectPermissions = data.permissions || [];

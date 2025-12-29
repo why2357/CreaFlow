@@ -19,7 +19,7 @@ export const listTransaction = (query: TransactionQuery): AxiosPromise<Transacti
  */
 export const getWalletTypes = (): AxiosPromise<WalletTypeVO[]> => {
   return request({
-    url: '/hivision/wallet/wallet-types',
+    url: '/hivision/wallet/transaction/name-types',
     method: 'get'
   });
 };

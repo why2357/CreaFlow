@@ -302,12 +302,6 @@
     }
 
     try {
-      await ElMessageBox.confirm('确定要在此镜头后插入新镜头吗？', '插入镜头', {
-        confirmButtonText: '确定',
-        cancelButtonText: '取消',
-        type: 'info'
-      });
-
       await addScene({
         preBasicId: item.id,
         sceneType: 1 // 1-图片
@@ -315,11 +309,9 @@
 
       ElMessage.success('插入镜头成功');
       loadWaterfallData(true);
-    } catch (error: any) {
-      if (error !== 'cancel') {
-        console.error('插入镜头失败:', error);
-        ElMessage.error('插入镜头失败，请重试');
-      }
+    } catch (error) {
+      console.error('插入镜头失败:', error);
+      ElMessage.error('插入镜头失败，请重试');
     }
   };
 

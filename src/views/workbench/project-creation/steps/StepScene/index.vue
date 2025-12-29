@@ -247,7 +247,7 @@
     allMaxLen: 10, // 单次最多上传10张
     totalLimit: 10, // 总数限制10张
     suffix: ['.jpg', '.jpeg', '.png', '.gif', '.webp'],
-    singleMaxSize: 25 * 1024 * 1024 // 25MB
+    singleMaxSize: 10 * 1024 * 1024 // 25MB
   };
 
   // 对话框状态

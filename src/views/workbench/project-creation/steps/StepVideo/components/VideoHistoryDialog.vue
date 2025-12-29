@@ -102,20 +102,11 @@
                 :class="{ selected: selectedVideoDetail?.historyDetailId === detail.historyDetailId }"
                 @click="handleSelectVideo(detail)"
               >
-                <div class="video-wrapper">
+                <div class="video-wrapper" :style="{ width: videoCardWidth }">
                   <!-- 预览图 -->
                   <img v-if="detail.previewOssUrl" :src="detail.previewOssUrl" class="video-thumbnail" alt="视频预览" />
                   <div v-else class="video-placeholder">
                     <el-icon><VideoPlay /></el-icon>
-                  </div>
-
-                  <!-- 左上角：播放预览按钮 -->
-                  <div class="action-top-left">
-                    <el-tooltip content="预览" placement="top">
-                      <div class="action-icon" @click.stop="handlePreviewVideo(detail)">
-                        <svg-icon icon-class="fy-zoomin" />
-                      </div>
-                    </el-tooltip>
                   </div>
 
                   <!-- 左下角：评论按钮 - 只在有留言时显示 -->
@@ -203,11 +194,33 @@
   import { formatDate } from '@/utils';
   import { Delete, Download, Loading, MoreFilled, VideoPlay } from '@element-plus/icons-vue';
   import { ElMessage } from 'element-plus';
-  import { ref, watch } from 'vue';
+  import { computed, ref, watch } from 'vue';
   import CommentListDialog from '../../StepShotList/components/CommentListDialog.vue';
   import VideoPreviewDialog from './VideoPreviewDialog.vue';
 
   const projectStore = useProjectStore();
+
+  // 根据项目比例计算视频卡片的固定宽度（高度固定为150px）
+  // pictureRatio: 1-16:9; 2-4:3; 3-1:1; 4-3:4; 5-9:16
+  const videoCardWidth = computed(() => {
+    const ratio = projectStore.pictureRatio;
+
+    switch (ratio) {
+      case 1: // 16:9
+        return '267px'; // 150 * (16/9)
+      case 2: // 4:3
+        return '200px'; // 150 * (4/3)
+      case 3: // 1:1
+        return '150px'; // 150 * 1
+      case 4: // 3:4
+        return '112px'; // 150 * (3/4)
+      case 5: // 9:16
+        return '84px'; // 150 * (9/16)
+      default:
+        // 默认使用 16:9
+        return '267px';
+    }
+  });
 
   interface VideoDetail extends SceneItemHistoryInfo {
     historyDetailId?: number;
@@ -336,9 +349,15 @@
     }
   };
 
-  // 选择视频
+  // 选择视频（支持二次点击预览）
   const handleSelectVideo = (detail: VideoDetail) => {
-    selectedVideoDetail.value = detail;
+    // 如果点击的是已选中的视频，则预览
+    if (selectedVideoDetail.value?.historyDetailId === detail.historyDetailId) {
+      handlePreviewVideo(detail);
+    } else {
+      // 否则选中该视频
+      selectedVideoDetail.value = detail;
+    }
   };
 
   // 预览视频
@@ -634,8 +653,8 @@
           }
 
           .video-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+            display: flex;
+            flex-wrap: wrap;
             gap: 12px;
 
             .video-item {
@@ -652,7 +671,6 @@
                 box-shadow: 0 4px 12px rgba(97, 87, 255, 0.2);
 
                 .video-wrapper {
-                  .action-top-left,
                   .action-bottom-left,
                   .action-bottom-right {
                     opacity: 1;
@@ -668,7 +686,7 @@
 
               .video-wrapper {
                 position: relative;
-                padding-bottom: 100%;
+                height: 150px;
                 background: #000;
 
                 .video-thumbnail {
@@ -677,7 +695,7 @@
                   left: 0;
                   width: 100%;
                   height: 100%;
-                  object-fit: cover;
+                  object-fit: contain;
                 }
 
                 .video-placeholder {
@@ -695,31 +713,6 @@
                     font-size: 32px;
                     color: #fff;
                     opacity: 0.5;
-                  }
-                }
-
-                // 左上角：预览按钮
-                .action-top-left {
-                  position: absolute;
-                  top: 8px;
-                  left: 8px;
-                  opacity: 0;
-                  transition: opacity 0.3s;
-
-                  .action-icon {
-                    display: flex;
-                    width: 24px;
-                    height: 24px;
-                    justify-content: center;
-                    align-items: center;
-                    border-radius: 4px;
-                    background: #f7f8fa;
-                    cursor: pointer;
-
-                    &:hover {
-                      background: white;
-                      transform: scale(1.1);
-                    }
                   }
                 }
 

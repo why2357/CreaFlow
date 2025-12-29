@@ -29,8 +29,8 @@
 
 <script setup lang="ts">
   import { replaceSceneImage } from '@/api/workbench/episode';
-  import { uploadFile } from '@/utils/uploadFile';
   import { sizeToValue } from '@/utils/projectUtils';
+  import { uploadFile } from '@/utils/uploadFile';
   import Cropper from 'cropperjs';
   import 'cropperjs/dist/cropper.css';
   import { ElMessage } from 'element-plus';
@@ -157,7 +157,7 @@
       }
 
       // 验证文件大小（不能超过25M）
-      const maxSize = 25 * 1024 * 1024; // 25MB
+      const maxSize = 10 * 1024 * 1024; // 25MB
       if (blob.size > maxSize) {
         ElMessage.error(`图片大小不能超过25M，当前大小为${(blob.size / 1024 / 1024).toFixed(2)}M`);
         return;

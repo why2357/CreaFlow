@@ -1,7 +1,7 @@
 <template>
   <el-button class="recharge-btn" :loading="loading">
     <svg-icon icon-class="fy-recharge" style="margin-right: 4px; width: 16px; height: 16px" />
-    {{ walletPoints }} 充值
+    {{ walletPoints }}
   </el-button>
 </template>
 

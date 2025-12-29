@@ -13,7 +13,7 @@
           ref="promptInputRef"
           v-model="promptText"
           type="textarea"
-          :rows="4"
+          :rows="3"
           placeholder="请输入视频提示词..."
           class="prompt-input"
           @blur="handlePromptBlur"
@@ -300,7 +300,7 @@
     }
 
     // 验证文件大小（限制为25MB）
-    const maxSize = 25 * 1024 * 1024;
+    const maxSize = 10 * 1024 * 1024;
     if (file.size > maxSize) {
       ElMessage.error('图片大小不能超过25MB');
       return;
@@ -589,13 +589,14 @@
       // 只读状态样式
       .prompt-readonly {
         display: flex;
-        align-items: center;
+        align-items: flex-start;
         justify-content: space-between;
         padding: 8px 12px;
         border-radius: 4px;
         cursor: text;
         transition: background 0.2s;
-        min-height: 36px;
+        max-height: 76px;
+        overflow-y: auto;
 
         &:hover {
           background: #eef0f3;
@@ -603,11 +604,11 @@
 
         .prompt-text {
           flex: 1;
-          font-size: 13px;
+          font-size: 16px;
           color: #4e5969;
-          overflow: hidden;
-          text-overflow: ellipsis;
-          white-space: nowrap;
+          line-height: 1.5;
+          word-wrap: break-word;
+          white-space: pre-wrap;
         }
       }
 
@@ -617,7 +618,7 @@
           width: 100%;
 
           :deep(.el-textarea__inner) {
-            font-size: 13px;
+            font-size: 16px;
             line-height: 1.5;
             resize: none;
           }

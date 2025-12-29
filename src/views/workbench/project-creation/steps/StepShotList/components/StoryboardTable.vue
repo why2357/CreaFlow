@@ -13,13 +13,14 @@
       <el-table ref="tableRef" :data="localShots" border stripe height="100%" class="storyboard-table" row-key="id">
         <el-table-column prop="shotNumber" label="镜号" width="120" align="center" fixed="left">
           <template #default="{ row, $index }">
-            <div class="shot-number-cell drag-handle" :data-row-index="$index">
+            <div class="shot-number-cell" :data-row-index="$index">
               <ShotNumberActions
                 :shot-number="row.shotNumber"
                 :scene-status="row.imgStatus"
                 @comment="(event: MouseEvent) => handleShotComment(row, event)"
                 @insert="handleShotInsert(row)"
                 @review="(event: MouseEvent) => handleShotReview(row, event)"
+                @review-close="handleReviewClose"
                 @delete="handleShotDelete(row)"
                 @view-comments="handleViewComments(row)"
               />
@@ -66,7 +67,7 @@
           </template>
         </el-table-column>
 
-        <el-table-column prop="sceneHint" label="画面描述" min-width="600">
+        <el-table-column prop="sceneHint" label="画面描述" min-width="260">
           <template #default="{ row }">
             <div v-if="!isEditing(row, 'sceneDesc')" class="editable-cell" @click="startEdit(row, 'sceneDesc')">
               <div
@@ -77,12 +78,14 @@
             </div>
             <div v-else class="editing-cell">
               <el-input
+                ref="editingInputRef"
                 v-model="editingValue"
                 type="textarea"
                 :rows="3"
                 maxlength="300"
+                resize="none"
                 placeholder="请输入特写镜头描述"
-                @blur="handleBlur(row)"
+                @blur="handleBlur()"
                 @keydown="(evt: Event) => handleKeydown(evt as KeyboardEvent)"
                 autofocus
               />
@@ -96,12 +99,14 @@
             </div>
             <div v-else class="editing-cell">
               <el-input
+                ref="editingInputRef"
                 v-model="editingValue"
                 type="textarea"
                 :rows="3"
                 maxlength="300"
+                resize="none"
                 placeholder="请输入场景提示"
-                @blur="handleBlur(row)"
+                @blur="handleBlur()"
                 @keydown="(evt: Event) => handleKeydown(evt as KeyboardEvent)"
                 autofocus
               />
@@ -109,7 +114,7 @@
           </template>
         </el-table-column>
 
-        <el-table-column prop="dialogue" label="台词" min-width="280">
+        <el-table-column prop="dialogue" label="台词" min-width="160">
           <template #default="{ row }">
             <div v-if="!isEditing(row, 'dialogue')" class="editable-cell" @click="startEdit(row, 'dialogue')">
               <div
@@ -120,12 +125,14 @@
             </div>
             <div v-else class="editing-cell">
               <el-input
+                ref="editingInputRef"
                 v-model="editingValue"
                 type="textarea"
-                :rows="3"
+                :rows="6"
                 maxlength="300"
+                resize="none"
                 placeholder="请输入台词"
-                @blur="handleBlur(row)"
+                @blur="handleBlur()"
                 @keydown="(evt: Event) => handleKeydown(evt as KeyboardEvent)"
                 autofocus
               />
@@ -133,7 +140,7 @@
           </template>
         </el-table-column>
 
-        <el-table-column prop="characters" label="人物" width="120">
+        <el-table-column prop="characters" label="人物" width="60">
           <template #default="{ row }">
             <div class="characters">
               <el-image
@@ -150,7 +157,7 @@
           </template>
         </el-table-column>
 
-        <el-table-column prop="sceneLocation" label="场景" :width="getImageColumnWidth()">
+        <el-table-column prop="sceneLocation" label="场景" :width="getImageColumnWidth()" fixed="right">
           <template #default="{ row }">
             <div
               class="scene-location-cell"
@@ -354,6 +361,7 @@
   const editingCell = ref<{ shotId: string | number; field: 'sceneDesc' | 'sceneHint' | 'dialogue' } | null>(null);
   const editingValue = ref('');
   const originalValue = ref('');
+  const editingInputRef = ref<any>(null);
 
   // 场景库相关
   const sceneLibraryDialogVisible = ref(false);
@@ -379,6 +387,7 @@
   const commentListTriggerRef = ref<HTMLElement>();
   const reviewDialogVisible = ref(false);
   const reviewTriggerRef = ref<HTMLElement>();
+  const reviewCloseTimer = ref<ReturnType<typeof setTimeout> | null>(null);
 
   // 图片上传
   const handleImageUpload = (shot: Shot, file: File) => {
@@ -545,7 +554,7 @@
     const file = imageFiles[0];
 
     // 验证文件大小（限制为25MB）
-    const maxSize = 25 * 1024 * 1024;
+    const maxSize = 10 * 1024 * 1024;
     if (file.size > maxSize) {
       ElMessage.error('图片大小不能超过25MB');
       return;
@@ -643,7 +652,7 @@
     }
 
     // 验证文件大小（限制为25MB）
-    const maxSize = 25 * 1024 * 1024;
+    const maxSize = 10 * 1024 * 1024;
     if (file.size > maxSize) {
       ElMessage.error('图片大小不能超过25MB');
       return;
@@ -713,11 +722,101 @@
     }
   };
 
+  // 保存当前编辑
+  const saveCurrentEdit = async () => {
+    if (!editingCell.value) return;
+
+    // 找到正在编辑的 shot
+    const currentShot = localShots.value.find((s) => s.id === editingCell.value?.shotId);
+    if (!currentShot) {
+      cancelEdit();
+      return;
+    }
+
+    const field = editingCell.value.field;
+    const newValue = editingValue.value.trim();
+
+    // 如果值没有变化，直接退出编辑
+    if (newValue === originalValue.value) {
+      cancelEdit();
+      return;
+    }
+
+    // 检查是否有 basicId
+    if (!currentShot.basicId) {
+      ElMessage.error('缺少场景基础信息ID，无法保存');
+      cancelEdit();
+      return;
+    }
+
+    try {
+      // 调用编辑接口
+      const editData: any = {
+        basicId: currentShot.basicId
+      };
+
+      // 根据不同字段设置参数
+      if (field === 'sceneDesc') {
+        editData.sceneDesc = newValue;
+      } else if (field === 'sceneHint') {
+        editData.sceneHint = newValue;
+      } else if (field === 'dialogue') {
+        editData.dialogues = newValue;
+      }
+
+      await editSceneBasic(editData);
+
+      // 更新本地数据
+      currentShot[field] = newValue;
+
+      // 如果编辑的是 sceneDesc 或 sceneHint，需要同步更新 sceneDescription
+      if (field === 'sceneDesc' || field === 'sceneHint') {
+        const sceneDesc = field === 'sceneDesc' ? newValue : currentShot.sceneDesc || '';
+        const sceneHint = field === 'sceneHint' ? newValue : currentShot.sceneHint || '';
+        currentShot.sceneDescription = `${sceneDesc}${sceneDesc && sceneHint ? '\n' : ''}${sceneHint}`;
+      }
+
+      // 显示成功提示
+      ElMessage.success('更新成功');
+
+      // 清除编辑状态
+      cancelEdit();
+    } catch (error) {
+      console.error('保存失败:', error);
+      // 保存失败时不退出编辑状态，让用户可以继续编辑
+      throw error;
+    }
+  };
+
   // 开始编辑
-  const startEdit = (shot: Shot, field: 'sceneDesc' | 'sceneHint' | 'dialogue') => {
+  const startEdit = async (shot: Shot, field: 'sceneDesc' | 'sceneHint' | 'dialogue') => {
+    // 如果当前有正在编辑的单元格，先保存
+    if (editingCell.value) {
+      try {
+        await saveCurrentEdit();
+      } catch (error) {
+        // 保存失败，不开始新的编辑
+        return;
+      }
+    }
+
     editingCell.value = { shotId: shot.id, field };
     editingValue.value = shot[field] || '';
     originalValue.value = shot[field] || '';
+
+    // 等待 DOM 更新后聚焦输入框
+    await nextTick();
+    if (editingInputRef.value) {
+      // 如果是 el-input 组件，需要访问其内部的 textarea 元素
+      if (editingInputRef.value.$el) {
+        const textarea = editingInputRef.value.$el.querySelector('textarea');
+        if (textarea) {
+          textarea.focus();
+        }
+      } else {
+        editingInputRef.value.focus();
+      }
+    }
   };
 
   // 判断是否正在编辑
@@ -738,63 +837,8 @@
   };
 
   // 处理失焦事件 - 自动保存
-  const handleBlur = async (shot: Shot) => {
-    if (!editingCell.value) return;
-
-    const field = editingCell.value.field;
-    const newValue = editingValue.value.trim();
-
-    // 如果值没有变化，直接退出编辑
-    if (newValue === originalValue.value) {
-      cancelEdit();
-      return;
-    }
-
-    // 检查是否有 basicId
-    if (!shot.basicId) {
-      ElMessage.error('缺少场景基础信息ID，无法保存');
-      cancelEdit();
-      return;
-    }
-
-    try {
-      // 调用编辑接口
-      const editData: any = {
-        basicId: shot.basicId
-      };
-
-      // 根据不同字段设置参数
-      if (field === 'sceneDesc') {
-        editData.sceneDesc = newValue;
-      } else if (field === 'sceneHint') {
-        editData.sceneHint = newValue;
-      } else if (field === 'dialogue') {
-        editData.dialogues = newValue;
-      }
-
-      await editSceneBasic(editData);
-
-      // 更新本地数据
-      shot[field] = newValue;
-
-      // 如果编辑的是 sceneDesc 或 sceneHint，需要同步更新 sceneDescription
-      if (field === 'sceneDesc' || field === 'sceneHint') {
-        const sceneDesc = field === 'sceneDesc' ? newValue : shot.sceneDesc || '';
-        const sceneHint = field === 'sceneHint' ? newValue : shot.sceneHint || '';
-        shot.sceneDescription = `${sceneDesc}${sceneDesc && sceneHint ? '\n' : ''}${sceneHint}`;
-      }
-
-      // 显示成功提示
-      ElMessage.success('更新成功');
-
-      // 清除编辑状态
-      editingCell.value = null;
-      editingValue.value = '';
-      originalValue.value = '';
-    } catch (error) {
-      console.error('保存失败:', error);
-      // 保存失败时不退出编辑状态，让用户可以继续编辑
-    }
+  const handleBlur = async () => {
+    await saveCurrentEdit();
   };
 
   // 处理键盘事件
@@ -961,12 +1005,6 @@
     }
 
     try {
-      await ElMessageBox.confirm('确定要在此镜头后插入新镜头吗？', '插入镜头', {
-        confirmButtonText: '确定',
-        cancelButtonText: '取消',
-        type: 'info'
-      });
-
       await addScene({
         preBasicId: shot.basicId,
         sceneType: 1 // 1-图片
@@ -974,11 +1012,9 @@
 
       ElMessage.success('插入镜头成功');
       emit('refresh');
-    } catch (error: any) {
-      if (error !== 'cancel') {
-        console.error('插入镜头失败:', error);
-        ElMessage.error('插入镜头失败，请重试');
-      }
+    } catch (error) {
+      console.error('插入镜头失败:', error);
+      ElMessage.error('插入镜头失败，请重试');
     }
   };
 
@@ -995,11 +1031,31 @@
       return;
     }
 
+    // 清除延迟关闭定时器（如果用户快速 hover 回来）
+    if (reviewCloseTimer.value) {
+      clearTimeout(reviewCloseTimer.value);
+      reviewCloseTimer.value = null;
+    }
+
     currentShotForAction.value = shot;
     if (event) {
       reviewTriggerRef.value = event.currentTarget as HTMLElement;
     }
     reviewDialogVisible.value = true;
+  };
+
+  // 延迟关闭评审弹窗
+  const handleReviewClose = () => {
+    // 清除之前的定时器
+    if (reviewCloseTimer.value) {
+      clearTimeout(reviewCloseTimer.value);
+    }
+
+    // 设置延迟关闭（300ms）
+    reviewCloseTimer.value = setTimeout(() => {
+      reviewDialogVisible.value = false;
+      reviewCloseTimer.value = null;
+    }, 300);
   };
 
   // 评审成功
@@ -1087,7 +1143,10 @@
           ghostClass: 'ghost-row', // 拖拽时的占位样式
           chosenClass: 'chosen-row', // 选中时的样式
           dragClass: 'dragging-row', // 拖拽中的样式
-          forceFallback: false, // 使用 HTML5 原生拖拽
+          forceFallback: true, // 使用自定义拖拽效果，更好地控制样式
+          direction: 'vertical', // 只允许垂直方向拖拽
+          delay: 100, // 长按延迟时间（毫秒）
+          delayOnTouchOnly: false, // 所有设备都启用延迟，不仅限触摸设备
           // 拖拽开始时，设置滚动容器并添加鼠标移动监听
           onStart: (event: SortableEvent) => {
             // 初始化鼠标位置
@@ -1249,7 +1308,7 @@
       .editable-cell {
         position: relative;
         max-height: 100%;
-        padding: 8px;
+        // padding: 8px;
         cursor: text;
         transition: background-color 0.2s;
         overflow: hidden;
@@ -1262,11 +1321,16 @@
       }
 
       .editing-cell {
-        padding: 8px;
+        // padding: 8px;
+
+        :deep(.el-textarea__inner) {
+          font-size: 16px;
+        }
       }
 
       .scene-description {
         color: #606266;
+        font-size: 16px;
         line-height: 1.6;
         white-space: pre-wrap;
         word-break: break-word;
@@ -1284,6 +1348,7 @@
 
       .dialogue {
         color: #606266;
+        font-size: 16px;
         line-height: 1.6;
         white-space: pre-wrap;
         word-break: break-word;
@@ -1365,14 +1430,20 @@
         }
 
         // ==================== Sortable.js 拖拽样式 ====================
-        // 拖拽时的占位符样式（ghost）
+        // 拖拽时的占位符样式（ghost）- 原位置显示空白占位
         &.ghost-row {
-          opacity: 0.4;
-          background-color: #e0e7ff !important;
+          opacity: 0.3;
+          background-color: #f5f7fa !important;
 
           > td {
-            background-color: #e0e7ff !important;
-            border: 2px dashed #5252ff !important;
+            background-color: #f5f7fa !important;
+            border: 2px dashed #d0d5dd !important;
+            color: transparent !important; // 隐藏文字内容
+
+            // 隐藏所有子元素，只保留占位框
+            * {
+              opacity: 0 !important;
+            }
           }
         }
 
@@ -1387,13 +1458,15 @@
           }
         }
 
-        // 拖拽中的样式（dragging）
+        // 拖拽中的样式（dragging）- 实体被拖走的效果
         &.dragging-row {
-          opacity: 0.9;
+          opacity: 1 !important; // 完全可见
           background-color: #fff !important;
-          box-shadow: 0 8px 24px rgba(82, 82, 255, 0.4);
-          transform: scale(1.02);
+          box-shadow: 0 12px 32px rgba(82, 82, 255, 0.3);
+          transform: scale(1.02); // 轻微放大，不旋转
           cursor: grabbing !important;
+          z-index: 9999 !important;
+          pointer-events: none; // 拖拽时禁用鼠标事件，防止触发 tooltip
 
           > td {
             background-color: #fff !important;
@@ -1407,10 +1480,7 @@
         vertical-align: middle;
         overflow: hidden;
         background-color: #fff;
-
-        &:not(:has(.scene-image-cell)) {
-          padding: 12px !important;
-        }
+        padding: 0 !important;
       }
 
       // Fixed列在hover时也需要改变背景色

@@ -125,6 +125,7 @@
     updateShot
   } from '@/api/workbench/episode';
   import type { EpisodeInfoResponseDto, EpisodeSceneItemInfo } from '@/api/workbench/episode/types';
+  import { saveProjectModel } from '@/api/workbench/project';
   import type { Episode, Shot, ShotForm } from '@/api/workbench/project/types';
   import { useImageUpdateListener, useScriptUpdateListener } from '@/composables/useSSEListener';
   import { useProjectStore } from '@/store/modules/project';
@@ -199,9 +200,22 @@
 
   // 初始化
   onMounted(async () => {
-    // 初始化默认模型
-    currentModelCode.value = getDefaultModel(projectStore.t2iModelInfoList);
+    // 初始化模型选择：优先使用用户保存的选择，如果没有则使用默认模型
+    console.log('projectStore.selectedModeCode', projectStore.selectedModeCode);
 
+    if (projectStore.selectedModeCode) {
+      // 验证保存的模型代码是否在当前可用模型列表中
+      const modelExists = projectStore.t2iModelInfoList?.some((m) => m.modelCode === projectStore.selectedModeCode);
+      if (modelExists) {
+        currentModelCode.value = projectStore.selectedModeCode;
+      } else {
+        // 如果保存的模型不存在，使用默认模型
+        currentModelCode.value = getDefaultModel(projectStore.t2iModelInfoList);
+      }
+    } else {
+      // 如果没有保存的选择，使用默认模型（第一个）
+      currentModelCode.value = getDefaultModel(projectStore.t2iModelInfoList);
+    }
     // 检查剧集列表是否为空
     if (projectStore.episodes.length === 0) {
       selectedEpisodeId.value = null;
@@ -350,6 +364,26 @@
       }
     },
     { deep: true }
+  );
+
+  // 监听 selectedModeCode 变化，同步更新 currentModelCode
+  watch(
+    () => projectStore.selectedModeCode,
+    (newSelectedModeCode) => {
+      if (newSelectedModeCode) {
+        // 验证模型代码是否在当前可用模型列表中
+        const modelExists = projectStore.t2iModelInfoList?.some((m) => m.modelCode === newSelectedModeCode);
+        if (modelExists) {
+          currentModelCode.value = newSelectedModeCode;
+        } else {
+          // 如果保存的模型不存在，使用默认模型
+          currentModelCode.value = getDefaultModel(projectStore.t2iModelInfoList);
+        }
+      } else {
+        // 如果没有保存的选择，使用默认模型
+        currentModelCode.value = getDefaultModel(projectStore.t2iModelInfoList);
+      }
+    }
   );
 
   // 将后端数据转换为 Shot 类型
@@ -568,10 +602,25 @@
   };
 
   // 模型切换
-  const handleModelChange = (modelCode: string) => {
+  const handleModelChange = async (modelCode: string) => {
     currentModelCode.value = modelCode;
     const modelName = getModelName(projectStore.t2iModelInfoList, modelCode);
-    ElMessage.success(`已切换到 ${modelName}`);
+
+    // 保存模型选择到后端
+    if (projectStore.currentProjectId) {
+      try {
+        await saveProjectModel({
+          projectId: Number(projectStore.currentProjectId),
+          modelCode: modelCode
+        });
+        ElMessage.success(`已切换到 ${modelName}`);
+      } catch (error) {
+        console.error('保存模型选择失败:', error);
+        ElMessage.error('保存模型选择失败');
+      }
+    } else {
+      ElMessage.success(`已切换到 ${modelName}`);
+    }
   };
 
   // 角色编辑
