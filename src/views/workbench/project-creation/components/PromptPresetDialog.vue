@@ -18,6 +18,7 @@
   interface Props {
     modelValue: boolean;
     defaultPrompt?: string;
+    currentPrompt?: string;
   }
 
   interface Emits {
@@ -41,8 +42,8 @@
     (val) => {
       dialogVisible.value = val;
       if (val) {
-        // 打开对话框时重置为默认文本
-        promptText.value = props.defaultPrompt || DEFAULT_PROMPT;
+        // 打开对话框时使用当前预设文案（如果有），否则使用默认文本
+        promptText.value = props.currentPrompt || props.defaultPrompt || DEFAULT_PROMPT;
       }
     },
     { immediate: true }

@@ -118,7 +118,11 @@
   </el-dialog>
 
   <!-- 预设对话框 -->
-  <PromptPresetDialog v-model="presetDialogVisible" @confirm="handlePresetConfirm" />
+  <PromptPresetDialog
+    v-model="presetDialogVisible"
+    :current-prompt="form.promptPreFix"
+    @confirm="handlePresetConfirm"
+  />
 </template>
 
 <script setup lang="ts">

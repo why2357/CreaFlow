@@ -92,15 +92,15 @@
       </el-table-column>
 
       <!-- 画面描述列 -->
-      <el-table-column label="画面描述" min-width="600">
+      <el-table-column label="画面描述" min-width="260">
         <template #default="{ row }">
           <div class="scene-desc-cell">
             <div v-if="row.sceneDesc" class="desc-section">
-              <div class="desc-label">镜头：</div>
+              <!-- <div class="desc-label">镜头：</div> -->
               <div class="desc-text">{{ row.sceneDesc }}</div>
             </div>
             <div v-if="row.dialogues" class="desc-section">
-              <div class="desc-label">台词：</div>
+              <!-- <div class="desc-label">台词：</div> -->
               <div class="hint-text">{{ row.dialogues }}</div>
             </div>
             <div v-if="!row.sceneDesc && !row.dialogues" class="empty-text">暂无描述</div>
@@ -109,7 +109,7 @@
       </el-table-column>
 
       <!-- 视频提示词列 -->
-      <el-table-column label="视频提示词" min-width="350">
+      <el-table-column label="视频提示词" min-width="330">
         <template #default="{ row }">
           <VideoPromptCell
             :video="row"
@@ -405,12 +405,6 @@
     }
 
     try {
-      await ElMessageBox.confirm('确定要在此镜头后插入新镜头吗？', '插入镜头', {
-        confirmButtonText: '确定',
-        cancelButtonText: '取消',
-        type: 'info'
-      });
-
       await addScene({
         preBasicId: video.basicId,
         sceneType: 2 // 2-视频
@@ -418,11 +412,9 @@
 
       ElMessage.success('插入镜头成功');
       emit('refresh');
-    } catch (error: any) {
-      if (error !== 'cancel') {
-        console.error('插入镜头失败:', error);
-        ElMessage.error('插入镜头失败，请重试');
-      }
+    } catch (error) {
+      console.error('插入镜头失败:', error);
+      ElMessage.error('插入镜头失败，请重试');
     }
   };
 
@@ -599,6 +591,8 @@
     .scene-desc-cell {
       padding: 8px;
       line-height: 1.6;
+      max-height: 190px;
+      overflow-y: auto;
 
       .desc-section {
         margin-bottom: 8px;
@@ -609,20 +603,20 @@
 
         .desc-label {
           color: #1d2129;
-          font-size: 12px;
+          font-size: 16px;
           font-weight: 600;
           margin-bottom: 4px;
         }
 
         .desc-text {
           color: #4e5969;
-          font-size: 13px;
+          font-size: 16px;
           line-height: 1.5;
         }
 
         .hint-text {
           color: #4e5969;
-          font-size: 13px;
+          font-size: 16px;
           line-height: 1.5;
         }
       }

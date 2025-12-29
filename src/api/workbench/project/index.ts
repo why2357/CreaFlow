@@ -11,6 +11,7 @@ import {
   ProjectQuery,
   ProjectRenameRequest,
   ProjectLimitPointsRequest,
+  ProjectModelRequest,
   ProjectUserPageInfo,
   ProjectUserQuery
 } from './types';
@@ -81,6 +82,18 @@ export const renameProject = (data: ProjectRenameRequest): AxiosPromise<void> =>
 export const limitProjectPoints = (data: ProjectLimitPointsRequest): AxiosPromise<void> => {
   return request({
     url: '/hivision/story/project/limit-points',
+    method: 'post',
+    data: data
+  });
+};
+
+/**
+ * 保存项目模型选择
+ * @param data 项目模型请求数据
+ */
+export const saveProjectModel = (data: ProjectModelRequest): AxiosPromise<void> => {
+  return request({
+    url: '/hivision/story/project/save-model',
     method: 'post',
     data: data
   });

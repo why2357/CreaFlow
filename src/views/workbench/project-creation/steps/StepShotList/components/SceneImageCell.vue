@@ -360,7 +360,7 @@
     }
 
     // 验证文件大小（限制为25MB）
-    const maxSize = 25 * 1024 * 1024;
+    const maxSize = 10 * 1024 * 1024;
     if (file.size > maxSize) {
       ElMessage.error('图片大小不能超过25MB');
       target.value = '';
@@ -512,7 +512,7 @@
     // }
 
     // 验证文件大小（限制为25MB）
-    const maxSize = 25 * 1024 * 1024;
+    const maxSize = 10 * 1024 * 1024;
     if (file.size > maxSize) {
       ElMessage.error('图片大小不能超过25MB');
       return;
@@ -591,9 +591,10 @@
     // }
   };
 
-  // 点击遮罩层空白区域（只在taskStatus === 2时）
+  // 点击遮罩层空白区域打开历史记录
   const handleOverlayClick = () => {
-    if (props.taskStatus === 2) {
+    // 只要有图片数据，就打开查看历史图片的弹窗
+    if (!hasNoImages.value) {
       historyDialogVisible.value = true;
     }
   };
@@ -798,7 +799,8 @@
     justify-content: space-between;
     padding: 12px;
     background: linear-gradient(0deg, rgba(0, 0, 0, 0.4) 0%, rgba(0, 0, 0, 0.4) 100%);
-    pointer-events: none; // 允许拖拽事件穿透
+    pointer-events: auto; // 允许点击触发历史记录弹窗
+    cursor: pointer;
 
     .top-actions {
       display: flex;

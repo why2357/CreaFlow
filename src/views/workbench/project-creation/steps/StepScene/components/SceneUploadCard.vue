@@ -52,7 +52,7 @@
 
   const props = withDefaults(defineProps<Props>(), {
     maxFiles: 10, // 单次最多上传10张
-    maxSize: 25 * 1024 * 1024, // 默认25MB
+    maxSize: 10 * 1024 * 1024, // 默认25MB
     accept: () => ['.jpg', '.jpeg', '.png', '.gif', '.webp'],
     disabled: false,
     totalLimit: 10, // 总数最多10张
