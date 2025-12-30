@@ -10,12 +10,12 @@
   >
     <template #header>
       <div class="dialog-header">
-        <span class="dialog-title">视频预览</span>
+        <div class="dialog-title">视频预览</div>
         <div v-if="videoInfo" class="video-info">
           <span v-if="videoInfo.modelName" class="info-item">{{ videoInfo.modelName }}</span>
-          <span v-if="videoInfo.ratio" class="info-item">{{ videoInfo.ratio }}</span>
-          <span v-if="videoInfo.duration" class="info-item">{{ videoInfo.duration }}</span>
-          <span v-if="videoInfo.createTime" class="info-item">{{ videoInfo.createTime }}</span>
+          <span v-if="videoInfo.resolution" class="info-item">{{ videoInfo.resolution }}</span>
+          <span v-if="videoInfo.duration" class="info-item">{{ videoInfo.duration }}s</span>
+          <span v-if="videoInfo.createTime" class="info-item">{{ parseTime(videoInfo.createTime) }}</span>
         </div>
       </div>
     </template>
@@ -30,7 +30,7 @@
 
   interface VideoInfo {
     modelName?: string; // 模型名称
-    ratio?: string; // 分辨率
+    resolution?: string; // 分辨率
     duration?: string; // 时长
     createTime?: string; // 创建时间
   }
@@ -76,7 +76,8 @@
 <style scoped lang="scss">
   .dialog-header {
     display: flex;
-    flex-direction: column;
+    // flex-direction: column;
+    justify-content: space-between;
     gap: 12px;
 
     .dialog-title {
@@ -90,6 +91,7 @@
       align-items: center;
       gap: 12px;
       flex-wrap: wrap;
+      margin-right: 20px;
 
       .info-item {
         padding: 4px 12px;
@@ -100,8 +102,8 @@
         white-space: nowrap;
 
         &:first-child {
-          color: #5252ff;
-          background: #f3f3ff;
+          // color: #5252ff;
+          // background: #f3f3ff;
           font-weight: 500;
         }
       }

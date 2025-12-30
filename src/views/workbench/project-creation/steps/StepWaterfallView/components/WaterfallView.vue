@@ -1134,21 +1134,28 @@
 
       // VueDraggable 拖拽样式
       .ghost-column {
-        opacity: 0.4;
+        cursor: grabbing !important;
+        opacity: 1 !important;
         background: #e0e7ff;
-        border: 2px dashed #5252ff;
+        border: 2px dashed #5252ff !important;
         transform: rotate(2deg);
+        // 隐藏所有内容，只保留占位框
+        * {
+          opacity: 0 !important;
+          visibility: hidden !important;
+        }
       }
 
       .chosen-column {
         cursor: grabbing !important;
-        transform: scale(1.03);
+        transform: scale(1);
         box-shadow: 0 8px 24px rgba(82, 82, 255, 0.3);
-        border: 2px solid #5252ff;
+        border: 2px solid #5252ff !important;
         z-index: 1000;
       }
 
       .dragging-column {
+        cursor: grabbing !important;
         opacity: 0.9;
         transform: scale(1.05) rotate(2deg);
         box-shadow: 0 12px 32px rgba(82, 82, 255, 0.4);

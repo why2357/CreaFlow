@@ -349,6 +349,8 @@ export interface HivisionProjectHistoryVo {
   modelCode?: string;
   /** 模型名称 */
   modelName?: string;
+  // 分辨率
+  resolution?: string;
   /** 项目id */
   projectId?: number;
   /** 镜头描述 */

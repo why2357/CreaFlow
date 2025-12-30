@@ -125,7 +125,7 @@
     updateShot
   } from '@/api/workbench/episode';
   import type { EpisodeInfoResponseDto, EpisodeSceneItemInfo } from '@/api/workbench/episode/types';
-  import { saveProjectModel } from '@/api/workbench/project';
+  import { saveImageModel } from '@/api/workbench/project';
   import type { Episode, Shot, ShotForm } from '@/api/workbench/project/types';
   import { useImageUpdateListener, useScriptUpdateListener } from '@/composables/useSSEListener';
   import { useProjectStore } from '@/store/modules/project';
@@ -201,13 +201,15 @@
   // 初始化
   onMounted(async () => {
     // 初始化模型选择：优先使用用户保存的选择，如果没有则使用默认模型
-    console.log('projectStore.selectedModeCode', projectStore.selectedModeCode);
+    console.log('projectStore.selectedModeCodeImage', projectStore.selectedModeCodeImage);
 
-    if (projectStore.selectedModeCode) {
+    if (projectStore.selectedModeCodeImage?.modelCode) {
       // 验证保存的模型代码是否在当前可用模型列表中
-      const modelExists = projectStore.t2iModelInfoList?.some((m) => m.modelCode === projectStore.selectedModeCode);
+      const modelExists = projectStore.t2iModelInfoList?.some(
+        (m) => m.modelCode === projectStore.selectedModeCodeImage?.modelCode
+      );
       if (modelExists) {
-        currentModelCode.value = projectStore.selectedModeCode;
+        currentModelCode.value = projectStore.selectedModeCodeImage.modelCode;
       } else {
         // 如果保存的模型不存在，使用默认模型
         currentModelCode.value = getDefaultModel(projectStore.t2iModelInfoList);
@@ -366,15 +368,17 @@
     { deep: true }
   );
 
-  // 监听 selectedModeCode 变化，同步更新 currentModelCode
+  // 监听 selectedModeCodeImage 变化，同步更新 currentModelCode
   watch(
-    () => projectStore.selectedModeCode,
-    (newSelectedModeCode) => {
-      if (newSelectedModeCode) {
+    () => projectStore.selectedModeCodeImage,
+    (newselectedModeCodeImage) => {
+      if (newselectedModeCodeImage?.modelCode) {
         // 验证模型代码是否在当前可用模型列表中
-        const modelExists = projectStore.t2iModelInfoList?.some((m) => m.modelCode === newSelectedModeCode);
+        const modelExists = projectStore.t2iModelInfoList?.some(
+          (m) => m.modelCode === newselectedModeCodeImage.modelCode
+        );
         if (modelExists) {
-          currentModelCode.value = newSelectedModeCode;
+          currentModelCode.value = newselectedModeCodeImage.modelCode;
         } else {
           // 如果保存的模型不存在，使用默认模型
           currentModelCode.value = getDefaultModel(projectStore.t2iModelInfoList);
@@ -606,12 +610,13 @@
     currentModelCode.value = modelCode;
     const modelName = getModelName(projectStore.t2iModelInfoList, modelCode);
 
-    // 保存模型选择到后端
+    // 保存模型选择到后端（分镜表只需要保存 modelCode）
     if (projectStore.currentProjectId) {
       try {
-        await saveProjectModel({
+        await saveImageModel({
           projectId: Number(projectStore.currentProjectId),
           modelCode: modelCode
+          // 分镜表不需要 resolution 和 duration
         });
         ElMessage.success(`已切换到 ${modelName}`);
       } catch (error) {

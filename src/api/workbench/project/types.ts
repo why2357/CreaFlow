@@ -143,12 +143,21 @@ export interface ProjectLimitPointsRequest {
 /**
  * 项目模型请求DTO
  */
-export interface ProjectModelRequest {
+export interface ProjectModelRequestDto {
   /** 模型代码 */
   modelCode: string;
   /** 项目id */
   projectId: number;
+  /** 分辨率 */
+  resolution?: string;
+  /** 时长 */
+  duration?: number;
 }
+
+/**
+ * 项目模型请求（向后兼容的别名）
+ */
+export type ProjectModelRequest = ProjectModelRequestDto;
 
 /**
  * 项目表单（创建/更新）
@@ -274,8 +283,10 @@ export interface ProjectInfoResponse {
   t2tModelInfoList?: AiModelInfoDto[];
   /** 项目权限列表 */
   permissions?: string[];
-  /** 用户选择的模型代码 (文生图模型) */
-  selectedModeCode?: string;
+  /** 用户选择的模型配置 (文生图模型) */
+  selectedModeCodeImage?: ProjectModelRequestDto;
+  /** 用户选择的模型配置 (图生视频模型) */
+  selectedModeCodeVideo?: ProjectModelRequestDto;
 }
 
 /**
