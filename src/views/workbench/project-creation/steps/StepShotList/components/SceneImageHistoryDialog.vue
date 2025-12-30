@@ -566,10 +566,10 @@
     }
 
     // 如果选中的图片没有变化，直接关闭弹窗，不调用接口
-    if (selectedHistoryDetail.value.historyDetailId === initialSelectedHistoryDetailId.value) {
-      handleClose();
-      return;
-    }
+    // if (selectedHistoryDetail.value.historyDetailId === initialSelectedHistoryDetailId.value) {
+    //   handleClose();
+    //   return;
+    // }
 
     try {
       await chooseHistoryDetail({ historyDetailId: selectedHistoryDetail.value.historyDetailId });
