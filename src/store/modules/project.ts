@@ -246,8 +246,9 @@ export const useProjectStore = defineStore('project', {
         this.selectedModeCodeImage = data.selectedModeCodeImage || null;
         this.selectedModeCodeVideo = data.selectedModeCodeVideo || null;
 
-        // 更新项目权限
+        // 更新项目权限------项目中的权限要用v-has-project-permi
         this.projectPermissions = data.permissions || [];
+        // console.log('this.projectPermissions', this.projectPermissions);
 
         // 转换剧集信息为旧格式（兼容现有逻辑）
         this.episodes = this.episodeInfoList
