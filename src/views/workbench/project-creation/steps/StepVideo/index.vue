@@ -148,6 +148,7 @@
     VideoModelPointConfig,
     VideoSceneItemInfo
   } from '@/api/workbench/episode/types';
+  import { saveVideoModel } from '@/api/workbench/project';
   import { queryStoryBoard } from '@/api/workbench/storyboard';
   import { useVideoUpdateListener } from '@/composables/useSSEListener';
   import { useProjectStore } from '@/store/modules/project';
@@ -202,6 +203,9 @@
   const selectedModelCode = ref<string>('');
   const selectedResolution = ref<string>('');
   const selectedDuration = ref<number | undefined>(undefined);
+
+  // 标志位：是否正在自动选择（用于防止连锁触发多次保存请求）
+  const isAutoSelecting = ref(false);
 
   // 检查模型是否支持当前的 pictureRatio
   // veo-3.1-lingke 模型不支持 pictureRatio 为 2、3、4 的比例（对应 4:3、1:1、3:4）
@@ -281,7 +285,10 @@
   };
 
   // 模型变化处理
-  const handleModelChange = (modelCode: string) => {
+  const handleModelChange = async (modelCode: string) => {
+    // 设置自动选择标志，防止连锁触发多次请求
+    isAutoSelecting.value = true;
+
     // 重置分辨率和时长
     selectedResolution.value = '';
     selectedDuration.value = undefined;
@@ -289,12 +296,43 @@
     // 自动选择第一个分辨率
     if (availableResolutions.value.length > 0) {
       selectedResolution.value = availableResolutions.value[0].resolution || '';
-      handleResolutionChange(selectedResolution.value);
+      // 自动选择第一个时长
+      if (availableDurations.value.length > 0) {
+        selectedDuration.value = availableDurations.value[0].duration;
+      }
+    }
+
+    // 清除自动选择标志
+    isAutoSelecting.value = false;
+
+    // 保存模型选择到后端（视频需要保存 modelCode、resolution、duration）
+    if (projectStore.currentProjectId) {
+      try {
+        await saveVideoModel({
+          projectId: Number(projectStore.currentProjectId),
+          modelCode: modelCode,
+          resolution: selectedResolution.value,
+          duration: selectedDuration.value
+        });
+        // const modelName = currentModel.value?.modelName || '模型';
+        // ElMessage.success(`已切换到 ${modelName}`);
+      } catch (error) {
+        console.error('保存模型选择失败:', error);
+        ElMessage.error('保存模型选择失败');
+      }
     }
   };
 
   // 分辨率变化处理
-  const handleResolutionChange = (resolution: string) => {
+  const handleResolutionChange = async (resolution: string) => {
+    // 如果是自动选择，不触发保存（避免重复请求）
+    if (isAutoSelecting.value) {
+      return;
+    }
+
+    // 设置自动选择标志
+    isAutoSelecting.value = true;
+
     // 重置时长
     selectedDuration.value = undefined;
 
@@ -302,11 +340,40 @@
     if (availableDurations.value.length > 0) {
       selectedDuration.value = availableDurations.value[0].duration;
     }
+
+    // 清除自动选择标志
+    isAutoSelecting.value = false;
+
+    // 保存配置到后端
+    await saveCurrentVideoConfig();
   };
 
   // 时长变化处理
-  const handleDurationChange = (duration: number) => {
-    // 时长变化后无需额外操作，currentModelConfigObj 会自动更新
+  const handleDurationChange = async (duration: number) => {
+    // 如果是自动选择，不触发保存（避免重复请求）
+    if (isAutoSelecting.value) {
+      return;
+    }
+
+    // 保存配置到后端
+    await saveCurrentVideoConfig();
+  };
+
+  // 保存当前视频配置到后端的辅助函数
+  const saveCurrentVideoConfig = async () => {
+    if (projectStore.currentProjectId && selectedModelCode.value) {
+      try {
+        await saveVideoModel({
+          projectId: Number(projectStore.currentProjectId),
+          modelCode: selectedModelCode.value,
+          resolution: selectedResolution.value,
+          duration: selectedDuration.value
+        });
+      } catch (error) {
+        console.error('保存视频配置失败:', error);
+        // 不显示错误提示，避免频繁打扰用户
+      }
+    }
   };
 
   // 全选状态
@@ -425,6 +492,62 @@
     }
   );
 
+  // 监听 selectedModeCodeVideo 变化，同步更新 selectedModelCode、selectedResolution、selectedDuration
+  watch(
+    () => projectStore.selectedModeCodeVideo,
+    (newSelectedModeCodeVideo) => {
+      if (newSelectedModeCodeVideo?.modelCode) {
+        const savedModelCode = newSelectedModeCodeVideo.modelCode;
+        // 验证模型代码是否在当前可用模型列表中且支持当前比例
+        const modelExists = modelConfigs.value.find(
+          (m) => m.modelCode === savedModelCode && isModelSupported(m.modelCode || '')
+        );
+        if (modelExists) {
+          selectedModelCode.value = savedModelCode;
+
+          // 尝试恢复保存的分辨率和时长
+          if (newSelectedModeCodeVideo.resolution) {
+            const resolutionConfig = modelExists.resolutionConfigs?.find(
+              (r) => r.resolution === newSelectedModeCodeVideo.resolution
+            );
+            if (resolutionConfig) {
+              selectedResolution.value = newSelectedModeCodeVideo.resolution;
+
+              // 尝试恢复保存的时长
+              if (newSelectedModeCodeVideo.duration !== undefined) {
+                const durationConfig = resolutionConfig.durationConfigs?.find(
+                  (d) => d.duration === newSelectedModeCodeVideo.duration
+                );
+                if (durationConfig) {
+                  selectedDuration.value = newSelectedModeCodeVideo.duration;
+                } else if (resolutionConfig.durationConfigs && resolutionConfig.durationConfigs.length > 0) {
+                  // 时长不存在，使用第一个时长
+                  selectedDuration.value = resolutionConfig.durationConfigs[0].duration;
+                }
+              } else if (resolutionConfig.durationConfigs && resolutionConfig.durationConfigs.length > 0) {
+                // 没有保存时长，使用第一个时长
+                selectedDuration.value = resolutionConfig.durationConfigs[0].duration;
+              }
+            } else {
+              // 分辨率不存在，使用默认分辨率和时长
+              handleModelChange(savedModelCode);
+            }
+          } else {
+            // 没有保存分辨率，使用默认分辨率和时长
+            handleModelChange(savedModelCode);
+          }
+        } else {
+          // 如果保存的模型不存在或不支持，使用默认模型
+          const supportedModels = modelConfigs.value.filter((m) => isModelSupported(m.modelCode || ''));
+          if (supportedModels.length > 0) {
+            selectedModelCode.value = supportedModels[0].modelCode || '';
+            handleModelChange(selectedModelCode.value);
+          }
+        }
+      }
+    }
+  );
+
   // 加载视频模型配置
   const loadVideoModelConfig = async () => {
     try {
@@ -434,21 +557,75 @@
         if (Array.isArray(res.data)) {
           modelConfigs.value = res.data;
 
-          // 默认选择第一个支持当前 pictureRatio 的模型
+          // 优先使用用户保存的模型选择，如果没有则使用默认模型
           if (modelConfigs.value.length > 0) {
-            // 优先选择支持当前 pictureRatio 的模型
-            const supportedModels = modelConfigs.value.filter((m) => isModelSupported(m.modelCode || ''));
-            const firstModel = supportedModels.length > 0 ? supportedModels[0] : modelConfigs.value[0];
-            selectedModelCode.value = firstModel.modelCode || '';
+            let targetModelCode = '';
+            let targetResolution = '';
+            let targetDuration: number | undefined = undefined;
 
-            // 自动选择第一个分辨率
-            if (firstModel.resolutionConfigs && firstModel.resolutionConfigs.length > 0) {
-              const firstResolution = firstModel.resolutionConfigs[0];
-              selectedResolution.value = firstResolution.resolution || '';
+            // 1. 尝试使用保存的模型配置（包括 modelCode、resolution、duration）
+            if (projectStore.selectedModeCodeVideo?.modelCode) {
+              const savedModelCode = projectStore.selectedModeCodeVideo.modelCode;
+              // 验证保存的模型代码是否在当前可用模型列表中且支持当前比例
+              const savedModel = modelConfigs.value.find(
+                (m) => m.modelCode === savedModelCode && isModelSupported(m.modelCode || '')
+              );
+              if (savedModel) {
+                targetModelCode = savedModel.modelCode || '';
+                // 尝试使用保存的分辨率和时长
+                const savedResolution = projectStore.selectedModeCodeVideo.resolution;
+                const savedDuration = projectStore.selectedModeCodeVideo.duration;
 
-              // 自动选择第一个时长
-              if (firstResolution.durationConfigs && firstResolution.durationConfigs.length > 0) {
-                selectedDuration.value = firstResolution.durationConfigs[0].duration;
+                // 验证保存的分辨率是否存在
+                if (savedResolution) {
+                  const resolutionConfig = savedModel.resolutionConfigs?.find((r) => r.resolution === savedResolution);
+                  if (resolutionConfig) {
+                    targetResolution = savedResolution;
+                    // 验证保存的时长是否存在
+                    if (savedDuration !== undefined) {
+                      const durationConfig = resolutionConfig.durationConfigs?.find((d) => d.duration === savedDuration);
+                      if (durationConfig) {
+                        targetDuration = savedDuration;
+                      }
+                    }
+                  }
+                }
+              }
+            }
+
+            // 2. 如果没有保存的选择或验证失败，使用默认模型（第一个支持的模型）
+            if (!targetModelCode) {
+              const supportedModels = modelConfigs.value.filter((m) => isModelSupported(m.modelCode || ''));
+              const firstModel = supportedModels.length > 0 ? supportedModels[0] : modelConfigs.value[0];
+              targetModelCode = firstModel.modelCode || '';
+            }
+
+            selectedModelCode.value = targetModelCode;
+
+            // 根据选中的模型获取模型对象
+            const targetModel = modelConfigs.value.find((m) => m.modelCode === targetModelCode);
+
+            // 设置分辨率和时长
+            if (targetModel?.resolutionConfigs && targetModel.resolutionConfigs.length > 0) {
+              // 如果有保存的分辨率，使用保存的；否则使用第一个
+              if (targetResolution) {
+                selectedResolution.value = targetResolution;
+              } else {
+                const firstResolution = targetModel.resolutionConfigs[0];
+                selectedResolution.value = firstResolution.resolution || '';
+              }
+
+              // 设置时长
+              const currentResolutionConfig = targetModel.resolutionConfigs.find(
+                (r) => r.resolution === selectedResolution.value
+              );
+              if (currentResolutionConfig?.durationConfigs && currentResolutionConfig.durationConfigs.length > 0) {
+                // 如果有保存的时长，使用保存的；否则使用第一个
+                if (targetDuration !== undefined) {
+                  selectedDuration.value = targetDuration;
+                } else {
+                  selectedDuration.value = currentResolutionConfig.durationConfigs[0].duration;
+                }
               }
             }
           }

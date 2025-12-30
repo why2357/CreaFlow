@@ -6,12 +6,12 @@ import {
   ProjectCreateRequest,
   ProjectForm,
   ProjectInfoResponse,
+  ProjectLimitPointsRequest,
+  ProjectModelRequest,
   ProjectPageInfoResponseDto,
   ProjectProcessRecordVo,
   ProjectQuery,
   ProjectRenameRequest,
-  ProjectLimitPointsRequest,
-  ProjectModelRequest,
   ProjectUserPageInfo,
   ProjectUserQuery
 } from './types';
@@ -88,12 +88,24 @@ export const limitProjectPoints = (data: ProjectLimitPointsRequest): AxiosPromis
 };
 
 /**
- * 保存项目模型选择
+ * 保存项目模型选择---保存模型-文生图
+
  * @param data 项目模型请求数据
  */
-export const saveProjectModel = (data: ProjectModelRequest): AxiosPromise<void> => {
+export const saveImageModel = (data: ProjectModelRequest): AxiosPromise<void> => {
   return request({
-    url: '/hivision/story/project/save-model',
+    url: '/hivision//story/project/save-model-image',
+    method: 'post',
+    data: data
+  });
+};
+/**
+ * 保存项目模型选择---保存模型-图生视频
+ * @param data 项目模型请求数据
+ */
+export const saveVideoModel = (data: ProjectModelRequest): AxiosPromise<void> => {
+  return request({
+    url: '/hivision/story/project/save-model-video',
     method: 'post',
     data: data
   });

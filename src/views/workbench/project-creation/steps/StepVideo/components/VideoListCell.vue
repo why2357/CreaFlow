@@ -334,7 +334,7 @@
     currentVideoInfo.value = historyItem
       ? {
           modelName: historyItem.modelName,
-          ratio: historyItem.ratio,
+          resolution: historyItem.resolution,
           duration: historyItem.duration,
           createTime: historyItem.createTime
         }

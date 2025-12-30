@@ -99,6 +99,10 @@
               <!-- <div class="desc-label">镜头：</div> -->
               <div class="desc-text">{{ row.sceneDesc }}</div>
             </div>
+            <div v-if="row.sceneHint" class="desc-section">
+              <!-- <div class="desc-label">场景：</div> -->
+              <div class="desc-text">{{ row.sceneHint }}</div>
+            </div>
             <div v-if="row.dialogues" class="desc-section">
               <!-- <div class="desc-label">台词：</div> -->
               <div class="hint-text">{{ row.dialogues }}</div>
@@ -595,7 +599,7 @@
       overflow-y: auto;
 
       .desc-section {
-        margin-bottom: 8px;
+        margin-bottom: 14px;
 
         &:last-child {
           margin-bottom: 0;

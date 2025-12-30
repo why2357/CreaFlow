@@ -1,5 +1,8 @@
 <template>
   <div class="storyboard-table-container">
+    <!-- 拖拽遮罩层 -->
+    <div v-if="isDragging" class="drag-mask"></div>
+
     <!-- 加载中 -->
     <div v-if="loading" v-loading="loading" class="loading-container">
       <div class="loading-content">
@@ -1099,6 +1102,9 @@
   // 保存 Sortable 实例
   let sortableInstance: any = null;
 
+  // 拖拽状态
+  const isDragging = ref<boolean>(false);
+
   // 初始化自动滚动 composable（垂直滚动）
   const autoScroll = useAutoScroll({
     direction: 'vertical',
@@ -1154,6 +1160,10 @@
             const initialMouseY = originalEvent.originalEvent?.clientY;
             // 启动自动滚动
             autoScroll.start(scrollContainer as HTMLElement, initialMouseY);
+            // 显示拖拽遮罩层
+            isDragging.value = true;
+            // 给 body 添加拖拽状态类，用于全局样式控制
+            document.body.classList.add('is-dragging-table');
           },
           // 添加 onMove 回调以实时捕获鼠标位置
           onMove: (event: any) => {
@@ -1162,6 +1172,10 @@
           onEnd: async (event: SortableEvent) => {
             // 停止自动滚动
             autoScroll.stop();
+            // 隐藏拖拽遮罩层
+            isDragging.value = false;
+            // 移除 body 的拖拽状态类
+            document.body.classList.remove('is-dragging-table');
             const { oldIndex, newIndex } = event;
 
             // 如果位置没有变化，直接返回
@@ -1238,6 +1252,17 @@
     align-items: center;
     width: 100%;
     height: 100%;
+    position: relative;
+
+    // 拖拽遮罩层
+    .drag-mask {
+      position: fixed;
+      inset: 0;
+      z-index: 2500; // 高于 tooltip (2000)，低于拖拽元素 (9999)
+      background: transparent;
+      cursor: grabbing;
+      pointer-events: none; // 不捕获鼠标事件，让拖拽正常进行
+    }
 
     .loading-container {
       display: flex;
@@ -1898,6 +1923,26 @@
           }
         }
       }
+    }
+  }
+</style>
+
+<style lang="scss">
+  // 全局样式：拖拽时隐藏 tooltip 和交互元素
+  body.is-dragging-table {
+    // 隐藏所有 Element Plus tooltip 弹出层
+    .el-tooltip__popper,
+    .el-popper {
+      display: none !important;
+    }
+
+    // 禁用所有可能触发交互的元素
+    .top-actions,
+    .hover-actions,
+    .scene-hover-overlay,
+    .action-btn {
+      pointer-events: none !important;
+      opacity: 0 !important;
     }
   }
 </style>

@@ -7,6 +7,7 @@ import type {
   MaterialStaticsInfo,
   ProductionStats,
   ProjectInfoResponse,
+  ProjectModelRequestDto,
   ProjectProcessRecordVo,
   ProjectProgress,
   Scene,
@@ -54,8 +55,9 @@ interface ProjectState {
   t2iModelInfoList: AiModelInfoDto[];
   t2tModelInfoList: AiModelInfoDto[];
 
-  // 用户选择的模型代码
-  selectedModeCode: string | null;
+  // 用户选择的模型配置
+  selectedModeCodeImage: ProjectModelRequestDto | null;
+  selectedModeCodeVideo: ProjectModelRequestDto | null;
 
   // 统计数据
   progress: ProjectProgress | null;
@@ -98,7 +100,8 @@ export const useProjectStore = defineStore('project', {
     i2vModelInfoList: [],
     t2iModelInfoList: [],
     t2tModelInfoList: [],
-    selectedModeCode: null,
+    selectedModeCodeImage: null,
+    selectedModeCodeVideo: null,
     progress: null,
     stats: null,
     projectPermissions: [],
@@ -240,7 +243,8 @@ export const useProjectStore = defineStore('project', {
         this.t2tModelInfoList = data.t2tModelInfoList || [];
 
         // 更新用户选择的模型代码
-        this.selectedModeCode = data.selectedModeCode || null;
+        this.selectedModeCodeImage = data.selectedModeCodeImage || null;
+        this.selectedModeCodeVideo = data.selectedModeCodeVideo || null;
 
         // 更新项目权限
         this.projectPermissions = data.permissions || [];
