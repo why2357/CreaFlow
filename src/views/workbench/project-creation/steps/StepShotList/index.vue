@@ -83,7 +83,7 @@
         />
       </div>
       <!-- 右下批量生成按钮 -->
-      <div v-if="batchStatus === 0" class="right-tools" v-hasPermi="['generate-continue']">
+      <div v-if="batchStatus === 0" class="right-tools" v-has-project-permi="['generate-continue']">
         <el-button class="bottom-btn" :loading="batchGenerateLoading" @click="handleBatchGenerate"> 继续 </el-button>
       </div>
     </div>

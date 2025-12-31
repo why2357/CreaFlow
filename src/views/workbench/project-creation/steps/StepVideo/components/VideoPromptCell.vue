@@ -454,6 +454,15 @@
   // 初始化模型配置（使用传入的prop）
   const initModelConfigs = () => {
     if (props.modelConfigs.length > 0) {
+      // 优先使用父组件传递的 modelConfig（右上角的选择）
+      if (props.modelConfig?.modelCode) {
+        selectedModelCode.value = props.modelConfig.modelCode;
+        selectedResolution.value = props.modelConfig.resolution;
+        selectedDuration.value = props.modelConfig.duration;
+        return;
+      }
+
+      // 如果没有传递 modelConfig，则使用第一个模型作为默认值
       const firstModel = props.modelConfigs[0];
       selectedModelCode.value = firstModel.modelCode || '';
 
@@ -481,7 +490,7 @@
     { immediate: true }
   );
 
-  // 监听父组件的 modelConfig 变化，同步到当前组件
+  // 监听父组件的 modelConfig 变化，同步到当前组件（immediate: true 确保初始化时也能同步）
   watch(
     () => props.modelConfig,
     (newConfig) => {
@@ -492,7 +501,7 @@
         selectedDuration.value = newConfig.duration;
       }
     },
-    { deep: true }
+    { deep: true, immediate: true }
   );
 
   // 监听video变化

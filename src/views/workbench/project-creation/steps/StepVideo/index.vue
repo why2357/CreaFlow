@@ -583,7 +583,9 @@
                     targetResolution = savedResolution;
                     // 验证保存的时长是否存在
                     if (savedDuration !== undefined) {
-                      const durationConfig = resolutionConfig.durationConfigs?.find((d) => d.duration === savedDuration);
+                      const durationConfig = resolutionConfig.durationConfigs?.find(
+                        (d) => d.duration === savedDuration
+                      );
                       if (durationConfig) {
                         targetDuration = savedDuration;
                       }
