@@ -74,6 +74,7 @@
           :episodes="projectStore.episodeInfoList"
           :model-points="getCurrentModelPoints"
           :episode-task-status="episodeTaskStatus"
+          :workflow-mode="projectStore.workflowMode"
           @image-upload="handleImageUpload"
           @image-regenerate="handleImageRegenerate"
           @toggle-favorite="handleToggleFavorite"
@@ -95,6 +96,9 @@
       :next-episode-number="projectStore.episodes.length + 1"
       @success="handleAddEpisodeSuccess"
     />
+
+    <!-- 工作流选择对话框 -->
+    <SelectWorkflowDialog v-model="workflowDialogVisible" @confirm="handleWorkflowSelect" />
 
     <!-- 角色编辑对话框 -->
     <CharacterEditDialog
@@ -138,6 +142,7 @@
   // 导入组件
   import generatingAnimation from '@/assets/lottie/video-generating.json';
   import AddEpisodeDialog from '../../components/AddEpisodeDialog.vue';
+  import SelectWorkflowDialog from '../../components/SelectWorkflowDialog.vue';
   import ExportDropdown from '../../components/ExportDropdown.vue';
   import EpisodeListPanel from '../StepScript/components/EpisodeListPanel.vue';
   import CharacterEditDialog from './components/CharacterEditDialog.vue';
@@ -185,6 +190,9 @@
 
   // 新增剧集对话框
   const addEpisodeDialogVisible = ref(false);
+
+  // 工作流选择对话框
+  const workflowDialogVisible = ref(false);
 
   // 角色编辑对话框
   const characterEditDialogVisible = ref(false);
@@ -587,8 +595,17 @@
     loadShots();
   };
 
-  // 显示新增剧集对话框
+  // 显示新增剧集对话框 - 先显示工作流选择
   const handleShowAddEpisodeDialog = () => {
+    workflowDialogVisible.value = true;
+  };
+
+  // 工作流选择确认回调
+  const handleWorkflowSelect = (mode: 'classic' | 'seedance') => {
+    console.log('选择的工作流:', mode);
+    // 保存工作流模式到 store
+    projectStore.setWorkflowMode(mode);
+    // 选择完成后，显示新增剧集对话框
     addEpisodeDialogVisible.value = true;
   };
 

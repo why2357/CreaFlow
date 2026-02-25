@@ -344,7 +344,8 @@
   // 工作流选择确认回调
   const handleWorkflowSelect = (mode: 'classic' | 'seedance') => {
     console.log('选择的工作流:', mode);
-    // TODO: 根据选择的工作流 mode 进行后续处理
+    // 保存工作流模式到 store
+    projectStore.setWorkflowMode(mode);
     // 选择完成后，显示新增剧集对话框
     addEpisodeDialogVisible.value = true;
   };

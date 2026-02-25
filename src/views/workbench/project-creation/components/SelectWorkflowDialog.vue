@@ -32,7 +32,15 @@
         >
           <div class="pattern-classic"></div>
           <div class="card-icon-wrapper classic-icon">
-            <svg class="card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <svg
+              class="card-icon"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
               <rect x="2" y="2" width="20" height="20" rx="2.18" ry="2.18"></rect>
               <line x1="7" y1="2" x2="7" y2="22"></line>
               <line x1="17" y1="2" x2="17" y2="22"></line>
@@ -62,8 +70,18 @@
         >
           <div class="pattern-nextgen"></div>
           <div class="card-icon-wrapper seedance-icon">
-            <svg class="card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"></path>
+            <svg
+              class="card-icon"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <path
+                d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"
+              ></path>
               <path d="M5 3v4"></path>
               <path d="M19 17v4"></path>
               <path d="M3 5h4"></path>
@@ -145,16 +163,17 @@
 
 <style scoped lang="scss">
   .select-workflow-dialog {
-    // 遮罩层样式 - 完全覆盖屏幕
+    // 确保遮罩层在最上层
     :deep(.el-overlay) {
-      position: fixed;
-      inset: 0;
+      z-index: 9999 !important;
       background-color: rgba(0, 0, 0, 0.3);
       backdrop-filter: blur(4px);
+      -webkit-backdrop-filter: blur(4px);
     }
 
-    // 弹窗容器 - 半透明白色 + 背景模糊
+    // 确保弹窗容器在最上层
     :deep(.el-dialog) {
+      z-index: 10000 !important;
       background: rgba(255, 255, 255, 0.8);
       backdrop-filter: blur(40px);
       border: 1px solid rgba(255, 255, 255, 0.6);
@@ -177,12 +196,17 @@
     padding: 40px;
     background: linear-gradient(135deg, #fff5eb 0%, #f0f5ff 100%);
     min-height: 400px;
+    z-index: 1;
   }
 
   // 背景图案 - 经典工作流
   .pattern-classic {
     position: absolute;
-    inset: 0;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 0;
     background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M30 0C13.431 0 0 13.431 0 30c0 16.569 13.431 30 30 30 16.569 0 30-13.431 30-30C60 13.431 46.569 0 30 0zm0 57C15.088 57 3 44.912 3 30S15.088 3 30 3s27 12.088 27 27-12.088 27-27 27zm0-51c-13.255 0-24 10.745-24 24s10.745 24 24 24 24-10.745 24-24-10.745-24-24-24zm0 45c-11.598 0-21-9.402-21-21s9.402-21 21-21 21 9.402 21 21-9.402 21-21 21zm0-39c-9.941 0-18 8.059-18 18s8.059 18 18 18 18-8.059 18-18-8.059-18-18-18zm0 33c-8.284 0-15-6.716-15-15s6.716-15 15-15 15 6.716 15 15-6.716 15-15 15z' fill='%23ea580c' fill-opacity='0.08' fill-rule='evenodd'/%3E%3C/svg%3E");
     mix-blend-mode: multiply;
     opacity: 0.5;
@@ -193,7 +217,11 @@
   // 背景图案 - Seedance
   .pattern-nextgen {
     position: absolute;
-    inset: 0;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 0;
     background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M30 0l10 20 20 10-20 10-10 20-10-20-20-10 20-10L30 0zm0 13.5L24.5 24.5 13.5 30l11 5.5L30 46.5l5.5-11 11-5.5-11-5.5L30 13.5z' fill='%233b82f6' fill-opacity='0.06' fill-rule='evenodd'/%3E%3C/svg%3E");
     mix-blend-mode: multiply;
     opacity: 0.5;
@@ -206,6 +234,7 @@
     position: absolute;
     top: 24px;
     right: 24px;
+    z-index: 100;
     width: 36px;
     height: 36px;
     border-radius: 50%;
@@ -255,6 +284,8 @@
 
   // 标题区域
   .dialog-header {
+    position: relative;
+    z-index: 10;
     text-align: center;
     margin-bottom: 40px;
 
@@ -274,6 +305,8 @@
 
   // 卡片容器
   .cards-container {
+    position: relative;
+    z-index: 10;
     display: grid;
     grid-template-columns: repeat(2, 1fr);
     gap: 24px;
@@ -283,6 +316,7 @@
   // 工作流卡片
   .workflow-card {
     position: relative;
+    z-index: 10;
     padding: 32px 24px;
     border-radius: 16px;
     border: 2px solid transparent;
@@ -495,6 +529,8 @@
 
   // 底部按钮
   .dialog-footer {
+    position: relative;
+    z-index: 10;
     display: flex;
     justify-content: flex-end;
     align-items: center;

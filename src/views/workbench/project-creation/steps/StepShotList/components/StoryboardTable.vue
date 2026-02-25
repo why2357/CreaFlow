@@ -46,7 +46,7 @@
           </template>
         </el-table-column>
 
-        <el-table-column label="画面" :width="getImageColumnWidth()" align="center" fixed="left">
+        <el-table-column label="分镜" :width="getImageColumnWidth()" align="center" fixed="left">
           <template #default="{ row }">
             <SceneImageCell
               :image-url="row.sceneImage"
@@ -70,7 +70,7 @@
           </template>
         </el-table-column>
 
-        <el-table-column prop="sceneHint" label="画面描述" min-width="260">
+        <el-table-column prop="sceneHint" label="提示词" min-width="260">
           <template #default="{ row }">
             <div v-if="!isEditing(row, 'sceneDesc')" class="editable-cell" @click="startEdit(row, 'sceneDesc')">
               <div
@@ -117,7 +117,7 @@
           </template>
         </el-table-column>
 
-        <el-table-column prop="dialogue" label="台词" min-width="160">
+        <el-table-column v-if="props.workflowMode !== 'seedance'" prop="dialogue" label="台词" min-width="160">
           <template #default="{ row }">
             <div v-if="!isEditing(row, 'dialogue')" class="editable-cell" @click="startEdit(row, 'dialogue')">
               <div
@@ -143,7 +143,7 @@
           </template>
         </el-table-column>
 
-        <el-table-column prop="characters" label="人物" width="60">
+        <el-table-column v-if="props.workflowMode !== 'seedance'" prop="characters" label="人物" width="60">
           <template #default="{ row }">
             <div class="characters">
               <el-image
@@ -160,7 +160,13 @@
           </template>
         </el-table-column>
 
-        <el-table-column prop="sceneLocation" label="场景" :width="getImageColumnWidth()" fixed="right">
+        <el-table-column
+          v-if="props.workflowMode !== 'seedance'"
+          prop="sceneLocation"
+          label="场景"
+          :width="getImageColumnWidth()"
+          fixed="right"
+        >
           <template #default="{ row }">
             <div
               class="scene-location-cell"
@@ -322,6 +328,7 @@
     episodes: EpisodeInfo[];
     modelPoints?: number; // 当前模型的点数
     episodeTaskStatus?: number; // 剧集任务状态
+    workflowMode?: 'classic' | 'seedance' | null; // 工作流模式
   }
 
   const props = withDefaults(defineProps<Props>(), {

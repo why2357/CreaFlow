@@ -22,9 +22,9 @@ export interface SceneBasicEditRequest {
   basicId: number;
   /** 台词 */
   dialogues?: string;
-  /** 镜头描述 */
+  /** 特写镜头描述 */
   sceneDesc?: string;
-  /** 镜头提示 */
+  /** 场景提示 */
   sceneHint?: string;
 }
 

@@ -1,5 +1,9 @@
 {
   "permissions": {
-    "allow": ["Bash(ssh-mpc-server:*)"]
+    "allow": [
+      "Bash(ssh-mpc-server:*)",
+      "mcp__zai-mcp-server__analyze_image",
+      "Bash(echo:*)"
+    ]
   }
 }

@@ -31,6 +31,9 @@ interface ProjectState {
   pictureRatio: number | null;
   allEpisodePercent: string;
 
+  // 工作流模式：classic-经典工作流 / seedance-Seedance 2.0
+  workflowMode: 'classic' | 'seedance' | null;
+
   // 剧集列表
   episodes: Episode[];
   episodeInfoList: EpisodeInfo[];
@@ -79,6 +82,7 @@ export const useProjectStore = defineStore('project', {
     projectName: '',
     pictureRatio: null,
     allEpisodePercent: '0%',
+    workflowMode: null, // 默认为 null，未选择工作流模式
     episodes: [],
     episodeInfoList: [],
     currentEpisode: null,
@@ -295,6 +299,15 @@ export const useProjectStore = defineStore('project', {
       this.progress = null;
       this.stats = null;
       this.projectPermissions = [];
+      this.workflowMode = null;
+    },
+
+    /**
+     * 设置工作流模式
+     * @param mode 工作流模式：classic 或 seedance
+     */
+    setWorkflowMode(mode: 'classic' | 'seedance') {
+      this.workflowMode = mode;
     },
 
     // ==================== 剧集管理 ====================
