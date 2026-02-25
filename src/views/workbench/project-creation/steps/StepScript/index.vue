@@ -131,6 +131,9 @@
       :next-episode-number="(projectStore.episodeInfoList?.length || 0) + 1"
       @success="handleAddEpisodeSuccess"
     />
+
+    <!-- 工作流选择对话框 -->
+    <SelectWorkflowDialog v-model="workflowDialogVisible" @confirm="handleWorkflowSelect" />
   </div>
 </template>
 
@@ -145,6 +148,7 @@
 
   // 导入共享组件
   import AddEpisodeDialog from '../../components/AddEpisodeDialog.vue';
+  import SelectWorkflowDialog from '../../components/SelectWorkflowDialog.vue';
   import EpisodeListPanel from './components/EpisodeListPanel.vue';
 
   // 导入右侧面板组件
@@ -165,6 +169,9 @@
 
   // 新增剧集对话框
   const addEpisodeDialogVisible = ref(false);
+
+  // 工作流选择对话框
+  const workflowDialogVisible = ref(false);
 
   // 标记是否已经完成首次加载（用于区分 onMounted 和 onActivated）
   const isFirstLoad = ref(true);
@@ -329,8 +336,16 @@
     await projectStore.switchEpisode(episodeId);
   };
 
-  // 显示新增剧集对话框
+  // 显示新增剧集对话框 - 先显示工作流选择
   const handleAddEpisode = () => {
+    workflowDialogVisible.value = true;
+  };
+
+  // 工作流选择确认回调
+  const handleWorkflowSelect = (mode: 'classic' | 'seedance') => {
+    console.log('选择的工作流:', mode);
+    // TODO: 根据选择的工作流 mode 进行后续处理
+    // 选择完成后，显示新增剧集对话框
     addEpisodeDialogVisible.value = true;
   };
 
