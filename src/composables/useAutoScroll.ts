@@ -27,12 +27,7 @@ export interface AutoScrollConfig {
  * @returns 自动滚动控制方法
  */
 export function useAutoScroll(config: AutoScrollConfig = {}) {
-  const {
-    direction = 'vertical',
-    threshold = 350,
-    minSpeed = 15,
-    maxSpeed = 80
-  } = config;
+  const { direction = 'vertical', threshold = 350, minSpeed = 15, maxSpeed = 80 } = config;
 
   // 状态管理
   const isDragging = ref(false);
@@ -57,11 +52,7 @@ export function useAutoScroll(config: AutoScrollConfig = {}) {
       const distanceFromViewportBottom = window.innerHeight - currentMousePosition;
 
       // 向上滚动：鼠标接近视口顶部
-      if (
-        distanceFromViewportTop < threshold &&
-        distanceFromViewportTop > 0 &&
-        currentScrollContainer.scrollTop > 0
-      ) {
+      if (distanceFromViewportTop < threshold && distanceFromViewportTop > 0 && currentScrollContainer.scrollTop > 0) {
         const ratio = Math.pow(1 - distanceFromViewportTop / threshold, 2);
         scrollAmount = -(minSpeed + (maxSpeed - minSpeed) * ratio);
       }

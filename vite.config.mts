@@ -33,7 +33,7 @@ export default defineConfig(({ mode, command }: ConfigEnv): UserConfig => {
           // target: `http://172.28.38.137:16020`, // 测试
           // target: `http://172.28.44.206:16020`, // 锐
           // target: `http://172.28.104.25:16020`,
-          target: `http://172.28.104.54:16020`,
+          target: `http://172.28.104.54:16020`, //why
           // target: `http://172.28.44.59:16020`, // 玉龙
           // target: `http://172.28.44.69:16020`, // 小飞
           changeOrigin: true,
