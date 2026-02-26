@@ -567,14 +567,15 @@ const handleUpload = async (options: any) => {
 }
 
 .input-wrapper {
-  position: relative;
+  display: flex;
+  align-items: stretch;
+  gap: 8px;
 }
 
 .prompt-textarea {
-  width: 100%;
+  flex: 1;
   min-height: 60px;
   padding: 8px;
-  padding-right: 80px;
   border: 1px solid #e4e7ed;
   border-radius: 8px;
   resize: none;
@@ -589,9 +590,9 @@ const handleUpload = async (options: any) => {
 }
 
 .input-actions {
-  position: absolute;
-  right: 8px;
-  top: 8px;
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
 }
 
 .mention-tags-preview {
