@@ -74,7 +74,7 @@
           :episodes="projectStore.episodeInfoList"
           :model-points="getCurrentModelPoints"
           :episode-task-status="episodeTaskStatus"
-          :workflow-mode="projectStore.workflowMode"
+          :workflow-mode="currentEpisodeWorkflowMode"
           @image-upload="handleImageUpload"
           @image-regenerate="handleImageRegenerate"
           @toggle-favorite="handleToggleFavorite"
@@ -134,6 +134,7 @@
   import { useImageUpdateListener, useScriptUpdateListener } from '@/composables/useSSEListener';
   import { useProjectStore } from '@/store/modules/project';
   import { useUserStore } from '@/store/modules/user';
+  import { getEpisodeWorkflowMode, setEpisodeWorkflowMode } from '@/utils/episodeWorkflow';
   import { convertModelsToOptions, getDefaultModel, getModelName, ratioToSize } from '@/utils/projectUtils';
   import { ElMessage, ElMessageBox } from 'element-plus';
   import { computed, onActivated, onMounted, ref, watch } from 'vue';
@@ -179,6 +180,12 @@
     return projectStore.pictureRatio ? ratioToSize(projectStore.pictureRatio) : '16:9';
   });
 
+  // 当前剧集的工作流模式
+  const currentEpisodeWorkflowMode = computed(() => {
+    if (!selectedEpisodeId.value) return null;
+    return getEpisodeWorkflowMode(selectedEpisodeId.value);
+  });
+
   // 加载状态
   const loading = ref(false);
 
@@ -193,6 +200,9 @@
 
   // 工作流选择对话框
   const workflowDialogVisible = ref(false);
+
+  // 临时保存即将创建的剧集的工作流模式
+  const pendingWorkflowMode = ref<'classic' | 'seedance' | null>(null);
 
   // 角色编辑对话框
   const characterEditDialogVisible = ref(false);
@@ -456,7 +466,11 @@
           ? scene.commentInfo
           : undefined,
       // 图片状态 0-白色 1-橙色 2-绿色 3-红色
-      imgStatus: scene.sceneStatus
+      imgStatus: scene.sceneStatus,
+      // Seedance 2.0 提示词
+      seedancePrompt: '',
+      // Seedance 2.0 参考图片列表
+      seedancePromptImages: []
     }));
   };
 
@@ -523,6 +537,8 @@
               shot.characters = newShot.characters;
               shot.sceneLocationImage = newShot.sceneLocationImage;
               shot.envMaterialInfoVo = newShot.envMaterialInfoVo;
+              // 注意：seedancePrompt 和 seedancePromptImages 是前端临时存储的字段
+              // 不在后端返回的数据中，因此保留本地值
             }
           });
 
@@ -603,14 +619,28 @@
   // 工作流选择确认回调
   const handleWorkflowSelect = (mode: 'classic' | 'seedance') => {
     console.log('选择的工作流:', mode);
-    // 保存工作流模式到 store
-    projectStore.setWorkflowMode(mode);
+    // 临时保存即将创建的剧集的工作流模式
+    pendingWorkflowMode.value = mode;
     // 选择完成后，显示新增剧集对话框
     addEpisodeDialogVisible.value = true;
   };
 
   // 新增剧集成功回调
-  const handleAddEpisodeSuccess = async () => {
+  const handleAddEpisodeSuccess = async (newEpisodeId: number) => {
+    console.log('[handleAddEpisodeSuccess] 收到新剧集ID:', newEpisodeId);
+    console.log('[handleAddEpisodeSuccess] 待保存的工作流模式:', pendingWorkflowMode.value);
+
+    // 如果有待保存的工作流模式，保存到新创建的剧集
+    if (pendingWorkflowMode.value && newEpisodeId > 0) {
+      setEpisodeWorkflowMode(newEpisodeId, pendingWorkflowMode.value);
+      console.log(`[handleAddEpisodeSuccess] 剧集 ${newEpisodeId} 工作流模式设置为: ${pendingWorkflowMode.value}`);
+      console.log('[handleAddEpisodeSuccess] 当前 localStorage:', localStorage.getItem('episode_workflow_mode'));
+      // 清空临时保存的工作流模式
+      pendingWorkflowMode.value = null;
+    } else {
+      console.log('[handleAddEpisodeSuccess] 跳过保存工作流模式 - newEpisodeId:', newEpisodeId, 'pendingWorkflowMode:', pendingWorkflowMode.value);
+    }
+
     // 重新加载项目信息以获取最新的剧集列表
     await projectStore.loadProjectInfo(Number(projectStore.currentProjectId));
 

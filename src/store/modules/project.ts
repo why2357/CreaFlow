@@ -15,6 +15,7 @@ import type {
 } from '@/api/workbench/project/types';
 import { ElMessage } from 'element-plus';
 import { defineStore } from 'pinia';
+import { getEpisodeWorkflowMode } from '@/utils/episodeWorkflow';
 
 interface StepInfo {
   key: number;
@@ -116,9 +117,19 @@ export const useProjectStore = defineStore('project', {
   getters: {
     /**
      * 获取主步骤列表（排除子视图）
+     * 如果当前剧集是 Seedance 2.0 模式，则隐藏"视频"步骤
      */
     mainSteps: (state) => {
-      return state.steps.filter((step) => !step.isSubView);
+      // 检查当前剧集是否为 Seedance 2.0 模式
+      const isSeedance = state.currentEpisodeId ? getEpisodeWorkflowMode(state.currentEpisodeId) === 'seedance' : false;
+
+      return state.steps.filter((step) => {
+        // 排除子视图
+        if (step.isSubView) return false;
+        // 如果是 Seedance 2.0 模式，隐藏视频步骤（key: 7）
+        if (isSeedance && step.key === 7) return false;
+        return true;
+      });
     },
 
     /**
@@ -319,7 +330,16 @@ export const useProjectStore = defineStore('project', {
     async switchEpisodeFromInfo(episodeInfo: EpisodeInfo) {
       try {
         // 保存当前步骤（在切换剧集时保留）
-        const previousStep = this.currentStep;
+        let previousStep = this.currentStep;
+
+        // 检查目标剧集是否为 Seedance 2.0 模式
+        const isSeedance = episodeInfo.episodeId ? getEpisodeWorkflowMode(episodeInfo.episodeId) === 'seedance' : false;
+
+        // 如果当前在视频步骤(7)，且切换到 Seedance 2.0 模式剧集，则跳转到分镜头步骤(4)
+        if (previousStep === 7 && isSeedance) {
+          previousStep = 4;
+          this.currentStep = 4;
+        }
 
         // 转换为旧格式
         this.currentEpisode = {

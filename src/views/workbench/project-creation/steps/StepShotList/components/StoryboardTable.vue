@@ -13,7 +13,16 @@
 
     <!-- 分镜表格 -->
     <div v-else class="table-wrapper">
-      <el-table ref="tableRef" :data="localShots" border stripe height="100%" class="storyboard-table" row-key="id">
+      <el-table
+        ref="tableRef"
+        :key="`table-${props.workflowMode || 'default'}`"
+        :data="localShots"
+        border
+        stripe
+        height="100%"
+        class="storyboard-table"
+        row-key="id"
+      >
         <el-table-column prop="shotNumber" label="镜号" width="120" align="center" fixed="left">
           <template #default="{ row, $index }">
             <div class="shot-number-cell" :data-row-index="$index">
@@ -72,48 +81,59 @@
 
         <el-table-column prop="sceneHint" label="提示词" min-width="260">
           <template #default="{ row }">
-            <div v-if="!isEditing(row, 'sceneDesc')" class="editable-cell" @click="startEdit(row, 'sceneDesc')">
-              <div
-                class="scene-description"
-                :class="{ 'empty-placeholder': !row.sceneDesc }"
-                v-html="highlightCharacterNames(row.sceneDesc, row.characters) || '点击输入特写镜头描述'"
-              ></div>
-            </div>
-            <div v-else class="editing-cell">
-              <el-input
-                ref="editingInputRef"
-                v-model="editingValue"
-                type="textarea"
-                :rows="3"
-                maxlength="300"
-                resize="none"
-                placeholder="请输入特写镜头描述"
-                @blur="handleBlur()"
-                @keydown="(evt: Event) => handleKeydown(evt as KeyboardEvent)"
-                autofocus
+            <!-- Seedance 模式：富文本编辑器（支持提及功能） -->
+            <div v-if="props.workflowMode === 'seedance'" class="seedance-prompt-wrapper">
+              <SeedancePromptEditor
+                v-model="row.seedancePrompt"
+                :show-reference-bar="false"
+                placeholder="请输入提示词，可拖入参考图片或点击参考图插入"
               />
             </div>
-            <div v-if="!isEditing(row, 'sceneHint')" class="editable-cell" @click="startEdit(row, 'sceneHint')">
-              <div
-                class="scene-description"
-                :class="{ 'empty-placeholder': !row.sceneHint }"
-                v-html="highlightCharacterNames(row.sceneHint, row.characters) || '点击输入场景提示'"
-              ></div>
-            </div>
-            <div v-else class="editing-cell">
-              <el-input
-                ref="editingInputRef"
-                v-model="editingValue"
-                type="textarea"
-                :rows="3"
-                maxlength="300"
-                resize="none"
-                placeholder="请输入场景提示"
-                @blur="handleBlur()"
-                @keydown="(evt: Event) => handleKeydown(evt as KeyboardEvent)"
-                autofocus
-              />
-            </div>
+            <!-- 经典模式：显示两个输入框 -->
+            <template v-else>
+              <div v-if="!isEditing(row, 'sceneDesc')" class="editable-cell" @click="startEdit(row, 'sceneDesc')">
+                <div
+                  class="scene-description"
+                  :class="{ 'empty-placeholder': !row.sceneDesc }"
+                  v-html="highlightCharacterNames(row.sceneDesc, row.characters) || '点击输入特写镜头描述'"
+                ></div>
+              </div>
+              <div v-else class="editing-cell">
+                <el-input
+                  ref="editingInputRef"
+                  v-model="editingValue"
+                  type="textarea"
+                  :rows="3"
+                  maxlength="300"
+                  resize="none"
+                  placeholder="请输入特写镜头描述"
+                  @blur="handleBlur()"
+                  @keydown="(evt: Event) => handleKeydown(evt as KeyboardEvent)"
+                  autofocus
+                />
+              </div>
+              <div v-if="!isEditing(row, 'sceneHint')" class="editable-cell" @click="startEdit(row, 'sceneHint')">
+                <div
+                  class="scene-description"
+                  :class="{ 'empty-placeholder': !row.sceneHint }"
+                  v-html="highlightCharacterNames(row.sceneHint, row.characters) || '点击输入场景提示'"
+                ></div>
+              </div>
+              <div v-else class="editing-cell">
+                <el-input
+                  ref="editingInputRef"
+                  v-model="editingValue"
+                  type="textarea"
+                  :rows="3"
+                  maxlength="300"
+                  resize="none"
+                  placeholder="请输入场景提示"
+                  @blur="handleBlur()"
+                  @keydown="(evt: Event) => handleKeydown(evt as KeyboardEvent)"
+                  autofocus
+                />
+              </div>
+            </template>
           </template>
         </el-table-column>
 
@@ -319,6 +339,7 @@
   import SceneLibraryDialog from './SceneLibraryDialog.vue';
   import ShotNumberActions from './ShotNumberActions.vue';
   import SingleCharacterEditDialog from './SingleCharacterEditDialog.vue';
+  import { SeedancePromptEditor } from '@/components/TiptapEditor';
 
   interface Props {
     shots: Shot[];
@@ -380,6 +401,8 @@
   // 场景上传相关
   const sceneUploadInput = ref<HTMLInputElement>();
   const currentUploadShot = ref<Shot | null>(null);
+
+  // Seedance 上传功能已迁移到 SeedancePromptEditor 组件中
 
   // 单个角色编辑相关
   const singleCharacterDialogVisible = ref(false);
@@ -731,6 +754,8 @@
       ElMessage.error('删除场景失败，请重试');
     }
   };
+
+  // Seedance 2.0 上传功能已迁移到 SeedancePromptEditor 组件中
 
   // 保存当前编辑
   const saveCurrentEdit = async () => {
@@ -1375,6 +1400,109 @@
         &.empty-placeholder {
           color: #c0c4cc;
           // font-style: italic;
+        }
+      }
+
+      // Seedance 2.0 提示词输入区域
+      .seedance-prompt-container {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        width: 100%;
+        transition: height 0.35s cubic-bezier(0.15, 0.75, 0.3, 1);
+      }
+
+      .seedance-prompt-input {
+        display: flex;
+        gap: 8px;
+        align-items: stretch;
+        width: 100%;
+
+        :deep(.el-textarea) {
+          flex: 4;
+        }
+
+        .upload-btn {
+          position: relative;
+          flex: 1;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          gap: 4px;
+          min-width: 60px;
+          height: 80px;
+          font-size: 12px;
+          border: 2px dotted #5252ff;
+          border-radius: 4px;
+          background: #f5f7fa;
+          color: #5252ff;
+          cursor: pointer;
+          transform: rotate(-3deg);
+          transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+
+          &:hover {
+            transform: rotate(0deg) scale(1.02);
+            background: #e8eaff;
+            border-color: #4242e0;
+            color: #4242e0;
+          }
+        }
+      }
+
+      // Seedance 图片预览区域（参考图区域）
+      .seedance-images-preview {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        width: 100%;
+        transition: height 0.35s cubic-bezier(0.15, 0.75, 0.3, 1);
+
+        .seedance-image-item {
+          position: relative;
+          width: 48px;
+          height: 64px;
+          border-radius: 2px;
+          overflow: hidden;
+          border: 1px solid #e4e7ed;
+          cursor: move;
+          transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+
+          &:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgb(0 0 0 / 15%);
+          }
+
+          .seedance-image {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+          }
+
+          .seedance-image-delete {
+            position: absolute;
+            top: 2px;
+            right: 2px;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: rgba(0, 0, 0, 0.6);
+            color: #fff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            opacity: 0;
+            transition: opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+
+            &:hover {
+              background: rgba(255, 77, 79, 0.9);
+            }
+          }
+
+          &:hover .seedance-image-delete {
+            opacity: 1;
+          }
         }
       }
 

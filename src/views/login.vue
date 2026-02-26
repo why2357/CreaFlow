@@ -1225,7 +1225,7 @@
 
     .el-dialog__header {
       padding: 20px 20px 10px;
-      border-bottom: 1px solid #ee0202;
+      border-bottom: 1px solid #f0f0f0;
 
       .el-dialog__title {
         font-size: 18px;
