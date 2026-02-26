@@ -1,37 +1,66 @@
 <template>
   <div class="seedance-prompt-container" ref="containerRef">
-    <!-- 参考图区域 -->
-    <div v-if="showReferenceBar && referenceStore.images.length > 0" class="reference-bar">
+    <!-- 参考图区域（堆叠样式） -->
+    <div
+      v-if="showReferenceBar && referenceStore.images.length > 0"
+      class="reference-images-section"
+      :class="{ 'drag-over': isDragOver }"
+      @drop="handleDrop"
+      @dragover="handleDragOverSection"
+      @dragenter="handleDragEnter"
+      @dragleave="handleDragLeave"
+    >
       <div
-        v-for="image in referenceStore.images"
-        :key="image.id"
-        class="reference-item"
-        draggable="true"
-        @dragstart="handleReferenceDragStart($event, image)"
-        @click="handleInsertMentionTag(image)"
+        class="reference-images-stack"
+        :class="{ 'is-expanded': isHoveringImages }"
+        @mouseenter="handleImagesMouseEnter"
+        @mouseleave="handleImagesMouseLeave"
       >
-        <img :src="image.src" class="reference-image" />
-        <div class="reference-label">{{ image.label }}</div>
-        <div class="reference-delete" @click.stop="handleRemoveReference(image.id)">
-          <svg-icon icon-class="fy-del" style="width: 12px; height: 12px" />
-        </div>
+        <TransitionGroup name="stack-slide">
+          <div
+            v-for="(image, index) in referenceStore.images"
+            :key="image.id"
+            class="reference-image-item"
+            :class="{ 'is-hovered': isHoveringImages }"
+            :style="getImageStackStyle(index, isHoveringImages)"
+            draggable="true"
+            @dragstart="handleReferenceDragStart($event, image)"
+            @click="handleInsertMentionTag(image)"
+          >
+            <img :src="image.src" class="reference-thumbnail" />
+            <!-- 删除按钮 -->
+            <Transition name="delete-fade">
+              <div v-if="isHoveringImages" class="delete-button" @click.stop="handleRemoveReference(image.id)">
+                <svg-icon icon-class="fy-del" style="width: 12px; height: 12px" />
+              </div>
+            </Transition>
+          </div>
+
+          <!-- 添加按钮 -->
+          <div
+            v-if="referenceStore.images.length < 3"
+            :key="'add-button'"
+            class="reference-image-item add-more-button"
+            :class="{ 'is-hovered': isHoveringImages, 'is-empty': referenceStore.images.length === 0 }"
+            :style="getAddButtonStyle(referenceStore.images.length, isHoveringImages)"
+          >
+            <el-upload
+              :show-file-list="false"
+              :before-upload="handleBeforeUpload"
+              :http-request="handleUpload"
+              class="add-more-upload"
+            >
+              <div class="add-more-content">
+                <svg-icon icon-class="fy-add" style="height: 16px; width: 16px" />
+              </div>
+            </el-upload>
+          </div>
+        </TransitionGroup>
       </div>
-      <!-- 上传按钮 -->
-      <el-upload
-        class="reference-upload"
-        :show-file-list="false"
-        :before-upload="handleBeforeUpload"
-        :http-request="handleUpload"
-      >
-        <div class="upload-trigger">
-          <svg-icon icon-class="fy-upload" style="width: 16px; height: 16px" />
-          <span class="upload-text">上传</span>
-        </div>
-      </el-upload>
     </div>
 
-    <!-- 输入框区域 -->
-    <div class="input-wrapper">
+    <!-- 输入框区域（没有参考图时显示） -->
+    <div v-if="!showReferenceBar || referenceStore.images.length === 0" class="input-wrapper">
       <textarea
         ref="textareaRef"
         :value="textValue"
@@ -45,19 +74,38 @@
         rows="3"
         :placeholder="placeholder"
       />
-      <!-- 上传按钮（当没有参考图时显示） -->
-      <div v-if="!showReferenceBar || referenceStore.images.length === 0" class="input-actions">
-        <el-upload
-          :show-file-list="false"
-          :before-upload="handleBeforeUpload"
-          :http-request="handleUpload"
-        >
-          <el-button size="small" type="primary" link>
-            <svg-icon icon-class="fy-upload" style="width: 14px; height: 14px; margin-right: 4px" />
-            上传参考图
-          </el-button>
-        </el-upload>
+      <!-- 圆形上传按钮 -->
+      <div class="input-actions">
+        <div class="circular-upload-button-wrapper">
+          <el-upload
+            :show-file-list="false"
+            :before-upload="handleBeforeUpload"
+            :http-request="handleUpload"
+            class="circular-upload"
+          >
+            <div class="circular-upload-button">
+              <svg-icon icon-class="fy-add" style="height: 18px; width: 18px" />
+            </div>
+          </el-upload>
+        </div>
       </div>
+    </div>
+
+    <!-- 只在有参考图时显示输入框（独立于上传区域） -->
+    <div v-if="showReferenceBar && referenceStore.images.length > 0" class="input-wrapper-alone">
+      <textarea
+        ref="textareaRef"
+        :value="textValue"
+        @input="handleInput"
+        @keydown="handleKeydown"
+        @focus="isFocused = true"
+        @blur="handleBlur"
+        @drop="handleDrop"
+        @dragover="handleDragOver"
+        class="prompt-textarea"
+        rows="3"
+        :placeholder="placeholder"
+      />
     </div>
 
     <!-- 提及标签预览 -->
@@ -122,6 +170,14 @@ const mentionPopupRef = ref<InstanceType<typeof MentionPopup>>();
 
 // 是否聚焦
 const isFocused = ref(false);
+
+// hover状态
+const isHoveringImages = ref(false);
+let hoverTimer: ReturnType<typeof setTimeout> | null = null;
+
+// 拖拽相关状态
+const isDragOver = ref(false);
+const dragCounter = ref(0);
 
 // 文本内容（处理后的，不包含提及标签）
 const textValue = ref('');
@@ -384,39 +440,76 @@ const handleDragOver = (e: DragEvent) => {
   }
 };
 
-// 处理放置
+// 处理放置（支持提及标签和文件上传）
 const handleDrop = (e: DragEvent) => {
   e.preventDefault();
+
+  // 首先检查是否有提及标签数据
   const data = e.dataTransfer?.getData('application/json');
-  if (!data) return;
+  if (data) {
+    try {
+      const dragData: DragData = JSON.parse(data);
 
-  try {
-    const dragData: DragData = JSON.parse(data);
+      // 根据 type 创建不同的提及标签
+      const newTag = {
+        id: dragData.id,
+        type: dragData.type as MentionType,
+        src: dragData.src,
+        label: dragData.label,
+        alias: dragData.alias,
+        category: dragData.category
+      };
 
-    // 根据 type 创建不同的提及标签
-    const newTag = {
-      id: dragData.id,
-      type: dragData.type as MentionType,
-      src: dragData.src,
-      label: dragData.label,
-      alias: dragData.alias,
-      category: dragData.category
-    };
+      // 检查是否已存在
+      const exists = mentionTags.value.some(tag => tag.id === newTag.id);
+      if (exists) {
+        ElMessage.warning(`${newTag.label} 已添加`);
+        return;
+      }
 
-    // 检查是否已存在
-    const exists = mentionTags.value.some(tag => tag.id === newTag.id);
-    if (exists) {
-      ElMessage.warning(`${newTag.label} 已添加`);
+      mentionTags.value.push(newTag);
+      emit('update:modelValue', buildHtmlWithMentions(textValue.value, mentionTags.value));
+
+      const typeLabel = newTag.type === MentionTypeEnum.CHARACTER ? '角色' : newTag.type === MentionTypeEnum.SCENE ? '场景' : '参考图';
+      ElMessage.success(`已插入${typeLabel}: ${newTag.label}`);
+    } catch (error) {
+      console.error('解析拖拽数据失败:', error);
+    }
+    return;
+  }
+
+  // 如果没有提及标签数据，检查是否有文件（用于参考图区域）
+  const files = e.dataTransfer?.files;
+  if (files && files.length > 0) {
+    // 过滤图片文件
+    const imageFiles = Array.from(files).filter((file) => file.type.startsWith('image/'));
+
+    if (imageFiles.length === 0) {
+      ElMessage.error('请拖拽图片文件');
       return;
     }
 
-    mentionTags.value.push(newTag);
-    emit('update:modelValue', buildHtmlWithMentions(textValue.value, mentionTags.value));
+    const file = imageFiles[0];
 
-    const typeLabel = newTag.type === MentionTypeEnum.CHARACTER ? '角色' : newTag.type === MentionTypeEnum.SCENE ? '场景' : '参考图';
-    ElMessage.success(`已插入${typeLabel}: ${newTag.label}`);
-  } catch (error) {
-    console.error('解析拖拽数据失败:', error);
+    // 验证并上传
+    const isImage = file.type.startsWith('image/');
+    const isLt10M = file.size / 1024 / 1024 < 10;
+
+    if (!isImage) {
+      ElMessage.warning('只能上传图片文件！');
+      return;
+    }
+    if (!isLt10M) {
+      ElMessage.warning('图片大小不能超过 10MB！');
+      return;
+    }
+
+    // 上传文件
+    referenceStore.addImage(file).then(() => {
+      ElMessage.success('图片上传成功');
+    }).catch((error) => {
+      console.error('上传失败:', error);
+    });
   }
 };
 
@@ -453,6 +546,143 @@ const handleUpload = async (options: any) => {
     console.error('上传失败:', error);
   }
 };
+
+// ==================== 堆叠样式计算 ====================
+
+// 获取堆叠图片样式
+const getImageStackStyle = (index: number, isExpanded: boolean) => {
+  const rotations = [0, -10.567, -19.954];
+  const stackOrder = index + 1;
+
+  if (isExpanded) {
+    // 展开状态：横向紧密排列
+    const expandedOffsets = [
+      { left: '0px', top: '0px' },
+      { left: '60px', top: '0px' },
+      { left: '120px', top: '0px' }
+    ];
+    const expandedRotations = [-10, 3, 20];
+
+    return {
+      transform: `rotate(${expandedRotations[index]}deg)`,
+      transformOrigin: 'center center',
+      zIndex: 10 + index,
+      position: 'absolute' as const,
+      ...expandedOffsets[index],
+      transition: 'all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)'
+    };
+  } else {
+    // 收起状态：堆叠
+    const collapsedOffsets = [
+      { left: '0px', top: '0px' },
+      { left: '5.49px', top: '2.55px' },
+      { left: '12.32px', top: '7.38px' }
+    ];
+
+    let transformOrigin = 'center center';
+    if (index > 0) {
+      const offset = collapsedOffsets[index];
+      const offsetX = -parseFloat(offset.left);
+      const offsetY = -parseFloat(offset.top);
+      transformOrigin = `calc(50% + ${offsetX}px) calc(50% + ${offsetY}px)`;
+    }
+
+    return {
+      transform: `rotate(${rotations[index]}deg)`,
+      transformOrigin,
+      zIndex: stackOrder,
+      position: 'absolute' as const,
+      ...collapsedOffsets[index],
+      transition: 'all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)'
+    };
+  }
+};
+
+// 获取添加按钮位置样式
+const getAddButtonStyle = (currentCount: number, isExpanded: boolean) => {
+  if (currentCount === 0) {
+    return {
+      position: 'relative' as const,
+      width: '100%',
+      height: '100%',
+      left: '0px',
+      top: '0px',
+      zIndex: 1,
+      transition: 'all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)'
+    };
+  }
+
+  const collapsedPositions = [
+    { right: '-8px', bottom: '-8px' },
+    { right: '-8px', bottom: '-8px' }
+  ];
+
+  const expandedOffsets = [
+    { left: '60px', top: '0px' },
+    { left: '120px', top: '0px' }
+  ];
+
+  if (isExpanded) {
+    return {
+      position: 'absolute' as const,
+      ...expandedOffsets[currentCount - 1],
+      zIndex: 20 + currentCount,
+      transition: 'all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)'
+    };
+  } else {
+    return {
+      position: 'absolute' as const,
+      ...collapsedPositions[currentCount - 1],
+      zIndex: 5,
+      transition: 'all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)'
+    };
+  }
+};
+
+// 处理图片区域hover进入
+const handleImagesMouseEnter = () => {
+  if (hoverTimer) {
+    clearTimeout(hoverTimer);
+  }
+  isHoveringImages.value = true;
+};
+
+// 处理图片区域hover离开
+const handleImagesMouseLeave = () => {
+  if (hoverTimer) {
+    clearTimeout(hoverTimer);
+  }
+  hoverTimer = setTimeout(() => {
+    isHoveringImages.value = false;
+    hoverTimer = null;
+  }, 150);
+};
+
+// ==================== 拖拽相关 ====================
+
+// 拖拽进入（用于参考图区域）
+const handleDragEnter = (event: DragEvent) => {
+  event.preventDefault();
+  event.stopPropagation();
+  dragCounter.value++;
+  isDragOver.value = true;
+};
+
+// 拖拽经过（用于参考图区域）
+const handleDragOverSection = (event: DragEvent) => {
+  event.preventDefault();
+  event.stopPropagation();
+};
+
+// 拖拽离开（用于参考图区域）
+const handleDragLeave = (event: DragEvent) => {
+  event.preventDefault();
+  event.stopPropagation();
+  dragCounter.value--;
+  if (dragCounter.value === 0) {
+    isDragOver.value = false;
+  }
+};
 </script>
 
 <style scoped lang="scss">
@@ -463,113 +693,177 @@ const handleUpload = async (options: any) => {
   width: 100%;
 }
 
-.reference-bar {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  flex-wrap: wrap;
-  padding-bottom: 8px;
-  border-bottom: 1px solid #f0f0f0;
-}
-
-.reference-item {
+// ==================== 参考图堆叠区域 ====================
+.reference-images-section {
+  flex-shrink: 0;
+  width: 60px;
+  height: 80px;
   position: relative;
-  width: 48px;
-  height: 48px;
-  border-radius: 4px;
-  overflow: hidden;
-  cursor: pointer;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: width 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
 
-  &:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
-
-    .reference-delete {
-      opacity: 1;
+  // 拖拽悬停状态
+  &.drag-over {
+    &::after {
+      content: '释放以上传图片';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      z-index: 100;
+      padding: 8px 16px;
+      border-radius: 8px;
+      background: rgba(82, 82, 255, 0.95);
+      color: #fff;
+      font-size: 12px;
+      white-space: nowrap;
+      pointer-events: none;
+      box-shadow: 0 4px 12px rgba(82, 82, 255, 0.3);
     }
   }
 
-  &:active {
-    cursor: grabbing;
+  .reference-images-stack {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    cursor: pointer;
+
+    .reference-image-item {
+      width: 60px;
+      height: 80px;
+      border: 2px solid white;
+      border-radius: 4px;
+      overflow: visible;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+      cursor: pointer;
+      transition: transform 0.3s ease;
+      position: relative;
+
+      &:hover {
+        transform: scale(1.133);
+      }
+
+      .reference-thumbnail {
+        width: 100%;
+        height: 100%;
+        border-radius: 2px;
+        overflow: hidden;
+
+        :deep(img) {
+          width: 100%;
+          height: 100%;
+          object-fit: cover;
+        }
+      }
+
+      // 删除按钮
+      .delete-button {
+        position: absolute;
+        top: -8px;
+        right: -8px;
+        width: 24px;
+        height: 24px;
+        border-radius: 50%;
+        background: #ff4d4f;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        color: white;
+        box-shadow: 0 2px 8px rgba(255, 77, 79, 0.4);
+        transition: all 0.2s;
+        z-index: 3;
+
+        &:hover {
+          background: #ff7875;
+          transform: scale(1.15);
+        }
+
+        &:active {
+          transform: scale(0.95);
+        }
+      }
+
+      // 添加按钮
+      &.add-more-button {
+        border-radius: 4px;
+        background: #f7f8fa;
+        transform: rotate(-5deg);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+
+        .add-more-content {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          width: 100%;
+          height: 100%;
+          gap: 6px;
+          color: #5252ff;
+          transition: all 0.3s;
+        }
+
+        &:hover {
+          background: #f3f3ff;
+          transform: scale(1.133);
+
+          .add-more-content {
+            transform: rotate(90deg) scale(1.1);
+          }
+        }
+
+        &:active {
+          transform: rotate(-5deg) scale(0.95);
+        }
+
+        &.is-hovered {
+          box-shadow: 0 4px 16px rgba(82, 82, 255, 0.15);
+        }
+
+        &.is-empty {
+          .add-more-content {
+            color: #86909c;
+          }
+
+          &:hover {
+            transform: scale(1.133);
+
+            .add-more-content {
+              color: #5252ff;
+            }
+          }
+        }
+      }
+
+      .add-more-upload {
+        width: 100%;
+        height: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+
+        :deep(.el-upload) {
+          display: block;
+          width: 100%;
+          height: 100%;
+        }
+      }
+    }
   }
 }
 
-.reference-image {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-.reference-label {
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  padding: 2px 4px;
-  background: rgba(0, 0, 0, 0.6);
-  color: #fff;
-  font-size: 10px;
-  text-align: center;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.reference-delete {
-  position: absolute;
-  top: 2px;
-  right: 2px;
-  width: 16px;
-  height: 16px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: rgba(0, 0, 0, 0.6);
-  border-radius: 50%;
-  cursor: pointer;
-  opacity: 0;
-  transition: opacity 0.2s;
-
-  &:hover {
-    background: rgba(255, 0, 0, 0.8);
-  }
-}
-
-.reference-upload {
-  :deep(.el-upload) {
-    display: block;
-  }
-}
-
-.upload-trigger {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  width: 48px;
-  height: 48px;
-  gap: 4px;
-  border: 1px dashed #dcdfe6;
-  border-radius: 4px;
-  cursor: pointer;
-  transition: all 0.2s;
-
-  &:hover {
-    border-color: #5252ff;
-    color: #5252ff;
-  }
-}
-
-.upload-text {
-  font-size: 10px;
-  color: #909399;
-}
-
+// ==================== 输入框区域 ====================
 .input-wrapper {
   display: flex;
   align-items: stretch;
   gap: 8px;
+}
+
+.input-wrapper-alone {
+  width: 100%;
 }
 
 .prompt-textarea {
@@ -593,8 +887,46 @@ const handleUpload = async (options: any) => {
   display: flex;
   align-items: center;
   flex-shrink: 0;
+
+  .circular-upload-button-wrapper {
+    position: relative;
+    width: 32px;
+    height: 32px;
+
+    .circular-upload {
+      :deep(.el-upload) {
+        display: block;
+        width: 100%;
+        height: 100%;
+      }
+    }
+
+    .circular-upload-button {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: #f7f8fa;
+      box-shadow: 0 4px 6px rgba(224, 231, 255, 0.25), 0 10px 15px rgba(224, 231, 255, 0.5);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      color: #5252ff;
+
+      &:hover {
+        background: #f3f3ff;
+        transform: rotate(90deg);
+      }
+
+      &:active {
+        transform: scale(0.95) rotate(90deg);
+      }
+    }
+  }
 }
 
+// ==================== 提及标签预览 ====================
 .mention-tags-preview {
   display: flex;
   align-items: center;
@@ -627,7 +959,6 @@ const handleUpload = async (options: any) => {
     cursor: grabbing;
   }
 
-  // 不同类型的提及标签有不同的边框颜色
   &.mention-tag-reference {
     border-color: #409eff;
     background: rgba(64, 158, 255, 0.05);
@@ -685,7 +1016,7 @@ const handleUpload = async (options: any) => {
   }
 }
 
-// 提及标签内联样式（用于在编辑器中显示）
+// ==================== 提及标签内联样式 ====================
 :deep(.mention-tag-inline) {
   display: inline-flex;
   align-items: center;
@@ -710,5 +1041,41 @@ const handleUpload = async (options: any) => {
     border-radius: 2px;
     object-fit: cover;
   }
+}
+
+// ==================== 过渡动画 ====================
+// 堆叠滑动过渡
+.stack-slide-enter-active {
+  transition: all 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.stack-slide-leave-active {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.6, 1);
+}
+
+.stack-slide-enter-from {
+  opacity: 0;
+  transform: scale(0.3) rotate(-15deg) translateY(-20px);
+}
+
+.stack-slide-leave-to {
+  opacity: 0;
+  transform: scale(0.5) rotate(10deg) translateY(10px);
+}
+
+.stack-slide-move {
+  transition: transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+// 删除按钮淡入淡出过渡
+.delete-fade-enter-active,
+.delete-fade-leave-active {
+  transition: all 0.2s ease;
+}
+
+.delete-fade-enter-from,
+.delete-fade-leave-to {
+  opacity: 0;
+  transform: scale(0);
 }
 </style>
