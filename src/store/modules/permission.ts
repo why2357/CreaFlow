@@ -68,13 +68,14 @@ export const usePermissionStore = defineStore('permission', () => {
       router.addRoute(route);
     });
 
-    // 将处理后的路由添加到 router
-    rewriteRoutes.forEach((route) => {
+    // 合并静态菜单和动态路由
+    const allRoutes = [...staticMenus.value, ...rewriteRoutes];
+
+    // 将合并后的路由添加到 router（包含静态菜单和动态路由）
+    allRoutes.forEach((route) => {
       router.addRoute(route);
     });
 
-    // 合并静态菜单和动态路由
-    const allRoutes = [...staticMenus.value, ...rewriteRoutes];
     setRoutes(allRoutes);
     // 合并静态菜单、常量路由和动态路由
     setSidebarRouters(constantRoutes.concat(sidebarRoutes));

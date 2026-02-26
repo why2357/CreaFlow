@@ -10,7 +10,9 @@
     "preview": "vite preview",
     "lint": "eslint src/**/*.{ts,js,vue} --fix",
     "prepare": "husky install",
-    "prettier": "prettier --write ."
+    "prettier": "prettier --write .",
+    "deploy": "node bin/deploy.js",
+    "deploy:prod": "npm run build:prod && npm run deploy"
   },
   "repository": {
     "type": "git",
@@ -76,6 +78,7 @@
     "eslint-plugin-vue": "9.9.0",
     "fast-glob": "^3.2.11",
     "husky": "7.0.4",
+    "node-ssh": "^13.2.1",
     "postcss": "^8.4.21",
     "prettier": "2.8.6",
     "sass": "1.56.1",

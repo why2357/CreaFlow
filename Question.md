@@ -150,6 +150,7 @@ npm run deploy
 
 ### 相关文件
 - `bin/deploy.js` - 改用逐个文件上传方式
+<<<<<<< HEAD
 
 ---
 
@@ -519,3 +520,5 @@ git show e99aed6
 # 查看两次提交之间的差异
 git diff e99aed6 HEAD
 ```
+=======
+>>>>>>> da3cde7216422cbec2031ca78c670ef9bc9c743b

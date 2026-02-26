@@ -62,19 +62,18 @@
 
     <!-- 输入框区域（没有参考图时显示） -->
     <div v-if="!showReferenceBar || referenceStore.images.length === 0" class="input-wrapper">
-      <textarea
-        ref="textareaRef"
-        :value="textValue"
+      <div
+        ref="editorRef"
+        class="prompt-editor"
+        :contenteditable="true"
+        :data-placeholder="placeholder"
         @input="handleInput"
         @keydown="handleKeydown"
         @focus="isFocused = true"
         @blur="handleBlur"
         @drop="handleDrop"
         @dragover="handleDragOver"
-        class="prompt-textarea"
-        rows="3"
-        :placeholder="placeholder"
-      />
+      ></div>
       <!-- 圆形上传按钮 -->
       <div class="input-actions">
         <div class="circular-upload-button-wrapper">
@@ -95,19 +94,18 @@
 
     <!-- 只在有参考图时显示输入框（独立于上传区域） -->
     <div v-if="showReferenceBar && referenceStore.images.length > 0" class="input-wrapper-alone">
-      <textarea
-        ref="textareaRef"
-        :value="textValue"
+      <div
+        ref="editorRef"
+        class="prompt-editor"
+        :contenteditable="true"
+        :data-placeholder="placeholder"
         @input="handleInput"
         @keydown="handleKeydown"
         @focus="isFocused = true"
         @blur="handleBlur"
         @drop="handleDrop"
         @dragover="handleDragOver"
-        class="prompt-textarea"
-        rows="3"
-        :placeholder="placeholder"
-      />
+      ></div>
     </div>
 
     <!-- 提及标签预览 -->
@@ -167,7 +165,7 @@ const referenceStore = useReferenceStore();
 
 // Refs
 const containerRef = ref<HTMLElement>();
-const textareaRef = ref<HTMLTextAreaElement>();
+const editorRef = ref<HTMLDivElement | null>(null);
 const mentionPopupRef = ref<InstanceType<typeof MentionPopup>>();
 
 // 是否聚焦
@@ -216,12 +214,11 @@ const parseModelValue = (value: string) => {
   const tags: typeof mentionTags.value = [];
   let text = value;
 
-  // 正则匹配所有类型的提及标签
-  // 匹配格式: <span data-type="reference|character|scene" data-id="xxx" data-src="xxx?" data-label="xxx" ...></span>
-  const mentionRegex = /<span[^>]*data-type="(reference|character|scene)"[^>]*data-id="([^"]*)"[^>]*>(?:<span[^>]*>.*?<\/span>)?<\/span>/gi;
+  // 先尝试解析 HTML 格式的提及标签（向后兼容）
+  const htmlMentionRegex = /<span[^>]*data-type="(reference|character|scene)"[^>]*data-id="([^"]*)"[^>]*>(?:<span[^>]*>.*?<\/span>)?<\/span>/gi;
 
   let match;
-  while ((match = mentionRegex.exec(value)) !== null) {
+  while ((match = htmlMentionRegex.exec(value)) !== null) {
     const type = match[1] as MentionType;
     const id = match[2];
 
@@ -241,38 +238,33 @@ const parseModelValue = (value: string) => {
     });
   }
 
-  // 移除提及标签，获取纯文本
-  text = text.replace(mentionRegex, '');
+  // 移除 HTML 格式的提及标签
+  text = text.replace(htmlMentionRegex, '');
+
+  // 如果没有 HTML 标签，说明是新的文本格式
+  if (tags.length === 0) {
+    textValue.value = value;
+    mentionTags.value = [];
+    return;
+  }
 
   mentionTags.value = tags;
   textValue.value = text;
 };
 
-// 构建包含提及标签的 HTML
+// 构建包含提及标签的文本
 const buildHtmlWithMentions = (text: string, tags: typeof mentionTags.value) => {
   let result = text;
 
-  // 为每个提及标签创建 HTML
-  const tagsHtml = tags.map(tag => {
-    const attrs = [
-      `data-type="${tag.type}"`,
-      `data-id="${tag.id}"`,
-      tag.src ? `data-src="${tag.src}"` : '',
-      `data-label="${tag.label}"`,
-      tag.alias ? `data-alias="${tag.alias}"` : '',
-      tag.category ? `data-category="${tag.category}"` : '',
-      'contenteditable="false"',
-      'class="mention-tag-inline"'
-    ].filter(Boolean).join(' ');
+  // 为每个提及标签创建文本格式
+  const tagsText = tags.map(tag => {
+    // 根据类型添加前缀（不包含 @）
+    const prefix = tag.type === MentionTypeEnum.CHARACTER ? '角色:' :
+                   tag.type === MentionTypeEnum.SCENE ? '场景:' : '';
+    return prefix + tag.label;
+  }).join(' ');
 
-    const icon = tag.src
-      ? `<img src="${tag.src}" class="mention-thumb" style="width: 16px; height: 16px; border-radius: 2px; object-fit: cover; vertical-align: middle;" />`
-      : `<span class="mention-icon">${getTagIcon(tag.type) === 'fy-user' ? '👤' : '🏞️'}</span>`;
-
-    return `<span ${attrs}>${icon} ${tag.label}</span>`;
-  }).join('');
-
-  return result + tagsHtml;
+  return result + (tagsText ? ' ' + tagsText : '');
 };
 
 // 监听 modelValue 变化
@@ -307,8 +299,8 @@ const handleInput = (e: Event) => {
     mentionTriggerPos.value = null;
   }
 
-  // 发送包含提及标签的完整 HTML
-  emit('update:modelValue', buildHtmlWithMentions(value, mentionTags.value));
+  // 直接输出文本
+  emit('update:modelValue', value);
 };
 
 // 处理键盘事件
@@ -351,35 +343,31 @@ const handleMentionSelect = (option: MentionOption) => {
   const { start, end } = mentionTriggerPos.value;
   const currentValue = textValue.value;
 
-  // 构建新的文本值（移除@符号，保留选中的提及）
+  // 根据类型添加前缀（不包含 @）
+  const prefix = option.type === MentionTypeEnum.CHARACTER ? '角色:' :
+                 option.type === MentionTypeEnum.SCENE ? '场景:' : '';
+
+  // 构建新的文本值：将 @ 替换成图片名称
   const beforeMention = currentValue.slice(0, start);
   const afterMention = currentValue.slice(end);
-  const newText = beforeMention + afterMention;
+  const newText = beforeMention + prefix + option.label + afterMention;
 
-  // 添加提及标签
-  const newTag = {
-    id: option.id,
-    type: option.type,
-    src: option.src,
-    label: option.label,
-    subtitle: option.subtitle,
-    alias: option.alias,
-    category: option.category
-  };
-
-  mentionTags.value.push(newTag);
   textValue.value = newText;
 
-  // 更新输出
-  emit('update:modelValue', buildHtmlWithMentions(newText, mentionTags.value));
+  // 更新输出（直接输出文本，不包含 HTML 标签）
+  emit('update:modelValue', newText);
 
   // 关闭弹窗
   mentionTriggerPos.value = null;
   mentionQuery.value = '';
 
-  // 聚焦回 textarea
+  // 聚焦回 textarea，并将光标移到插入文本后面
   nextTick(() => {
-    textareaRef.value?.focus();
+    if (textareaRef.value) {
+      textareaRef.value.focus();
+      const newCursorPos = start + prefix.length + option.label.length;
+      textareaRef.value.setSelectionRange(newCursorPos, newCursorPos);
+    }
   });
 
   const typeLabel = option.type === MentionTypeEnum.REFERENCE ? '参考图' : option.type === MentionTypeEnum.CHARACTER ? '角色' : '场景';
@@ -394,22 +382,30 @@ const handleMentionClose = () => {
 
 // 插入提及标签（点击参考图）
 const handleInsertMentionTag = (image: ReferenceImage) => {
-  // 检查是否已经存在
-  const exists = mentionTags.value.some(tag => tag.id === image.id);
-  if (exists) {
-    ElMessage.warning(`${image.label} 已添加`);
-    return;
-  }
+  // 在光标位置插入图片名称
+  if (!textareaRef.value) return;
 
-  mentionTags.value.push({
-    id: image.id,
-    type: MentionTypeEnum.REFERENCE,
-    src: image.src,
-    label: image.label
+  const currentValue = textValue.value;
+  const cursorPos = textareaRef.value.selectionStart;
+
+  // 在光标位置插入图片名称
+  const beforeCursor = currentValue.slice(0, cursorPos);
+  const afterCursor = currentValue.slice(cursorPos);
+  const newText = beforeCursor + image.label + afterCursor;
+
+  textValue.value = newText;
+
+  // 更新输出（直接输出文本）
+  emit('update:modelValue', newText);
+
+  // 聚焦并移动光标到插入文本后面
+  nextTick(() => {
+    if (textareaRef.value) {
+      textareaRef.value.focus();
+      const newCursorPos = cursorPos + image.label.length;
+      textareaRef.value.setSelectionRange(newCursorPos, newCursorPos);
+    }
   });
-
-  // 更新输出
-  emit('update:modelValue', buildHtmlWithMentions(textValue.value, mentionTags.value));
 
   ElMessage.success(`已插入${image.label}`);
 };
@@ -452,28 +448,35 @@ const handleDrop = async (e: DragEvent) => {
     try {
       const dragData: DragData = JSON.parse(data);
 
-      // 根据 type 创建不同的提及标签
-      const newTag = {
-        id: dragData.id,
-        type: dragData.type as MentionType,
-        src: dragData.src,
-        label: dragData.label,
-        alias: dragData.alias,
-        category: dragData.category
-      };
+      // 在光标位置插入文本
+      if (!textareaRef.value) return;
 
-      // 检查是否已存在
-      const exists = mentionTags.value.some(tag => tag.id === newTag.id);
-      if (exists) {
-        ElMessage.warning(`${newTag.label} 已添加`);
-        return;
-      }
+      const currentValue = textValue.value;
+      const cursorPos = textareaRef.value.selectionStart;
 
-      mentionTags.value.push(newTag);
-      emit('update:modelValue', buildHtmlWithMentions(textValue.value, mentionTags.value));
+      // 根据类型添加前缀（不包含 @）
+      const prefix = dragData.type === MentionTypeEnum.CHARACTER ? '角色:' :
+                     dragData.type === MentionTypeEnum.SCENE ? '场景:' : '';
 
-      const typeLabel = newTag.type === MentionTypeEnum.CHARACTER ? '角色' : newTag.type === MentionTypeEnum.SCENE ? '场景' : '参考图';
-      ElMessage.success(`已插入${typeLabel}: ${newTag.label}`);
+      // 在光标位置插入文本
+      const beforeCursor = currentValue.slice(0, cursorPos);
+      const afterCursor = currentValue.slice(cursorPos);
+      const newText = beforeCursor + prefix + dragData.label + afterCursor;
+
+      textValue.value = newText;
+      emit('update:modelValue', newText);
+
+      // 聚焦并移动光标到插入文本后面
+      nextTick(() => {
+        if (textareaRef.value) {
+          textareaRef.value.focus();
+          const newCursorPos = cursorPos + prefix.length + dragData.label.length;
+          textareaRef.value.setSelectionRange(newCursorPos, newCursorPos);
+        }
+      });
+
+      const typeLabel = dragData.type === MentionTypeEnum.CHARACTER ? '角色' : dragData.type === MentionTypeEnum.SCENE ? '场景' : '参考图';
+      ElMessage.success(`已插入${typeLabel}: ${dragData.label}`);
     } catch (error) {
       console.error('解析拖拽数据失败:', error);
     }
