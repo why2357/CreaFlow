@@ -48,6 +48,7 @@
               :show-file-list="false"
               :before-upload="handleBeforeUpload"
               :http-request="handleUpload"
+              :multiple="true"
               class="add-more-upload"
             >
               <div class="add-more-content">
@@ -81,6 +82,7 @@
             :show-file-list="false"
             :before-upload="handleBeforeUpload"
             :http-request="handleUpload"
+            :multiple="true"
             class="circular-upload"
           >
             <div class="circular-upload-button">
@@ -441,7 +443,7 @@ const handleDragOver = (e: DragEvent) => {
 };
 
 // 处理放置（支持提及标签和文件上传）
-const handleDrop = (e: DragEvent) => {
+const handleDrop = async (e: DragEvent) => {
   e.preventDefault();
 
   // 首先检查是否有提及标签数据
@@ -489,27 +491,40 @@ const handleDrop = (e: DragEvent) => {
       return;
     }
 
-    const file = imageFiles[0];
-
-    // 验证并上传
-    const isImage = file.type.startsWith('image/');
-    const isLt10M = file.size / 1024 / 1024 < 10;
-
-    if (!isImage) {
-      ElMessage.warning('只能上传图片文件！');
-      return;
-    }
-    if (!isLt10M) {
-      ElMessage.warning('图片大小不能超过 10MB！');
-      return;
-    }
-
-    // 上传文件
-    referenceStore.addImage(file).then(() => {
-      ElMessage.success('图片上传成功');
-    }).catch((error) => {
-      console.error('上传失败:', error);
+    // 验证所有图片文件
+    const validFiles = imageFiles.filter(file => {
+      const isLt10M = file.size / 1024 / 1024 < 10;
+      if (!isLt10M) {
+        ElMessage.warning(`图片 "${file.name}" 超过 10MB，已跳过`);
+        return false;
+      }
+      return true;
     });
+
+    if (validFiles.length === 0) {
+      return;
+    }
+
+    // 批量上传
+    let successCount = 0;
+    let failCount = 0;
+
+    for (const file of validFiles) {
+      try {
+        await referenceStore.addImage(file);
+        successCount++;
+      } catch (error) {
+        console.error('上传失败:', error);
+        failCount++;
+      }
+    }
+
+    if (successCount > 0) {
+      ElMessage.success(`成功上传 ${successCount} 张图片`);
+    }
+    if (failCount > 0) {
+      ElMessage.error(`${failCount} 张图片上传失败`);
+    }
   }
 };
 
@@ -541,9 +556,10 @@ const handleUpload = async (options: any) => {
   const file = options.file;
   try {
     await referenceStore.addImage(file);
-    ElMessage.success('图片上传成功');
+    // 单个文件上传成功时不显示消息，避免多文件上传时消息过多
   } catch (error) {
     console.error('上传失败:', error);
+    ElMessage.error(`图片 "${file.name}" 上传失败`);
   }
 };
 
