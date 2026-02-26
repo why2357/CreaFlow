@@ -95,7 +95,7 @@ export const ImageMention = Node.create<ImageMentionOptions>({
 
   // 使用自定义 Vue 组件渲染
   addNodeView() {
-    return VueNodeViewRenderer(ImageMentionView, {
+    return VueNodeViewRenderer(ImageMentionView as any, {
       // 编辑时不进入编辑模式
       stopEvent: () => true
     });

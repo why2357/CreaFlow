@@ -19,17 +19,14 @@
 
 <script setup lang="ts">
 import { computed } from 'vue';
-import type { NodeViewProps } from '@tiptap/vue-3';
-import type { MentionNodeAttrs } from '@/types/mention';
+import type { Node } from '@tiptap/core';
 
-// 获取节点属性
-const props = defineProps<{
-  node: {
-    attrs: MentionNodeAttrs;
-  };
-  updateAttributes: (attributes: Partial<MentionNodeAttrs>) => void;
-  deleteNode: () => void;
-}>();
+// 定义 NodeView Props 接口
+interface ImageMentionProps {
+  node: Node;
+}
+
+const props = defineProps<ImageMentionProps>();
 
 const attrs = computed(() => props.node.attrs);
 

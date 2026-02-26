@@ -25,15 +25,30 @@ export interface ReferenceImage {
 }
 
 /**
+ * 提及类型枚举
+ */
+export enum MentionType {
+  REFERENCE = 'reference', // 参考图
+  CHARACTER = 'character', // 角色
+  SCENE = 'scene' // 场景
+}
+
+/**
  * 提及节点属性
  */
 export interface MentionNodeAttrs {
-  /** 参考图ID */
+  /** 提及类型 */
+  type: MentionType;
+  /** 唯一标识 */
   id: string;
   /** 图片地址 */
-  src: string;
+  src?: string;
   /** 显示标签 */
   label: string;
+  /** 角色别名 (仅角色类型) */
+  alias?: string;
+  /** 场景类别 (仅场景类型) */
+  category?: string;
 }
 
 /**
@@ -41,13 +56,53 @@ export interface MentionNodeAttrs {
  */
 export interface DragData {
   /** 拖拽类型 */
-  type: 'image-mention';
-  /** 参考图ID */
+  type: MentionType | 'image-mention';
+  /** 唯一标识 */
   id: string;
   /** 图片地址 */
   src: string;
   /** 显示标签 */
   label: string;
+  /** 角色别名 (可选) */
+  alias?: string;
+  /** 场景类别 (可选) */
+  category?: string;
+}
+
+/**
+ * 提及选项（用于弹窗选择）
+ */
+export interface MentionOption {
+  /** 唯一标识 */
+  id: string;
+  /** 提及类型 */
+  type: MentionType;
+  /** 图片地址 */
+  src?: string;
+  /** 显示标签 */
+  label: string;
+  /** 副标题 */
+  subtitle?: string;
+  /** 角色别名 (仅角色类型) */
+  alias?: string;
+  /** 场景类别 (仅场景类型) */
+  category?: string;
+}
+
+/**
+ * 提及弹窗状态
+ */
+export interface MentionPopupState {
+  /** 是否显示 */
+  visible: boolean;
+  /** 触发位置 */
+  position: { x: number; y: number };
+  /** 搜索关键词 */
+  query: string;
+  /** 当前激活的索引 */
+  activeIndex: number;
+  /** 当前选中的分类 */
+  activeTab: MentionType;
 }
 
 /**

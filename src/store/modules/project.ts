@@ -460,6 +460,91 @@ export const useProjectStore = defineStore('project', {
       return await this.goToStep(viewMode);
     },
 
+    // ==================== 角色和场景数据管理 ====================
+
+    /**
+     * 加载角色数据
+     * @param episodeId 剧集ID（可选）
+     */
+    async loadCharacters(episodeId?: number | string) {
+      if (!this.currentProjectId) return;
+
+      try {
+        const { getCharacterDetail } = await import('@/api/workbench/library');
+        const response = await getCharacterDetail({
+          projectId: Number(this.currentProjectId),
+          episodeId: episodeId ? Number(episodeId) : undefined
+        });
+
+        const data = response.data;
+        if (data?.libraryItemInfoList) {
+          // 转换为扁平的角色列表
+          const characters: Character[] = [];
+          data.libraryItemInfoList.forEach((item: any) => {
+            if (item.librarySubInfoList && item.librarySubInfoList.length > 0) {
+              item.librarySubInfoList.forEach((sub: any) => {
+                characters.push({
+                  id: sub.libraryDetailId || item.libraryId,
+                  projectId: this.currentProjectId!,
+                  name: sub.detailName || item.name,
+                  alias: sub.detailName !== item.name ? item.name : undefined,
+                  images: sub.ossUrl ? [sub.ossUrl] : [],
+                  episodes: data.episodeInfoList?.map((ep: any) => ep.episodeName) || []
+                });
+              });
+            }
+          });
+          this.characters = characters;
+        }
+      } catch (error) {
+        console.error('[loadCharacters] 加载角色数据失败:', error);
+        this.characters = [];
+      }
+    },
+
+    /**
+     * 加载场景数据
+     * @param episodeId 剧集ID（可选）
+     */
+    async loadScenes(episodeId?: number | string) {
+      if (!this.currentProjectId) return;
+
+      try {
+        const { getSceneDetail } = await import('@/api/workbench/library');
+        const response = await getSceneDetail({
+          projectId: Number(this.currentProjectId),
+          episodeId: episodeId ? Number(episodeId) : undefined
+        });
+
+        const data = response.data;
+        if (data?.libraryItemInfoList) {
+          // 转换为扁平的场景列表
+          const scenes: Scene[] = [];
+          data.libraryItemInfoList.forEach((item: any) => {
+            const images: string[] = [];
+            if (item.librarySubInfoList && item.librarySubInfoList.length > 0) {
+              item.librarySubInfoList.forEach((sub: any) => {
+                if (sub.ossUrl) {
+                  images.push(sub.ossUrl);
+                }
+              });
+            }
+            scenes.push({
+              id: item.libraryId,
+              projectId: this.currentProjectId!,
+              category: item.name || '',
+              images: images,
+              episodes: data.episodeInfoList?.map((ep: any) => ep.episodeName) || []
+            });
+          });
+          this.scenes = scenes;
+        }
+      } catch (error) {
+        console.error('[loadScenes] 加载场景数据失败:', error);
+        this.scenes = [];
+      }
+    },
+
     // ==================== SSE 数据更新 ====================
 
     /**
