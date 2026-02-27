@@ -30,7 +30,7 @@
             <img :src="image.src" class="reference-thumbnail" />
             <!-- 删除按钮 -->
             <Transition name="delete-fade">
-              <div v-if="isHoveringImages" class="delete-button" @click.stop="handleRemoveReference(image.id)">
+              <div v-if="isHoveringImages" class="delete-button" @click.stop.prevent="handleRemoveReference($event, image.id)">
                 <svg-icon icon-class="fy-del" style="width: 12px; height: 12px" />
               </div>
             </Transition>
@@ -114,13 +114,18 @@
         v-for="tag in mentionTags"
         :key="tag.id"
         class="mention-tag-item"
-        :class="`mention-tag-${tag.type}`"
+        :class="[
+          `mention-tag-${tag.type}`,
+          { 'is-selected': selectedPreviewTagId === tag.id }
+        ]"
+        @click="handlePreviewTagClick(tag)"
+        @dblclick="handleInsertTagToEditor(tag)"
       >
-        <img v-if="tag.src" :src="tag.src" class="mention-tag-thumb" />
+        <img v-if="tag.src" :src="tag.src" class="mention-tag-thumb" @click.stop.prevent />
         <svg-icon v-else :icon-class="getTagIcon(tag.type)" class="mention-tag-icon" />
         <span class="mention-tag-label">{{ tag.label }}</span>
         <span v-if="tag.subtitle" class="mention-tag-subtitle">{{ tag.subtitle }}</span>
-        <div class="mention-tag-delete" @click="handleRemoveMentionTag(tag.id)">
+        <div class="mention-tag-delete" @click.stop.prevent="handleRemoveMentionTag($event, tag.id)">
           <svg-icon icon-class="fy-del" style="width: 10px; height: 10px" />
         </div>
       </div>
@@ -193,6 +198,9 @@ const mentionTags = ref<Array<{
   category?: string;
 }>>([]);
 
+// 当前选中的预览标签ID
+const selectedPreviewTagId = ref<string | null>(null);
+
 // 提及弹窗相关
 const mentionTriggerPos = ref<{ start: number; end: number } | null>(null);
 const mentionQuery = ref('');
@@ -212,7 +220,6 @@ const getTagIcon = (type: MentionType) => {
 // 解析 modelValue，分离文本和提及标签
 const parseModelValue = (value: string) => {
   const tags: typeof mentionTags.value = [];
-  let text = value;
 
   // 先尝试解析 HTML 格式的提及标签（向后兼容）
   const htmlMentionRegex = /<span[^>]*data-type="(reference|character|scene)"[^>]*data-id="([^"]*)"[^>]*>(?:<span[^>]*>.*?<\/span>)?<\/span>/gi;
@@ -238,18 +245,54 @@ const parseModelValue = (value: string) => {
     });
   }
 
-  // 移除 HTML 格式的提及标签
-  text = text.replace(htmlMentionRegex, '');
+  // 使用 DOMParser 解析内联提及格式（更可靠的方法）
+  const parser = new DOMParser();
+  const doc = parser.parseFromString(`<div>${value}</div>`, 'text/html');
+  const mentionElements = doc.querySelectorAll('.inline-mention');
 
-  // 如果没有 HTML 标签，说明是新的文本格式
-  if (tags.length === 0) {
-    textValue.value = value;
-    mentionTags.value = [];
-    return;
+  mentionElements.forEach((el, index) => {
+    const img = el.querySelector('img');
+    const src = img?.getAttribute('src');
+    const label = el.getAttribute('data-label');
+    const type = el.getAttribute('data-type') as MentionType;
+    const id = el.getAttribute('data-id') || `mention-${Date.now()}-${index}`;
+
+    if (src && label) {
+      tags.push({
+        id,
+        type: type || MentionTypeEnum.REFERENCE,
+        src,
+        label
+      });
+    }
+  });
+
+  // 兼容旧的独立 img 格式
+  const imgRegex = /<img[^>]*class="inline-image"[^>]*>/gi;
+  while ((match = imgRegex.exec(value)) !== null) {
+    const srcMatch = match[0].match(/src="([^"]*)"/);
+    const labelMatch = match[0].match(/data-label="([^"]*)"/);
+    const typeMatch = match[0].match(/data-type="([^"]*)"/);
+
+    if (srcMatch && labelMatch) {
+      tags.push({
+        id: `img-${Date.now()}-${Math.random()}`,
+        type: (typeMatch?.[1] || MentionTypeEnum.REFERENCE) as MentionType,
+        src: srcMatch[1],
+        label: labelMatch[1]
+      });
+    }
   }
 
   mentionTags.value = tags;
-  textValue.value = text;
+  textValue.value = value; // 保留原始 HTML
+
+  // 设置编辑器内容
+  nextTick(() => {
+    if (editorRef.value && editorRef.value.innerHTML !== value) {
+      editorRef.value.innerHTML = value;
+    }
+  });
 };
 
 // 构建包含提及标签的文本
@@ -274,33 +317,39 @@ watch(() => props.modelValue, (newValue) => {
 
 // 处理输入
 const handleInput = (e: Event) => {
-  const target = e.target as HTMLTextAreaElement;
-  const value = target.value;
-  const cursorPos = target.selectionStart;
-
-  textValue.value = value;
+  const target = e.target as HTMLDivElement;
 
   // 检查是否触发提及（@ 符号）
-  const beforeCursor = value.slice(0, cursorPos);
-  const atMatch = beforeCursor.match(/@(\w*)$/);
+  const selection = window.getSelection();
+  if (selection && selection.rangeCount > 0) {
+    const range = selection.getRangeAt(0);
+    const startRange = document.createRange();
+    startRange.selectNodeContents(target);
+    startRange.setEnd(range.startContainer, range.startOffset);
+    const beforeCursor = startRange.toString();
+    const atMatch = beforeCursor.match(/@(\w*)$/);
 
-  if (atMatch) {
-    // 触发提及弹窗
-    mentionQuery.value = atMatch[1];
-    mentionTriggerPos.value = {
-      start: cursorPos - atMatch[0].length,
-      end: cursorPos
-    };
+    if (atMatch) {
+      // 更新查询内容
+      mentionQuery.value = atMatch[1];
 
-    showMentionPopup();
-  } else {
-    // 关闭提及弹窗
-    mentionPopupRef.value?.hide();
-    mentionTriggerPos.value = null;
+      // 只在弹窗未打开时才触发（第一次输入 @ 时）
+      if (!mentionTriggerPos.value) {
+        mentionTriggerPos.value = {
+          start: beforeCursor.length - atMatch[0].length,
+          end: beforeCursor.length
+        };
+        showMentionPopup();
+      }
+    } else {
+      // 不再匹配 @ 模式，关闭弹窗
+      mentionPopupRef.value?.hide();
+      mentionTriggerPos.value = null;
+    }
   }
 
-  // 直接输出文本
-  emit('update:modelValue', value);
+  // 输出 HTML 内容
+  emit('update:modelValue', target.innerHTML);
 };
 
 // 处理键盘事件
@@ -310,6 +359,65 @@ const handleKeydown = (e: KeyboardEvent) => {
     const keys = ['ArrowUp', 'ArrowDown', 'Enter', 'Escape', 'Tab'];
     if (keys.includes(e.key)) {
       e.preventDefault();
+    }
+    return;
+  }
+
+  // 处理删除键：检查选中的是否是提及元素
+  if (e.key === 'Delete' || e.key === 'Backspace') {
+    const selection = window.getSelection();
+    if (selection && selection.rangeCount > 0) {
+      const range = selection.getRangeAt(0);
+
+      // 检查选中内容是否是单个提及元素内的文本
+      if (range.startContainer === range.endContainer &&
+          range.startContainer.nodeType === Node.TEXT_NODE &&
+          range.startContainer.parentElement?.classList.contains('inline-mention')) {
+        const mention = range.startContainer.parentElement;
+        if (mention.classList.contains('inline-mention')) {
+          e.preventDefault();
+          mention.remove();
+          if (editorRef.value) {
+            emit('update:modelValue', editorRef.value.innerHTML);
+          }
+          ElMessage.success('已删除图片');
+          return;
+        }
+      }
+
+      // 检查光标是否在提及元素旁边，尝试删除
+      const { startContainer, startOffset } = range;
+      if (startContainer.nodeType === Node.TEXT_NODE) {
+        const textNode = startContainer as Text;
+
+        // 如果光标在文本节点开头，检查前一个兄弟节点
+        if (e.key === 'Backspace' && startOffset === 0) {
+          const prevSibling = textNode.previousSibling;
+          if (prevSibling && (prevSibling as HTMLElement).classList?.contains('inline-mention')) {
+            e.preventDefault();
+            prevSibling.remove();
+            if (editorRef.value) {
+              emit('update:modelValue', editorRef.value.innerHTML);
+            }
+            ElMessage.success('已删除图片');
+            return;
+          }
+        }
+
+        // 如果光标在文本节点末尾，检查后一个兄弟节点
+        if (e.key === 'Delete' && startOffset === textNode.length) {
+          const nextSibling = textNode.nextSibling;
+          if (nextSibling && (nextSibling as HTMLElement).classList?.contains('inline-mention')) {
+            e.preventDefault();
+            nextSibling.remove();
+            if (editorRef.value) {
+              emit('update:modelValue', editorRef.value.innerHTML);
+            }
+            ElMessage.success('已删除图片');
+            return;
+          }
+        }
+      }
     }
   }
 };
@@ -324,50 +432,133 @@ const handleBlur = () => {
 
 // 显示提及弹窗
 const showMentionPopup = () => {
-  if (!textareaRef.value) return;
+  if (!editorRef.value) return;
 
-  const rect = textareaRef.value.getBoundingClientRect();
-  const scrollTop = textareaRef.value.scrollTop;
+  const rect = editorRef.value.getBoundingClientRect();
 
-  // 计算光标位置（简化版，使用 textarea 底部）
+  // 计算光标位置（简化版，使用编辑器底部）
   const popupX = rect.left;
   const popupY = rect.bottom + 5;
 
   mentionPopupRef.value?.show(popupX, popupY);
 };
 
+// 创建内联提及元素（包含图片、@符号和名字）
+const createInlineImage = (src: string, label: string, type: MentionType) => {
+  // 创建容器元素
+  const container = document.createElement('span');
+  const uniqueId = `mention-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+  container.className = 'inline-mention';
+  container.contentEditable = 'false';
+  container.draggable = true;
+  container.dataset.type = type;
+  container.dataset.label = label;
+  container.dataset.id = uniqueId;
+  container.title = '选中后按删除键删除';
+
+  // 创建图片元素
+  const img = document.createElement('img');
+  img.src = src;
+  img.className = 'inline-image';
+  img.draggable = false; // 禁用图片的拖拽，使用容器的拖拽
+
+  // 创建文本节点（@符号和名字）
+  const textSpan = document.createElement('span');
+  textSpan.className = 'inline-mention-text';
+  textSpan.textContent = `@${label}`;
+
+  // 组装
+  container.appendChild(img);
+  container.appendChild(textSpan);
+
+  // 添加拖拽事件
+  container.addEventListener('dragstart', handleInlineImageDragStart);
+  container.addEventListener('dragend', handleInlineImageDragEnd);
+
+  // 添加点击事件：点击时切换选中状态
+  container.addEventListener('click', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const selection = window.getSelection();
+
+    // 检查是否已经选中了这个元素
+    const isSelected = selection.rangeCount > 0 &&
+                       selection.containsNode(container, true);
+
+    if (isSelected) {
+      // 如果已选中，取消选中
+      selection.removeAllRanges();
+    } else {
+      // 如果未选中，选中整个提及元素
+      const range = document.createRange();
+      range.selectNodeContents(container);
+      selection.removeAllRanges();
+      selection.addRange(range);
+    }
+  });
+
+  return container;
+};
+
 // 处理提及选择
 const handleMentionSelect = (option: MentionOption) => {
-  if (!mentionTriggerPos.value || !textareaRef.value) return;
+  if (!mentionTriggerPos.value || !editorRef.value) return;
 
-  const { start, end } = mentionTriggerPos.value;
-  const currentValue = textValue.value;
+  const selection = window.getSelection();
+  if (!selection || selection.rangeCount === 0) return;
 
-  // 根据类型添加前缀（不包含 @）
-  const prefix = option.type === MentionTypeEnum.CHARACTER ? '角色:' :
-                 option.type === MentionTypeEnum.SCENE ? '场景:' : '';
+  const range = selection.getRangeAt(0);
 
-  // 构建新的文本值：将 @ 替换成图片名称
-  const beforeMention = currentValue.slice(0, start);
-  const afterMention = currentValue.slice(end);
-  const newText = beforeMention + prefix + option.label + afterMention;
+  // 删除 @ 符号
+  const { start } = mentionTriggerPos.value;
+  // 找到 @ 的位置并删除
+  const editorRange = document.createRange();
+  const walker = document.createTreeWalker(
+    editorRef.value,
+    NodeFilter.SHOW_TEXT,
+    null
+  );
 
-  textValue.value = newText;
+  let charCount = 0;
+  let targetNode: Node | null = null;
+  let targetOffset = 0;
 
-  // 更新输出（直接输出文本，不包含 HTML 标签）
-  emit('update:modelValue', newText);
+  while (walker.nextNode()) {
+    const node = walker.currentNode;
+    if (charCount + node.length >= start) {
+      targetNode = node;
+      targetOffset = start - charCount;
+      break;
+    }
+    charCount += node.length;
+  }
+
+  if (targetNode) {
+    editorRange.setStart(targetNode, targetOffset);
+    editorRange.setEnd(targetNode, targetOffset + 1);
+    editorRange.deleteContents();
+
+    // 插入图片
+    const img = createInlineImage(option.src || '', option.label, option.type);
+    editorRange.insertNode(img);
+
+    // 移动光标到图片后面
+    editorRange.setStartAfter(img);
+    editorRange.setEndAfter(img);
+    selection.removeAllRanges();
+    selection.addRange(editorRange);
+  }
+
+  // 更新输出
+  emit('update:modelValue', editorRef.value.innerHTML);
 
   // 关闭弹窗
   mentionTriggerPos.value = null;
   mentionQuery.value = '';
 
-  // 聚焦回 textarea，并将光标移到插入文本后面
+  // 聚焦回编辑器
   nextTick(() => {
-    if (textareaRef.value) {
-      textareaRef.value.focus();
-      const newCursorPos = start + prefix.length + option.label.length;
-      textareaRef.value.setSelectionRange(newCursorPos, newCursorPos);
-    }
+    editorRef.value?.focus();
   });
 
   const typeLabel = option.type === MentionTypeEnum.REFERENCE ? '参考图' : option.type === MentionTypeEnum.CHARACTER ? '角色' : '场景';
@@ -380,40 +571,105 @@ const handleMentionClose = () => {
   mentionQuery.value = '';
 };
 
-// 插入提及标签（点击参考图）
+// 插入图片（点击参考图）
 const handleInsertMentionTag = (image: ReferenceImage) => {
-  // 在光标位置插入图片名称
-  if (!textareaRef.value) return;
+  if (!editorRef.value) return;
 
-  const currentValue = textValue.value;
-  const cursorPos = textareaRef.value.selectionStart;
+  const selection = window.getSelection();
+  if (!selection || selection.rangeCount === 0) return;
 
-  // 在光标位置插入图片名称
-  const beforeCursor = currentValue.slice(0, cursorPos);
-  const afterCursor = currentValue.slice(cursorPos);
-  const newText = beforeCursor + image.label + afterCursor;
+  const range = selection.getRangeAt(0);
 
-  textValue.value = newText;
+  // 插入图片
+  const img = createInlineImage(image.src, image.label, MentionTypeEnum.REFERENCE);
+  range.deleteContents();
+  range.insertNode(img);
 
-  // 更新输出（直接输出文本）
-  emit('update:modelValue', newText);
+  // 移动光标到图片后面
+  range.setStartAfter(img);
+  range.setEndAfter(img);
+  selection.removeAllRanges();
+  selection.addRange(range);
 
-  // 聚焦并移动光标到插入文本后面
-  nextTick(() => {
-    if (textareaRef.value) {
-      textareaRef.value.focus();
-      const newCursorPos = cursorPos + image.label.length;
-      textareaRef.value.setSelectionRange(newCursorPos, newCursorPos);
-    }
-  });
+  // 更新输出
+  emit('update:modelValue', editorRef.value.innerHTML);
 
   ElMessage.success(`已插入${image.label}`);
 };
 
+// 点击预览标签切换选中状态
+const handlePreviewTagClick = (tag: typeof mentionTags.value[0]) => {
+  if (selectedPreviewTagId.value === tag.id) {
+    // 如果已选中，取消选中
+    selectedPreviewTagId.value = null;
+  } else {
+    // 如果未选中，选中该标签
+    selectedPreviewTagId.value = tag.id;
+  }
+};
+
+// 点击标签插入到编辑器（改为双击触发）
+const handleInsertTagToEditor = (tag: typeof mentionTags.value[0]) => {
+  if (!editorRef.value || !tag.src) return;
+
+  const selection = window.getSelection();
+  if (!selection || selection.rangeCount === 0) return;
+
+  const range = selection.getRangeAt(0);
+
+  // 插入内联提及元素
+  const mention = createInlineImage(tag.src, tag.label, tag.type);
+  range.deleteContents();
+  range.insertNode(mention);
+
+  // 移动光标到提及元素后面
+  range.setStartAfter(mention);
+  range.setEndAfter(mention);
+  selection.removeAllRanges();
+  selection.addRange(range);
+
+  // 更新输出
+  emit('update:modelValue', editorRef.value.innerHTML);
+
+  // 聚焦编辑器
+  nextTick(() => {
+    editorRef.value?.focus();
+  });
+};
+
 // 删除提及标签
-const handleRemoveMentionTag = (id: string) => {
-  mentionTags.value = mentionTags.value.filter(tag => tag.id !== id);
-  emit('update:modelValue', buildHtmlWithMentions(textValue.value, mentionTags.value));
+const handleRemoveMentionTag = (e: Event | string, id?: string) => {
+  // 支持两种调用方式：(event, id) 或
+  let actualId: string;
+  if (typeof e === 'string') {
+    actualId = e;
+  } else {
+    e.preventDefault();
+    e.stopPropagation();
+    actualId = id as string;
+  }
+
+  // 找到对应的 tag 获取其 label
+  const tagToRemove = mentionTags.value.find(tag => tag.id === actualId);
+  if (!tagToRemove) {
+    mentionTags.value = mentionTags.value.filter(tag => tag.id !== actualId);
+    return;
+  }
+
+  // 从 mentionTags 数组中删除
+  mentionTags.value = mentionTags.value.filter(tag => tag.id !== actualId);
+
+  // 同时从编辑器中删除对应的内联提及元素（通过 label 匹配）
+  if (editorRef.value) {
+    const mentionElements = editorRef.value.querySelectorAll('.inline-mention');
+    mentionElements.forEach(el => {
+      const element = el as HTMLElement;
+      if (element.dataset.label === tagToRemove.label && element.dataset.type === tagToRemove.type) {
+        element.remove();
+      }
+    });
+    emit('update:modelValue', editorRef.value.innerHTML);
+  }
 };
 
 // 处理参考图拖拽开始
@@ -430,11 +686,133 @@ const handleReferenceDragStart = (e: DragEvent, image: ReferenceImage) => {
   }
 };
 
+// ==================== 内联图片拖拽排序 ====================
+let draggedInlineImage: HTMLElement | null = null;
+
+// 内联图片拖拽开始
+const handleInlineImageDragStart = (e: DragEvent) => {
+  const target = e.target as HTMLElement;
+  if (target.classList.contains('inline-mention')) {
+    draggedInlineImage = target;
+    target.classList.add('dragging');
+    e.dataTransfer!.effectAllowed = 'move';
+  }
+};
+
+// 内联图片拖拽结束
+const handleInlineImageDragEnd = (e: DragEvent) => {
+  const target = e.target as HTMLElement;
+  if (target.classList.contains('inline-mention')) {
+    target.classList.remove('dragging');
+    clearDropIndicators();
+    draggedInlineImage = null;
+  }
+};
+
+// 清除放置指示器
+const clearDropIndicators = () => {
+  if (!editorRef.value) return;
+  const mentions = editorRef.value.querySelectorAll('.inline-mention');
+  mentions.forEach(mention => {
+    mention.classList.remove('drop-before', 'drop-after');
+  });
+};
+
+// 内联图片拖拽经过
+const handleInlineImageDragOver = (e: DragEvent) => {
+  e.preventDefault();
+  if (!draggedInlineImage || !editorRef.value) return;
+
+  e.dataTransfer!.dropEffect = 'move';
+  clearDropIndicators();
+
+  const x = e.clientX;
+  const y = e.clientY;
+  const elementAtPoint = document.elementFromPoint(x, y);
+
+  if (!elementAtPoint || !editorRef.value.contains(elementAtPoint)) {
+    return;
+  }
+
+  // 查找最近的内联提及元素
+  let targetMention = elementAtPoint?.closest('.inline-mention') as HTMLElement | null;
+
+  if (targetMention && targetMention !== draggedInlineImage) {
+    const rect = targetMention.getBoundingClientRect();
+    const centerX = rect.x + rect.width / 2;
+
+    if (x < centerX) {
+      targetMention.classList.add('drop-before');
+    } else {
+      targetMention.classList.add('drop-after');
+    }
+  }
+};
+
+// 内联图片放置
+const handleInlineImageDrop = (e: DragEvent) => {
+  e.preventDefault();
+  if (!draggedInlineImage || !editorRef.value) return;
+
+  const x = e.clientX;
+  const y = e.clientY;
+  const elementAtPoint = document.elementFromPoint(x, y);
+
+  if (!elementAtPoint) {
+    clearDropIndicators();
+    draggedInlineImage = null;
+    return;
+  }
+
+  let targetMention = elementAtPoint?.closest('.inline-mention') as HTMLElement | null;
+
+  if (targetMention && targetMention !== draggedInlineImage) {
+    const rect = targetMention.getBoundingClientRect();
+    const centerX = rect.x + rect.width / 2;
+    const insertBefore = x < centerX;
+
+    if (insertBefore) {
+      targetMention.before(draggedInlineImage);
+    } else {
+      targetMention.after(draggedInlineImage);
+    }
+
+    // 更新输出
+    emit('update:modelValue', editorRef.value.innerHTML);
+  } else if (editorRef.value.contains(elementAtPoint)) {
+    // 在文字区域放置
+    const range = document.caretRangeFromPoint(x, y);
+    if (range) {
+      range.deleteContents();
+      range.insertNode(draggedInlineImage);
+
+      range.setStartAfter(draggedInlineImage);
+      range.setEndAfter(draggedInlineImage);
+      const selection = window.getSelection();
+      if (selection) {
+        selection.removeAllRanges();
+        selection.addRange(range);
+      }
+
+      // 更新输出
+      emit('update:modelValue', editorRef.value.innerHTML);
+    }
+  }
+
+  clearDropIndicators();
+  draggedInlineImage = null;
+};
+
 // 处理拖拽经过
 const handleDragOver = (e: DragEvent) => {
   e.preventDefault();
   if (e.dataTransfer) {
-    e.dataTransfer.dropEffect = 'copy';
+    // 检查是否是内联图片拖拽
+    if (draggedInlineImage) {
+      handleInlineImageDragOver(e);
+    } else {
+      e.dataTransfer.dropEffect = 'copy';
+    }
   }
 };
 
@@ -442,38 +820,39 @@ const handleDragOver = (e: DragEvent) => {
 const handleDrop = async (e: DragEvent) => {
   e.preventDefault();
 
+  // 首先检查是否是内联图片拖拽排序
+  if (draggedInlineImage) {
+    handleInlineImageDrop(e);
+    return;
+  }
+
   // 首先检查是否有提及标签数据
   const data = e.dataTransfer?.getData('application/json');
   if (data) {
     try {
       const dragData: DragData = JSON.parse(data);
 
-      // 在光标位置插入文本
-      if (!textareaRef.value) return;
+      // 在光标位置插入图片
+      if (!editorRef.value) return;
 
-      const currentValue = textValue.value;
-      const cursorPos = textareaRef.value.selectionStart;
+      const selection = window.getSelection();
+      if (!selection || selection.rangeCount === 0) return;
 
-      // 根据类型添加前缀（不包含 @）
-      const prefix = dragData.type === MentionTypeEnum.CHARACTER ? '角色:' :
-                     dragData.type === MentionTypeEnum.SCENE ? '场景:' : '';
+      const range = selection.getRangeAt(0);
 
-      // 在光标位置插入文本
-      const beforeCursor = currentValue.slice(0, cursorPos);
-      const afterCursor = currentValue.slice(cursorPos);
-      const newText = beforeCursor + prefix + dragData.label + afterCursor;
+      // 插入图片
+      const img = createInlineImage(dragData.src || '', dragData.label, dragData.type as MentionType);
+      range.deleteContents();
+      range.insertNode(img);
 
-      textValue.value = newText;
-      emit('update:modelValue', newText);
+      // 移动光标到图片后面
+      range.setStartAfter(img);
+      range.setEndAfter(img);
+      selection.removeAllRanges();
+      selection.addRange(range);
 
-      // 聚焦并移动光标到插入文本后面
-      nextTick(() => {
-        if (textareaRef.value) {
-          textareaRef.value.focus();
-          const newCursorPos = cursorPos + prefix.length + dragData.label.length;
-          textareaRef.value.setSelectionRange(newCursorPos, newCursorPos);
-        }
-      });
+      // 更新输出
+      emit('update:modelValue', editorRef.value.innerHTML);
 
       const typeLabel = dragData.type === MentionTypeEnum.CHARACTER ? '角色' : dragData.type === MentionTypeEnum.SCENE ? '场景' : '参考图';
       ElMessage.success(`已插入${typeLabel}: ${dragData.label}`);
@@ -532,7 +911,9 @@ const handleDrop = async (e: DragEvent) => {
 };
 
 // 删除参考图
-const handleRemoveReference = (id: string) => {
+const handleRemoveReference = (e: Event, id: string) => {
+  e.preventDefault();
+  e.stopPropagation();
   referenceStore.removeImage(id);
   // 同时删除提及标签
   handleRemoveMentionTag(id);
@@ -791,6 +1172,7 @@ const handleDragLeave = (event: DragEvent) => {
         box-shadow: 0 2px 8px rgba(255, 77, 79, 0.4);
         transition: all 0.2s;
         z-index: 3;
+        pointer-events: auto;
 
         &:hover {
           background: #ff7875;
@@ -885,20 +1267,119 @@ const handleDragLeave = (event: DragEvent) => {
   width: 100%;
 }
 
-.prompt-textarea {
+.prompt-editor {
   flex: 1;
   min-height: 60px;
   padding: 8px;
   border: 1px solid #e4e7ed;
   border-radius: 8px;
-  resize: none;
   outline: none;
   font-size: 14px;
   line-height: 1.8;
   transition: border-color 0.2s;
+  word-break: break-word;
+
+  &:empty:before {
+    content: attr(data-placeholder);
+    color: #999;
+    pointer-events: none;
+  }
 
   &:focus {
     border-color: #5252ff;
+  }
+
+  // 内联提及样式（包含图片和文字）
+  :deep(.inline-mention) {
+    display: inline-flex;
+    align-items: center;
+    gap: 2px;
+    vertical-align: middle;
+    margin: 0 2px;
+    padding: 0 4px;
+    background: rgba(82, 82, 255, 0.08);
+    border: 1px solid rgba(82, 82, 255, 0.2);
+    border-radius: 4px;
+    cursor: grab;
+    transition: all 0.2s;
+    position: relative;
+    user-select: none;
+
+    &:hover {
+      background: rgba(82, 82, 255, 0.12);
+      border-color: rgba(82, 82, 255, 0.3);
+    }
+
+    // 选中状态
+    &::selection {
+      background: rgba(82, 82, 255, 0.3);
+    }
+
+    &.dragging {
+      opacity: 0.5;
+      cursor: grabbing;
+    }
+
+    &:active {
+      cursor: grabbing;
+    }
+
+    // 放置指示器 - 在提及元素前插入
+    &.drop-before::before {
+      content: '';
+      position: absolute;
+      left: -4px;
+      top: -2px;
+      bottom: -2px;
+      width: 3px;
+      background-color: #5252ff;
+      border-radius: 2px;
+      box-shadow: 0 0 6px #5252ff;
+      animation: pulse 0.8s infinite;
+    }
+
+    // 放置指示器 - 在提及元素后插入
+    &.drop-after::after {
+      content: '';
+      position: absolute;
+      right: -4px;
+      top: -2px;
+      bottom: -2px;
+      width: 3px;
+      background-color: #5252ff;
+      border-radius: 2px;
+      box-shadow: 0 0 6px #5252ff;
+      animation: pulse 0.8s infinite;
+    }
+
+    // 内联图片样式
+    .inline-image {
+      height: 1em;
+      width: auto;
+      max-width: 1em;
+      vertical-align: middle;
+      object-fit: contain;
+      pointer-events: none;
+    }
+
+    // 文本样式
+    .inline-mention-text {
+      font-size: 0.9em;
+      color: #5252ff;
+      white-space: nowrap;
+      pointer-events: none;
+    }
+  }
+
+  @keyframes pulse {
+    0%, 100% {
+      opacity: 1;
+      transform: scaleY(1);
+    }
+    50% {
+      opacity: 0.7;
+      transform: scaleY(1.2);
+    }
   }
 }
 
@@ -963,7 +1444,7 @@ const handleDragLeave = (event: DragEvent) => {
   background: rgba(0, 0, 0, 0.05);
   border: 1px solid #e4e7ed;
   font-size: 14px;
-  cursor: grab;
+  cursor: pointer;
   transition: all 0.2s;
 
   &:hover {
@@ -974,8 +1455,11 @@ const handleDragLeave = (event: DragEvent) => {
     }
   }
 
-  &:active {
-    cursor: grabbing;
+  // 选中状态
+  &.is-selected {
+    border-color: #5252ff;
+    background: rgba(82, 82, 255, 0.15);
+    box-shadow: 0 0 0 2px rgba(82, 82, 255, 0.2);
   }
 
   &.mention-tag-reference {
@@ -1029,6 +1513,7 @@ const handleDragLeave = (event: DragEvent) => {
   cursor: pointer;
   opacity: 0;
   transition: opacity 0.2s;
+  pointer-events: auto;
 
   &:hover {
     background: rgba(255, 0, 0, 0.1);
