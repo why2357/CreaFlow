@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>富文本剧本编辑器 - 极简命令面板</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        
+        .editor-content:empty:before {
+            content: attr(data-placeholder);
+            color: #9ca3af;
+            pointer-events: none;
+            display: block;
+        }
+        
+        ::selection { background-color: #dbeafe; color: #1e3a8a; }
+
+        .atomic-tag {
+            user-select: all;
+            -webkit-user-modify: read-only;
+        }
+
+        /* 优化毛玻璃阴影 */
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.5);
+            box-shadow: 0 10px 40px -10px rgba(0,0,0,0.1), 0 0 0 1px rgba(0,0,0,0.02);
+        }
+    </style>
+</head>
+<body class="bg-[#f4f5f7] min-h-screen flex flex-col items-center pt-24 pb-12 font-sans text-gray-800 antialiased overflow-x-hidden">
+
+    <div class="max-w-4xl w-full px-6 mb-8 text-center">
+        <h1 class="text-3xl font-bold tracking-tight text-gray-900 mb-3">沉浸式剧本编辑器</h1>
+        <p class="text-gray-500 text-sm">
+            键入 <kbd class="px-2 py-0.5 mx-1 bg-white border border-gray-200 rounded-md shadow-sm font-mono text-xs text-gray-700">@</kbd> 唤出命令面板进行引用。
+        </p>
+    </div>
+
+    <div class="max-w-3xl w-full px-6 relative">
+        <div class="w-full bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden transition-all duration-300 focus-within:ring-4 focus-within:ring-blue-500/10 focus-within:border-blue-400 focus-within:shadow-md flex flex-col">
+            
+            <div 
+                id="rich-editor" 
+                contenteditable="true" 
+                data-placeholder="冷色调的实验室中... (输入 @ 试试)"
+                class="editor-content w-full min-h-[360px] p-8 outline-none text-[15px] leading-relaxed text-gray-700 break-words"
+            >分镜1：冷色调的实验室中，</div>
+        </div>
+        
+        <div id="mention-menu" class="absolute z-40 w-[300px] glass-panel rounded-xl opacity-0 pointer-events-none flex flex-col overflow-hidden transition-opacity duration-150" style="top: 0; left: 0;">
+            
+            <div id="mention-list" class="p-1.5 flex flex-col gap-0.5">
+                </div>
+
+            <div class="p-1.5 bg-gray-50/80 border-t border-gray-100 flex flex-col gap-1 select-none">
+                <button onmousedown="openModalFromMenu(event, '角色')" class="flex items-center gap-3 px-2 py-2 rounded-lg text-sm text-gray-700 hover:text-indigo-700 hover:bg-indigo-50/80 transition-colors w-full text-left active:scale-[0.98]">
+                    <div class="flex items-center justify-center w-6 h-6 rounded-md bg-indigo-100/60 text-indigo-600">
+                        <i data-lucide="users-round" class="w-3.5 h-3.5"></i>
+                    </div>
+                    <span class="font-medium">打开角色图库</span>
+                    <i data-lucide="chevron-right" class="w-4 h-4 ml-auto text-gray-400"></i>
+                </button>
+                <button onmousedown="openModalFromMenu(event, '场景')" class="flex items-center gap-3 px-2 py-2 rounded-lg text-sm text-gray-700 hover:text-emerald-700 hover:bg-emerald-50/80 transition-colors w-full text-left active:scale-[0.98]">
+                    <div class="flex items-center justify-center w-6 h-6 rounded-md bg-emerald-100/60 text-emerald-600">
+                        <i data-lucide="image" class="w-3.5 h-3.5"></i>
+                    </div>
+                    <span class="font-medium">打开场景图库</span>
+                    <i data-lucide="chevron-right" class="w-4 h-4 ml-auto text-gray-400"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div id="library-modal" class="fixed inset-0 z-[100] flex items-center justify-center opacity-0 pointer-events-none transition-all duration-300">
+        <div id="modal-overlay" class="absolute inset-0 bg-gray-900/40 backdrop-blur-sm transition-opacity"></div>
+        
+        <div class="relative w-full max-w-[900px] h-[75vh] glass-panel rounded-2xl flex overflow-hidden transform scale-95 transition-transform duration-300 shadow-2xl" id="modal-content">
+            
+            <div class="w-56 bg-gray-50/60 border-r border-gray-200/50 flex flex-col shrink-0">
+                <div class="h-16 flex items-center px-5 border-b border-gray-200/50">
+                    <h3 id="modal-sidebar-title" class="text-base font-semibold text-gray-800 flex items-center gap-2">
+                        <i data-lucide="library" class="w-4 h-4 text-blue-500"></i>
+                        <span>资产库</span>
+                    </h3>
+                </div>
+                <div class="p-3 flex flex-col gap-1" id="sidebar-nav"></div>
+            </div>
+
+            <div class="flex-1 flex flex-col bg-white/40">
+                <div class="h-16 flex items-center justify-between px-6 border-b border-gray-200/50 bg-white/50">
+                    <div class="relative w-72">
+                        <i data-lucide="search" class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400"></i>
+                        <input type="text" placeholder="搜索名称或标签..." class="w-full pl-9 pr-4 py-2 bg-gray-100/50 border border-transparent rounded-full text-sm focus:bg-white focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 outline-none transition-all">
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <button onclick="closeLibraryModal()" class="p-2 rounded-lg text-gray-400 hover:text-gray-800 hover:bg-red-50 transition-colors">
+                            <i data-lucide="x" class="w-5 h-5"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="flex-1 overflow-y-auto p-6">
+                    <div id="modal-grid" class="grid gap-5"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        lucide.createIcons();
+
+        const dbData = [
+            { id: 'c1', name: '图片1', type: '场景', category: '室外', img: 'https://images.unsplash.com/photo-1518152006812-edab29b069ac?auto=format&fit=crop&q=80&w=600' },
+            { id: 'c2', name: '图片2', type: '角色', category: '主角团队', img: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&q=80&w=400' },
+            { id: 'c3', name: '图片3', type: '场景', category: '室内', img: 'https://images.unsplash.com/photo-1531315630201-bb15abeb1653?auto=format&fit=crop&q=80&w=600' },
+            { id: 'c4', name: '霸凌者A', type: '角色', category: '反派', img: 'https://images.unsplash.com/photo-1599566150163-29194dcaad36?auto=format&fit=crop&q=80&w=400' },
+            { id: 'c5', name: '霸凌者B', type: '角色', category: '反派', img: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&q=80&w=400' },
+            { id: 'c6', name: '冷色调实验室', type: '场景', category: '室内', img: 'https://images.unsplash.com/photo-1581093458791-9f3c3900df4b?auto=format&fit=crop&q=80&w=600' },
+            { id: 'c7', name: '群演', type: '角色', category: '群演', img: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&q=80&w=400' },
+        ];
+
+        const categories = {
+            '角色': ['全部', '主角团队', '反派', '群演'],
+            '场景': ['全部', '室内', '室外', '特殊环境']
+        };
+
+        const editor = document.getElementById('rich-editor');
+        const mentionMenu = document.getElementById('mention-menu');
+        const mentionList = document.getElementById('mention-list');
+        
+        const modal = document.getElementById('library-modal');
+        const modalContent = document.getElementById('modal-content');
+        const modalOverlay = document.getElementById('modal-overlay');
+        const modalGrid = document.getElementById('modal-grid');
+        const sidebarNav = document.getElementById('sidebar-nav');
+        const modalSidebarTitle = document.getElementById('modal-sidebar-title');
+
+        let isMentionOpen = false;
+        let mentionQuery = '';
+        let mentionSelectedIndex = 0;
+        let mentionStartOffset = null;
+        let currentTextNode = null;
+        let savedSelectionRange = null; 
+
+        // ========================== 光标记忆 ==========================
+        const saveCursorPosition = () => {
+            const selection = window.getSelection();
+            if (selection.rangeCount > 0) {
+                const range = selection.getRangeAt(0);
+                if (editor.contains(range.commonAncestorContainer)) savedSelectionRange = range.cloneRange();
+            }
+        };
+
+        editor.addEventListener('keyup', saveCursorPosition);
+        editor.addEventListener('mouseup', saveCursorPosition);
+        editor.addEventListener('input', saveCursorPosition);
+        editor.addEventListener('blur', saveCursorPosition);
+
+        // ========================== 标签插入 ==========================
+        function createTagElement(item) {
+            const tagWrapper = document.createElement('span');
+            tagWrapper.className = 'atomic-tag inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-gray-100 hover:bg-gray-200 transition-colors border border-gray-200/80 mx-1 align-middle select-none text-gray-800 text-sm font-medium shadow-sm';
+            tagWrapper.setAttribute('contenteditable', 'false');
+            tagWrapper.innerHTML = `<img src="${item.img}" class="w-[20px] h-[20px] rounded-[4px] object-cover border border-gray-200/50 select-none pointer-events-none"><span>${item.name}</span>`;
+            return tagWrapper;
+        }
+
+        function insertTagAtRange(item, targetRange) {
+            if (!targetRange) return;
+            const selection = window.getSelection();
+            const tagElement = createTagElement(item);
+            
+            targetRange.insertNode(tagElement);
+            targetRange.setStartAfter(tagElement);
+            targetRange.collapse(true);
+            const spaceNode = document.createTextNode('\u00A0');
+            targetRange.insertNode(spaceNode);
+            targetRange.setStartAfter(spaceNode);
+            targetRange.collapse(true);
+
+            selection.removeAllRanges();
+            selection.addRange(targetRange);
+            saveCursorPosition();
+            editor.focus();
+        }
+
+        // ========================== Modal 图库逻辑 ==========================
+        function openLibraryModal(type) {
+            if (!savedSelectionRange) {
+                editor.focus();
+                const range = document.createRange();
+                range.selectNodeContents(editor);
+                range.collapse(false);
+                savedSelectionRange = range;
+            }
+
+            modalSidebarTitle.innerHTML = type === '角色' 
+                ? '<i data-lucide="users-round" class="w-5 h-5 text-indigo-500"></i><span>角色库</span>'
+                : '<i data-lucide="image" class="w-5 h-5 text-emerald-500"></i><span>场景库</span>';
+
+            sidebarNav.innerHTML = '';
+            categories[type].forEach((cat, index) => {
+                const isSelected = index === 0;
+                const a = document.createElement('button');
+                a.className = `w-full text-left px-3 py-2 rounded-lg text-sm font-medium transition-all flex justify-between items-center ${
+                    isSelected ? 'bg-white shadow-sm text-gray-900 ring-1 ring-gray-200/50' : 'text-gray-600 hover:bg-gray-200/50'
+                }`;
+                const count = type === '角色' ? (index===0?4:Math.floor(Math.random()*3)+1) : (index===0?3:Math.floor(Math.random()*3));
+                a.innerHTML = `<span>${cat}</span> <span class="text-xs ${isSelected ? 'text-gray-400' : 'text-gray-400'}">${count}</span>`;
+                sidebarNav.appendChild(a);
+            });
+
+            modalGrid.className = type === '角色' ? 'grid grid-cols-4 sm:grid-cols-5 gap-4' : 'grid grid-cols-2 sm:grid-cols-3 gap-5';
+            modalGrid.innerHTML = '';
+            
+            const filteredData = dbData.filter(item => item.type === type);
+            filteredData.forEach(item => {
+                const card = document.createElement('div');
+                const aspectRatio = type === '角色' ? 'aspect-[3/4]' : 'aspect-video';
+                
+                card.className = `group relative ${aspectRatio} rounded-xl overflow-hidden cursor-pointer border border-gray-200/60 shadow-sm hover:shadow-xl hover:ring-2 hover:ring-blue-400/50 transition-all duration-300 transform hover:-translate-y-1 bg-gray-100`;
+                
+                card.innerHTML = `
+                    <img src="${item.img}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 ease-out">
+                    <div class="absolute inset-0 bg-gray-900/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                    <button class="absolute top-2 right-2 opacity-0 group-hover:opacity-100 bg-blue-500 text-white text-xs font-medium px-2.5 py-1.5 rounded-lg shadow-lg transform translate-y-1 group-hover:translate-y-0 transition-all duration-300 flex items-center gap-1">
+                        <i data-lucide="plus" class="w-3.5 h-3.5"></i> 插入
+                    </button>
+                    <div class="absolute bottom-0 left-0 right-0 p-3 bg-white/80 backdrop-blur-md border-t border-white/40 translate-y-full group-hover:translate-y-0 transition-transform duration-300">
+                        <p class="text-gray-900 text-sm font-semibold truncate leading-none mb-1">${item.name}</p>
+                        <p class="text-gray-500 text-[10px] uppercase tracking-wider">${item.category}</p>
+                    </div>
+                `;
+                card.onclick = () => {
+                    closeLibraryModal();
+                    insertTagAtRange(item, savedSelectionRange);
+                };
+                modalGrid.appendChild(card);
+            });
+
+            lucide.createIcons();
+            modal.classList.remove('opacity-0', 'pointer-events-none');
+            modalContent.classList.remove('scale-95');
+        }
+
+        function closeLibraryModal() {
+            modal.classList.add('opacity-0', 'pointer-events-none');
+            modalContent.classList.add('scale-95');
+            editor.focus();
+            if (savedSelectionRange) {
+                const selection = window.getSelection();
+                selection.removeAllRanges();
+                selection.addRange(savedSelectionRange);
+            }
+        }
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && !modal.classList.contains('pointer-events-none')) closeLibraryModal();
+        });
+        modalOverlay.addEventListener('click', closeLibraryModal);
+
+        // ========================== @ 菜单逻辑 ==========================
+        editor.addEventListener('input', () => {
+            if (!savedSelectionRange) return;
+            const node = savedSelectionRange.startContainer;
+            const offset = savedSelectionRange.startOffset;
+
+            if (node.nodeType !== Node.TEXT_NODE) return;
+
+            const textBeforeCursor = node.textContent.substring(0, offset);
+            const match = textBeforeCursor.match(/@(\S*)$/);
+
+            if (match) {
+                mentionQuery = match[1];
+                mentionStartOffset = match.index;
+                currentTextNode = node;
+                showMentionMenu(savedSelectionRange);
+                renderMentionItems();
+            } else {
+                closeMentionMenu();
+            }
+        });
+
+        function showMentionMenu(range) {
+            if (!isMentionOpen) {
+                isMentionOpen = true;
+                const rect = range.getBoundingClientRect();
+                const editorRect = editor.parentNode.getBoundingClientRect();
+                
+                let top = rect.bottom - editorRect.top + 8;
+                let left = rect.left - editorRect.left;
+
+                if (left + 280 > editorRect.width) left = editorRect.width - 280 - 16; 
+
+                mentionMenu.style.top = `${top}px`;
+                mentionMenu.style.left = `${left}px`;
+                mentionMenu.classList.remove('opacity-0', 'scale-95', 'pointer-events-none');
+            }
+        }
+
+        function closeMentionMenu() {
+            isMentionOpen = false;
+            mentionSelectedIndex = 0;
+            mentionMenu.classList.add('opacity-0', 'scale-95', 'pointer-events-none');
+        }
+
+        function renderMentionItems() {
+            mentionList.innerHTML = '';
+            const filteredData = dbData.filter(item => item.name.toLowerCase().includes(mentionQuery.toLowerCase()));
+
+            if (filteredData.length === 0) {
+                mentionList.innerHTML = '<div class="px-3 py-6 text-sm text-gray-400 text-center">无匹配项，请在下方库中选择</div>';
+                return;
+            }
+
+            if (mentionSelectedIndex >= filteredData.length) mentionSelectedIndex = 0;
+
+            filteredData.forEach((item, index) => {
+                const isSelected = index === mentionSelectedIndex;
+                const itemEl = document.createElement('div');
+                itemEl.className = `group flex items-center justify-between px-2.5 py-2 rounded-lg cursor-pointer transition-all duration-150 ${
+                    isSelected ? 'bg-blue-600 shadow-md text-white' : 'hover:bg-gray-100/80 text-gray-700'
+                }`;
+                
+                const leftContent = `
+                    <div class="flex items-center gap-3">
+                        <img src="${item.img}" class="w-8 h-8 rounded-[6px] shadow-sm object-cover border ${isSelected ? 'border-white/20' : 'border-gray-200/50'}">
+                        <div class="flex flex-col">
+                            <span class="text-sm font-medium leading-none mb-1.5">${item.name}</span>
+                            <span class="text-[10px] ${isSelected ? 'text-blue-100' : 'text-gray-400'} leading-none uppercase tracking-wider">${item.type}</span>
+                        </div>
+                    </div>
+                `;
+
+                const rightContent = `
+                    <kbd class="hidden group-hover:flex items-center justify-center w-5 h-5 rounded ${isSelected ? 'bg-blue-700/50 text-blue-100' : 'bg-white border border-gray-200 text-gray-400 shadow-sm'} text-[10px] font-mono transition-opacity">↵</kbd>
+                `;
+
+                itemEl.innerHTML = leftContent + rightContent;
+
+                itemEl.onmousedown = (e) => {
+                    e.preventDefault();
+                    executeMentionInsert(item);
+                };
+                itemEl.onmouseenter = () => {
+                    mentionSelectedIndex = index;
+                    renderMentionItems();
+                };
+                mentionList.appendChild(itemEl);
+            });
+            
+            const activeEl = mentionList.children[mentionSelectedIndex];
+            if(activeEl) activeEl.scrollIntoView({ block: 'nearest' });
+        }
+
+        editor.addEventListener('keydown', (e) => {
+            if (!isMentionOpen) return;
+            const filteredData = dbData.filter(item => item.name.toLowerCase().includes(mentionQuery.toLowerCase()));
+
+            if (e.key === 'ArrowDown') {
+                e.preventDefault();
+                if(filteredData.length > 0) {
+                    mentionSelectedIndex = (mentionSelectedIndex + 1) % filteredData.length;
+                    renderMentionItems();
+                }
+            } else if (e.key === 'ArrowUp') {
+                e.preventDefault();
+                if(filteredData.length > 0) {
+                    mentionSelectedIndex = (mentionSelectedIndex - 1 + filteredData.length) % filteredData.length;
+                    renderMentionItems();
+                }
+            } else if (e.key === 'Enter') {
+                e.preventDefault();
+                if (filteredData.length > 0) executeMentionInsert(filteredData[mentionSelectedIndex]);
+            } else if (e.key === 'Escape') {
+                closeMentionMenu();
+            }
+        });
+
+        function executeMentionInsert(item) {
+            if (!currentTextNode) return;
+            const range = document.createRange();
+            range.setStart(currentTextNode, mentionStartOffset);
+            range.setEnd(currentTextNode, currentTextNode.textContent.length);
+            range.deleteContents();
+            closeMentionMenu();
+            insertTagAtRange(item, range);
+        }
+
+        function openModalFromMenu(event, type) {
+            event.preventDefault(); 
+            if (currentTextNode && mentionStartOffset !== null) {
+                const range = document.createRange();
+                range.setStart(currentTextNode, mentionStartOffset);
+                range.setEnd(currentTextNode, currentTextNode.textContent.length);
+                range.deleteContents();
+                
+                const selection = window.getSelection();
+                selection.removeAllRanges();
+                selection.addRange(range);
+                saveCursorPosition();
+            }
+            closeMentionMenu();
+            openLibraryModal(type);
+        }
+
+        document.addEventListener('mousedown', (e) => {
+            if (isMentionOpen && !editor.contains(e.target) && !mentionMenu.contains(e.target)) {
+                closeMentionMenu();
+            }
+        });
+
+        window.addEventListener('DOMContentLoaded', () => {
+            editor.focus();
+            saveCursorPosition();
+        });
+    </script>
+</body>
+</html>

@@ -35,7 +35,7 @@
             <img v-if="option.src" :src="option.src" class="mention-option-thumb" />
             <div v-else class="mention-option-icon">
               <svg-icon
-                :icon-class="state.activeTab === MentionType.CHARACTER ? 'fy-user' : 'fy-scene'"
+                :icon-class="state.activeTab === MentionType.CHARACTER ? 'fy-user' : 'fy-sence-tupian'"
                 style="width: 20px; height: 20px; color: #909399"
               />
             </div>
@@ -50,6 +50,26 @@
             <svg-icon icon-class="fy-empty" style="width: 48px; height: 48px; color: #c0c4cc" />
             <p>暂无{{ state.activeTab === MentionType.REFERENCE ? '参考图' : state.activeTab === MentionType.CHARACTER ? '角色' : '场景' }}</p>
           </div>
+        </div>
+
+        <!-- 底部打开图库按钮 -->
+        <div class="mention-footer-actions">
+          <button
+            class="mention-action-btn"
+            @mousedown="handleOpenLibrary('character')"
+          >
+            <svg-icon icon-class="fy-user" style="width: 14px; height: 14px" />
+            <span>打开角色图库</span>
+            <svg-icon icon-class="fy-right" style="width: 12px; height: 12px; margin-left: auto" />
+          </button>
+          <button
+            class="mention-action-btn"
+            @mousedown="handleOpenLibrary('scene')"
+          >
+            <svg-icon icon-class="fy-sence-tupian" style="width: 14px; height: 14px" />
+            <span>打开场景图库</span>
+            <svg-icon icon-class="fy-right" style="width: 12px; height: 12px; margin-left: auto" />
+          </button>
         </div>
 
         <!-- 键盘提示 -->
@@ -78,6 +98,8 @@ interface Props {
   onSelect: (option: MentionOption) => void;
   /** 关闭回调 */
   onClose: () => void;
+  /** 打开图库回调 */
+  onOpenLibrary?: (type: 'character' | 'scene') => void;
 }
 
 const props = defineProps<Props>();
@@ -106,9 +128,9 @@ const state = reactive<MentionPopupState>({
 
 // Tabs
 const tabs = [
-  { key: MentionType.REFERENCE, label: '参考图', icon: 'fy-image' },
+  { key: MentionType.REFERENCE, label: '参考图', icon: 'fy-tupian' },
   { key: MentionType.CHARACTER, label: '角色', icon: 'fy-user' },
-  { key: MentionType.SCENE, label: '场景', icon: 'fy-scene' }
+  { key: MentionType.SCENE, label: '场景', icon: 'fy-sence-tupian' }
 ];
 
 // 计算过滤后的选项
@@ -271,6 +293,13 @@ const hide = () => {
 const handleSelect = (option: MentionOption) => {
   props.onSelect(option);
   hide();
+};
+
+// 打开图库
+const handleOpenLibrary = (type: 'character' | 'scene') => {
+  props.onOpenLibrary?.(type);
+  hide();
+  props.onClose();
 };
 
 // 键盘导航
@@ -528,6 +557,39 @@ onUnmounted(() => {
     border: 1px solid #dcdfe6;
     border-radius: 3px;
     box-shadow: 0 1px 1px rgba(0, 0, 0, 0.05);
+  }
+}
+
+.mention-footer-actions {
+  padding: 8px 12px;
+  border-top: 1px solid #f0f0f0;
+  background: #fafafa;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.mention-action-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  transition: all 0.15s;
+  font-size: 13px;
+  color: #606266;
+  text-align: left;
+
+  &:hover {
+    background: rgba(82, 82, 255, 0.05);
+    color: #5252ff;
+  }
+
+  &:active {
+    transform: scale(0.98);
   }
 }
 </style>

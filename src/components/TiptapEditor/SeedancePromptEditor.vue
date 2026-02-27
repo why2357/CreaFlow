@@ -137,17 +137,39 @@
       :query="mentionQuery"
       :on-select="handleMentionSelect"
       :on-close="handleMentionClose"
+      :on-open-library="handleOpenLibrary"
+    />
+
+    <!-- 场景库对话框 -->
+    <SceneLibraryDialog
+      v-model="sceneLibraryVisible"
+      :project-id="projectId"
+      :episodes="episodes"
+      @confirm="handleSceneSelect"
+    />
+
+    <!-- 角色库对话框 -->
+    <CharacterLibraryDialog
+      v-model="characterLibraryVisible"
+      :project-id="projectId"
+      :episodes="episodes"
+      @confirm="handleCharacterSelect"
     />
   </div>
 </template>
 
 <script setup lang="ts">
 import { useReferenceStore } from '@/store/modules/reference';
+import { useProjectStore } from '@/store/modules/project';
 import { ElMessage } from 'element-plus';
 import type { ReferenceImage, DragData, MentionOption, MentionType } from '@/types/mention';
 import { MentionType as MentionTypeEnum } from '@/types/mention';
 import MentionPopup from './MentionPopup.vue';
-import { ref, watch, nextTick } from 'vue';
+import SceneLibraryDialog from '@/views/workbench/project-creation/steps/StepShotList/components/SceneLibraryDialog.vue';
+import CharacterLibraryDialog from '@/views/workbench/project-creation/steps/StepShotList/components/CharacterLibraryDialog.vue';
+import { ref, watch, nextTick, computed } from 'vue';
+import type { LibrarySubInfo } from '@/api/workbench/project/types';
+import type { EpisodeInfo } from '@/api/workbench/project/types';
 
 interface Props {
   modelValue: string;
@@ -167,6 +189,7 @@ const props = withDefaults(defineProps<Props>(), {
 const emit = defineEmits<Emits>();
 
 const referenceStore = useReferenceStore();
+const projectStore = useProjectStore();
 
 // Refs
 const containerRef = ref<HTMLElement>();
@@ -205,15 +228,23 @@ const selectedPreviewTagId = ref<string | null>(null);
 const mentionTriggerPos = ref<{ start: number; end: number } | null>(null);
 const mentionQuery = ref('');
 
+// 图库对话框相关
+const sceneLibraryVisible = ref(false);
+const characterLibraryVisible = ref(false);
+
+// 获取当前项目ID和剧集
+const projectId = computed(() => Number(projectStore.currentProjectId) || 0);
+const episodes = computed(() => projectStore.episodes || []);
+
 // 获取标签图标
 const getTagIcon = (type: MentionType) => {
   switch (type) {
     case MentionTypeEnum.CHARACTER:
       return 'fy-user';
     case MentionTypeEnum.SCENE:
-      return 'fy-scene';
+      return 'fy-sence-tupian';
     default:
-      return 'fy-image';
+      return 'fy-tupian';
   }
 };
 
@@ -569,6 +600,81 @@ const handleMentionSelect = (option: MentionOption) => {
 const handleMentionClose = () => {
   mentionTriggerPos.value = null;
   mentionQuery.value = '';
+};
+
+// 打开图库
+const handleOpenLibrary = (type: 'character' | 'scene') => {
+  if (type === 'character') {
+    characterLibraryVisible.value = true;
+  } else {
+    sceneLibraryVisible.value = true;
+  }
+};
+
+// 处理场景选择
+const handleSceneSelect = (scene: LibrarySubInfo) => {
+  // 使用正确的字段路径：ossUrl 或 materialVo?.originOssUrl
+  const sceneSrc = scene.ossUrl || scene.materialVo?.originOssUrl;
+  if (!sceneSrc || !editorRef.value) return;
+
+  // materialVo 没有 materialName，使用 detailName
+  const label = scene.detailName || '场景';
+
+  // 直接插入到编辑器，不依赖 mentionTriggerPos
+  const selection = window.getSelection();
+  if (!selection || selection.rangeCount === 0) return;
+
+  const range = selection.getRangeAt(0);
+
+  // 创建内联图片元素
+  const img = createInlineImage(sceneSrc, label, MentionTypeEnum.SCENE);
+  range.deleteContents();
+  range.insertNode(img);
+
+  // 移动光标到图片后面
+  range.setStartAfter(img);
+  range.setEndAfter(img);
+  selection.removeAllRanges();
+  selection.addRange(range);
+
+  // 更新输出
+  emit('update:modelValue', editorRef.value.innerHTML);
+
+  sceneLibraryVisible.value = false;
+  ElMessage.success(`已插入场景: ${label}`);
+};
+
+// 处理角色选择
+const handleCharacterSelect = (character: LibrarySubInfo) => {
+  // 使用正确的字段路径：ossUrl 或 materialVo?.originOssUrl
+  const charSrc = character.ossUrl || character.materialVo?.originOssUrl;
+  if (!charSrc || !editorRef.value) return;
+
+  // materialVo 没有 materialName，使用 detailName
+  const label = character.detailName || '角色';
+
+  // 直接插入到编辑器，不依赖 mentionTriggerPos
+  const selection = window.getSelection();
+  if (!selection || selection.rangeCount === 0) return;
+
+  const range = selection.getRangeAt(0);
+
+  // 创建内联图片元素
+  const img = createInlineImage(charSrc, label, MentionTypeEnum.CHARACTER);
+  range.deleteContents();
+  range.insertNode(img);
+
+  // 移动光标到图片后面
+  range.setStartAfter(img);
+  range.setEndAfter(img);
+  selection.removeAllRanges();
+  selection.addRange(range);
+
+  // 更新输出
+  emit('update:modelValue', editorRef.value.innerHTML);
+
+  characterLibraryVisible.value = false;
+  ElMessage.success(`已插入角色: ${label}`);
 };
 
 // 插入图片（点击参考图）

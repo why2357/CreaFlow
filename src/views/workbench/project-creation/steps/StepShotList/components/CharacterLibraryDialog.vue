@@ -1,13 +1,13 @@
 <template>
   <el-dialog
     v-model="dialogVisible"
-    title="场景库"
+    title="角色库"
     width="988px"
     :z-index="10000"
     :close-on-click-modal="false"
     :destroy-on-close="false"
     :append-to-body="true"
-    class="scene-library-dialog"
+    class="character-library-dialog"
     @close="handleClose"
   >
     <!-- 剧集筛选 -->
@@ -21,13 +21,15 @@
       />
     </div>
 
-    <!-- 场景库内容 -->
-    <div v-loading="loading" class="scene-content">
-      <div v-if="sceneLibraries.length === 0" class="empty-state">
-        <p>暂无场景数据</p>
+    <!-- 角色库内容 -->
+    <div v-loading="loading" class="character-content">
+      <!-- 调试信息 -->
+      <div v-if="characterLibraries.length === 0" class="empty-state">
+        <p>暂无角色数据</p>
       </div>
-      <div v-else class="scene-libraries">
-        <div v-for="library in sceneLibraries" :key="library.libraryId" class="library-section">
+      <!-- 调试: 显示库的数量 -->
+      <div v-else class="character-libraries">
+        <div v-for="library in characterLibraries" :key="library.libraryId" class="library-section">
           <div class="library-header">
             <div class="library-name-tag">{{ library.name }}</div>
             <!-- 编辑集数按钮 -->
@@ -74,12 +76,17 @@
             <div
               v-for="item in library.librarySubInfoList"
               :key="item.libraryDetailId"
-              class="scene-item"
-              :class="{ selected: selectedSceneId === item.materialVo.id }"
-              @click="handleSelectScene(item)"
+              class="character-item"
+              :class="{ selected: selectedCharacterId === item.materialVo?.id }"
+              @click="handleSelectCharacter(item)"
             >
-              <div class="scene-image-wrapper">
-                <el-image :src="item.ossUrl" fit="cover" class="scene-image" hide-on-click-modal>
+              <div class="character-image-wrapper">
+                <el-image
+                  :src="item.ossUrl || item.materialVo?.originOssUrl"
+                  fit="cover"
+                  class="character-image"
+                  hide-on-click-modal
+                >
                   <template #error>
                     <div class="image-error">
                       <el-icon><Picture /></el-icon>
@@ -122,7 +129,7 @@
 </template>
 
 <script setup lang="ts">
-  import { bindEpisode, getSceneDetail } from '@/api/workbench/library';
+  import { bindEpisode, getCharacterDetail } from '@/api/workbench/library';
   import type { EpisodeInfo, LibraryItemInfo, LibrarySubInfo } from '@/api/workbench/project/types';
   import { LibraryType } from '@/api/workbench/project/types';
   import { Picture } from '@element-plus/icons-vue';
@@ -139,7 +146,7 @@
 
   interface Emits {
     (e: 'update:modelValue', value: boolean): void;
-    (e: 'confirm', scene: LibrarySubInfo): void;
+    (e: 'confirm', character: LibrarySubInfo): void;
   }
 
   const props = defineProps<Props>();
@@ -149,24 +156,24 @@
   const loading = ref(false);
   const submitting = ref(false);
   const selectedEpisodeId = ref<number | null>(null);
-  const sceneLibraries = ref<LibraryItemInfo[]>([]);
-  const selectedSceneId = ref<number>();
-  const selectedScene = ref<LibrarySubInfo>();
+  const characterLibraries = ref<LibraryItemInfo[]>([]);
+  const selectedCharacterId = ref<number>();
+  const selectedCharacter = ref<LibrarySubInfo>();
   const episodePopoverVisible = ref(false);
   const currentEditLibrary = ref<LibraryItemInfo | null>(null);
   const selectedEpisodeIds = ref<number[]>([]);
 
   // 重置状态
   const resetState = () => {
-    selectedSceneId.value = undefined;
-    selectedScene.value = undefined;
-    sceneLibraries.value = [];
+    selectedCharacterId.value = undefined;
+    selectedCharacter.value = undefined;
+    characterLibraries.value = [];
   };
 
   // 设置横向滚动
   const setupHorizontalScroll = () => {
     nextTick(() => {
-      const scrollWrappers = document.querySelectorAll('.scene-library-dialog .library-items');
+      const scrollWrappers = document.querySelectorAll('.character-library-dialog .library-items');
 
       scrollWrappers.forEach((wrapper) => {
         const handleWheel = (e: Event) => {
@@ -201,7 +208,7 @@
 
   // 组件卸载时清理
   onUnmounted(() => {
-    const scrollWrappers = document.querySelectorAll('.scene-library-dialog .library-items');
+    const scrollWrappers = document.querySelectorAll('.character-library-dialog .library-items');
     scrollWrappers.forEach((wrapper) => {
       if ((wrapper as any).__cleanupScroll) {
         (wrapper as any).__cleanupScroll();
@@ -209,40 +216,40 @@
     });
   });
 
-  // 加载场景库列表（按剧集筛选）
-  const loadSceneLibraries = async () => {
+  // 加载角色库列表（按剧集筛选）
+  const loadCharacterLibraries = async () => {
     if (!selectedEpisodeId.value) return;
 
     loading.value = true;
     try {
-      const res = await getSceneDetail({
+      const res = await getCharacterDetail({
         projectId: props.projectId,
         episodeId: selectedEpisodeId.value
       });
-      sceneLibraries.value = res.data?.libraryItemInfoList || [];
+      characterLibraries.value = res.data?.libraryItemInfoList || [];
       // 数据加载后设置横向滚动
       setupHorizontalScroll();
     } catch (error) {
-      console.error('加载场景库失败:', error);
-      sceneLibraries.value = [];
+      console.error('加载角色库失败:', error);
+      characterLibraries.value = [];
     } finally {
       loading.value = false;
     }
   };
 
-  // 加载所有场景库列表
-  const loadAllSceneLibraries = async () => {
+  // 加载所有角色库列表
+  const loadAllCharacterLibraries = async () => {
     loading.value = true;
     try {
-      const res = await getSceneDetail({
+      const res = await getCharacterDetail({
         projectId: props.projectId
       });
-      sceneLibraries.value = res.data?.libraryItemInfoList || [];
+      characterLibraries.value = res.data?.libraryItemInfoList || [];
       // 数据加载后设置横向滚动
       setupHorizontalScroll();
     } catch (error) {
-      console.error('加载场景库失败:', error);
-      sceneLibraries.value = [];
+      console.error('加载角色库失败:', error);
+      characterLibraries.value = [];
     } finally {
       loading.value = false;
     }
@@ -250,28 +257,28 @@
 
   // 切换剧集（兼容 HorizontalScrollTabs 的参数格式）
   const handleEpisodeChange = (episodeId: number | null | undefined) => {
-    selectedSceneId.value = undefined;
-    selectedScene.value = undefined;
+    selectedCharacterId.value = undefined;
+    selectedCharacter.value = undefined;
     if (episodeId !== undefined && episodeId !== null) {
-      loadSceneLibraries();
+      loadCharacterLibraries();
     } else {
-      // 选择"全部"时，加载所有场景
-      loadAllSceneLibraries();
+      // 选择"全部"时，加载所有角色
+      loadAllCharacterLibraries();
     }
   };
 
-  // 选择场景
-  const handleSelectScene = (scene: LibrarySubInfo) => {
-    selectedSceneId.value = scene.materialVo?.id || undefined;
-    selectedScene.value = scene;
+  // 选择角色
+  const handleSelectCharacter = (character: LibrarySubInfo) => {
+    selectedCharacterId.value = character.materialVo?.id || undefined;
+    selectedCharacter.value = character;
   };
 
   // 确认选择
   const handleConfirm = () => {
-    if (!selectedScene.value) {
+    if (!selectedCharacter.value) {
       return;
     }
-    emit('confirm', selectedScene.value);
+    emit('confirm', selectedCharacter.value);
     handleClose();
   };
 
@@ -296,7 +303,7 @@
     return name.length > 4;
   };
 
-  // 编辑集数（针对场景库分组）
+  // 编辑集数（针对角色库分组）
   const handleEditEpisodes = (library: LibraryItemInfo) => {
     currentEditLibrary.value = library;
     selectedEpisodeIds.value =
@@ -321,17 +328,17 @@
     try {
       await bindEpisode({
         episodeIdList: selectedIds,
-        libraryType: LibraryType.SCENE, // 2：场景
-        relationId: currentEditLibrary.value.libraryId // 场景关联剧集时给libraryId
+        libraryType: LibraryType.CHARACTER, // 1：角色
+        relationId: currentEditLibrary.value.libraryId // 角色关联剧集时给libraryId
       });
 
       ElMessage.success('剧集关联成功');
       episodePopoverVisible.value = false;
       // 刷新数据以更新显示
       if (selectedEpisodeId.value !== null) {
-        await loadSceneLibraries();
+        await loadCharacterLibraries();
       } else {
-        await loadAllSceneLibraries();
+        await loadAllCharacterLibraries();
       }
     } catch (error) {
       console.error('剧集关联失败:', error);
@@ -349,7 +356,7 @@
       if (val) {
         // 打开弹窗时，默认选择"全部"
         selectedEpisodeId.value = null;
-        loadAllSceneLibraries();
+        loadAllCharacterLibraries();
       } else {
         // 关闭弹窗时重置状态
         resetState();
@@ -365,7 +372,7 @@
 </script>
 
 <style scoped lang="scss">
-  .scene-library-dialog {
+  .character-library-dialog {
     :deep(.el-dialog__header) {
       padding: 24px 24px 16px;
 
@@ -388,7 +395,7 @@
       margin-bottom: 20px;
     }
 
-    .scene-content {
+    .character-content {
       min-height: 400px;
       max-height: 500px;
       overflow-y: auto;
@@ -402,7 +409,7 @@
         font-size: 14px;
       }
 
-      .scene-libraries {
+      .character-libraries {
         display: flex;
         flex-direction: column;
         gap: 24px;
@@ -432,7 +439,6 @@
             gap: 8px;
             flex: 1;
             margin-left: 16px;
-            // justify-content: flex-end;
 
             .edit-episodes-btn {
               height: 24px;
@@ -537,10 +543,10 @@
             }
           }
 
-          .scene-item {
+          .character-item {
             position: relative;
             flex-shrink: 0;
-            width: 240px;
+            width: 120px;
             cursor: pointer;
             border-radius: 8px;
             overflow: hidden;
@@ -558,9 +564,9 @@
               box-shadow: 0 0 0 2px rgba(91, 91, 255, 0.1);
             }
 
-            .scene-image-wrapper {
+            .character-image-wrapper {
               position: relative;
-              width: 100%;
+              width: 120px;
               height: 160px;
               background: #f9fafb;
 
@@ -610,7 +616,7 @@
               }
             }
 
-            .scene-image {
+            .character-image {
               width: 100%;
               height: 100%;
               display: block;
