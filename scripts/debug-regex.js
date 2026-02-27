@@ -3,7 +3,7 @@ const fs = require('fs');
 const content = fs.readFileSync('src/api/login.ts', 'utf-8');
 
 // 按函数分割
-const functions = content.split(/export\s+function\s+/).filter(s => s.trim());
+const functions = content.split(/export\s+function\s+/).filter((s) => s.trim());
 
 console.log(`Found ${functions.length} exported functions\n`);
 

@@ -362,12 +362,22 @@
     // 如果有待保存的工作流模式，保存到新创建的剧集
     if (pendingWorkflowMode.value && newEpisodeId > 0) {
       setEpisodeWorkflowMode(newEpisodeId, pendingWorkflowMode.value);
-      console.log(`[StepScript handleAddEpisodeSuccess] 剧集 ${newEpisodeId} 工作流模式设置为: ${pendingWorkflowMode.value}`);
-      console.log('[StepScript handleAddEpisodeSuccess] 当前 localStorage:', localStorage.getItem('episode_workflow_mode'));
+      console.log(
+        `[StepScript handleAddEpisodeSuccess] 剧集 ${newEpisodeId} 工作流模式设置为: ${pendingWorkflowMode.value}`
+      );
+      console.log(
+        '[StepScript handleAddEpisodeSuccess] 当前 localStorage:',
+        localStorage.getItem('episode_workflow_mode')
+      );
       // 清空临时保存的工作流模式
       pendingWorkflowMode.value = null;
     } else {
-      console.log('[StepScript handleAddEpisodeSuccess] 跳过保存工作流模式 - newEpisodeId:', newEpisodeId, 'pendingWorkflowMode:', pendingWorkflowMode.value);
+      console.log(
+        '[StepScript handleAddEpisodeSuccess] 跳过保存工作流模式 - newEpisodeId:',
+        newEpisodeId,
+        'pendingWorkflowMode:',
+        pendingWorkflowMode.value
+      );
     }
 
     // 重新加载项目信息以获取最新的剧集列表

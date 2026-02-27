@@ -1,871 +1,1564 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>AIGC Storyboard UI - V14 (Dynamic Header)</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
     <style>
-        :root {
-            --primary: #8B5CF6; 
-            --primary-hover: #7C3AED;
-            --primary-light: #F5F3FF;
-            --text-main: #1F2937;
-            --text-sub: #6B7280;
-            --border: #E5E7EB;
-            --bg-body: #F9FAFB;
-            --bg-card: #FFFFFF;
-        }
+      :root {
+        --primary: #8b5cf6;
+        --primary-hover: #7c3aed;
+        --primary-light: #f5f3ff;
+        --text-main: #1f2937;
+        --text-sub: #6b7280;
+        --border: #e5e7eb;
+        --bg-body: #f9fafb;
+        --bg-card: #ffffff;
+      }
 
-        * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; }
-        body { background-color: var(--bg-body); padding: 32px; color: var(--text-main); }
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      }
+      body {
+        background-color: var(--bg-body);
+        padding: 32px;
+        color: var(--text-main);
+      }
 
-        /* --- 工具栏 --- */
-        .toolbar {
-            display: flex; justify-content: space-between; align-items: center;
-            background: var(--bg-card); padding: 16px 24px; border-radius: 16px;
-            margin-bottom: 24px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); border: 1px solid rgba(0,0,0,0.03);
-        }
-        .tool-group-left { display: flex; gap: 12px; align-items: center; }
+      /* --- 工具栏 --- */
+      .toolbar {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        background: var(--bg-card);
+        padding: 16px 24px;
+        border-radius: 16px;
+        margin-bottom: 24px;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+        border: 1px solid rgba(0, 0, 0, 0.03);
+      }
+      .tool-group-left {
+        display: flex;
+        gap: 12px;
+        align-items: center;
+      }
 
-        .dropdown-container { position: relative; }
-        .dropdown-trigger {
-            background: #fff; border: 1px solid var(--border);
-            padding: 8px 16px; border-radius: 10px; font-size: 14px; font-weight: 500;
-            color: var(--text-main); cursor: pointer; display: flex; align-items: center; gap: 12px;
-            min-width: 130px; justify-content: space-between; transition: all 0.2s ease;
-        }
-        .dropdown-trigger:hover { border-color: #D1D5DB; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+      .dropdown-container {
+        position: relative;
+      }
+      .dropdown-trigger {
+        background: #fff;
+        border: 1px solid var(--border);
+        padding: 8px 16px;
+        border-radius: 10px;
+        font-size: 14px;
+        font-weight: 500;
+        color: var(--text-main);
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        min-width: 130px;
+        justify-content: space-between;
+        transition: all 0.2s ease;
+      }
+      .dropdown-trigger:hover {
+        border-color: #d1d5db;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+      }
 
-        /* Mega Menu */
-        .mega-menu {
-            position: absolute; top: 130%; left: 0; background: #fff; border: 1px solid var(--border);
-            border-radius: 12px; box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.1); display: none;
-            grid-template-columns: 1fr 1fr 1fr; width: 540px; padding: 24px; z-index: 100;
+      /* Mega Menu */
+      .mega-menu {
+        position: absolute;
+        top: 130%;
+        left: 0;
+        background: #fff;
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.1);
+        display: none;
+        grid-template-columns: 1fr 1fr 1fr;
+        width: 540px;
+        padding: 24px;
+        z-index: 100;
+      }
+      .mega-menu.active {
+        display: grid;
+        animation: fadeIn 0.2s ease-out;
+      }
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+          transform: translateY(-10px);
         }
-        .mega-menu.active { display: grid; animation: fadeIn 0.2s ease-out; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
 
-        .menu-column { padding: 0 20px; border-right: 1px solid var(--border); }
-        .menu-column:last-child { border-right: none; }
-        .menu-header { font-size: 12px; font-weight: 700; color: #9CA3AF; margin-bottom: 12px; }
-        .menu-item { display: block; padding: 10px 12px; font-size: 14px; border-radius: 8px; cursor: pointer; margin-bottom: 4px; transition: bg 0.1s; }
-        .menu-item:hover { background-color: #F3F4F6; }
-        .menu-item.selected { background-color: var(--primary-light); color: var(--primary); font-weight: 600; }
+      .menu-column {
+        padding: 0 20px;
+        border-right: 1px solid var(--border);
+      }
+      .menu-column:last-child {
+        border-right: none;
+      }
+      .menu-header {
+        font-size: 12px;
+        font-weight: 700;
+        color: #9ca3af;
+        margin-bottom: 12px;
+      }
+      .menu-item {
+        display: block;
+        padding: 10px 12px;
+        font-size: 14px;
+        border-radius: 8px;
+        cursor: pointer;
+        margin-bottom: 4px;
+        transition: bg 0.1s;
+      }
+      .menu-item:hover {
+        background-color: #f3f4f6;
+      }
+      .menu-item.selected {
+        background-color: var(--primary-light);
+        color: var(--primary);
+        font-weight: 600;
+      }
 
-        .btn-primary { 
-            background-color: var(--primary); color: white; border: none; padding: 10px 24px; 
-            border-radius: 10px; font-size: 14px; font-weight: 500; cursor: pointer; 
-            transition: all 0.2s; box-shadow: 0 2px 5px rgba(139, 92, 246, 0.2);
-        }
-        .btn-primary:hover { background-color: var(--primary-hover); }
+      .btn-primary {
+        background-color: var(--primary);
+        color: white;
+        border: none;
+        padding: 10px 24px;
+        border-radius: 10px;
+        font-size: 14px;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.2s;
+        box-shadow: 0 2px 5px rgba(139, 92, 246, 0.2);
+      }
+      .btn-primary:hover {
+        background-color: var(--primary-hover);
+      }
 
-        /* --- 主表格 --- */
-        .storyboard-table {
-            width: 100%; border-collapse: separate; border-spacing: 0; background: var(--bg-card);
-            border-radius: 16px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.05); 
-            table-layout: fixed; border: 1px solid var(--border);
-        }
-        .storyboard-table th {
-            padding: 18px 24px; text-align: left; font-size: 13px; font-weight: 600; color: var(--text-sub);
-            background-color: #F9FAFB; border-bottom: 1px solid var(--border);
-        }
-        .storyboard-table td {
-            padding: 24px; vertical-align: top; border-bottom: 1px solid var(--border); font-size: 14px; color: var(--text-main);
-        }
+      /* --- 主表格 --- */
+      .storyboard-table {
+        width: 100%;
+        border-collapse: separate;
+        border-spacing: 0;
+        background: var(--bg-card);
+        border-radius: 16px;
+        overflow: hidden;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+        table-layout: fixed;
+        border: 1px solid var(--border);
+      }
+      .storyboard-table th {
+        padding: 18px 24px;
+        text-align: left;
+        font-size: 13px;
+        font-weight: 600;
+        color: var(--text-sub);
+        background-color: #f9fafb;
+        border-bottom: 1px solid var(--border);
+      }
+      .storyboard-table td {
+        padding: 24px;
+        vertical-align: top;
+        border-bottom: 1px solid var(--border);
+        font-size: 14px;
+        color: var(--text-main);
+      }
 
-        /* 列宽配置 */
-        .col-index { width: 60px; text-align: center; color: #9CA3AF; }
-        .col-visual { width: 34%; } 
-        .col-prompt { width: 20%; }
-        .col-dialogue { width: 14%; }
-        .col-char { width: 9%; }
-        .col-scene { width: 9%; }
-        .col-frame-start { width: 9%; }
-        .col-frame-end { width: 9%; }
+      /* 列宽配置 */
+      .col-index {
+        width: 60px;
+        text-align: center;
+        color: #9ca3af;
+      }
+      .col-visual {
+        width: 34%;
+      }
+      .col-prompt {
+        width: 20%;
+      }
+      .col-dialogue {
+        width: 14%;
+      }
+      .col-char {
+        width: 9%;
+      }
+      .col-scene {
+        width: 9%;
+      }
+      .col-frame-start {
+        width: 9%;
+      }
+      .col-frame-end {
+        width: 9%;
+      }
 
-        /* 视觉容器 */
-        .visual-wrapper {
-            position: relative; width: 100%; padding-right: 80px; 
-        }
+      /* 视觉容器 */
+      .visual-wrapper {
+        position: relative;
+        width: 100%;
+        padding-right: 80px;
+      }
 
-        .main-display {
-            width: 100%; aspect-ratio: 16 / 9; background-color: #F8F9FC; 
-            border-radius: 12px; position: relative; overflow: hidden;
-            border: 1px solid #E5E7EB; display: flex; flex-direction: column;
-            transition: border-color 0.2s;
-        }
-        .main-display:hover { border-color: #D1D5DB; }
+      .main-display {
+        width: 100%;
+        aspect-ratio: 16 / 9;
+        background-color: #f8f9fc;
+        border-radius: 12px;
+        position: relative;
+        overflow: hidden;
+        border: 1px solid #e5e7eb;
+        display: flex;
+        flex-direction: column;
+        transition: border-color 0.2s;
+      }
+      .main-display:hover {
+        border-color: #d1d5db;
+      }
 
-        .task-sidebar {
-            position: absolute; top: 0; right: 0; bottom: 0;
-            width: 70px; display: flex; flex-direction: column; gap: 10px;
-            overflow-y: auto; padding-right: 2px;
-        }
-        .task-sidebar::-webkit-scrollbar { width: 0px; }
+      .task-sidebar {
+        position: absolute;
+        top: 0;
+        right: 0;
+        bottom: 0;
+        width: 70px;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        overflow-y: auto;
+        padding-right: 2px;
+      }
+      .task-sidebar::-webkit-scrollbar {
+        width: 0px;
+      }
 
-        .task-card {
-            width: 100%; aspect-ratio: 1 / 1; background: #fff; border-radius: 8px;
-            border: 2px solid transparent; cursor: pointer; position: relative; 
-            overflow: hidden; flex-shrink: 0; transition: all 0.3s ease;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.04);
-        }
-        .task-card.hiding { opacity: 0; transform: scale(0.5); margin-bottom: -70px; }
-        .task-card:hover { border-color: var(--primary); transform: translateY(-2px); box-shadow: 0 4px 8px rgba(0,0,0,0.08); }
-        .task-card.loading { background: #fff; border: 1px solid #E5E7EB; display: flex; align-items: center; justify-content: center; }
+      .task-card {
+        width: 100%;
+        aspect-ratio: 1 / 1;
+        background: #fff;
+        border-radius: 8px;
+        border: 2px solid transparent;
+        cursor: pointer;
+        position: relative;
+        overflow: hidden;
+        flex-shrink: 0;
+        transition: all 0.3s ease;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.04);
+      }
+      .task-card.hiding {
+        opacity: 0;
+        transform: scale(0.5);
+        margin-bottom: -70px;
+      }
+      .task-card:hover {
+        border-color: var(--primary);
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.08);
+      }
+      .task-card.loading {
+        background: #fff;
+        border: 1px solid #e5e7eb;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
 
-        .mini-spinner { width: 18px; height: 18px; border-radius: 50%; border: 2px solid var(--primary-light); border-top-color: var(--primary); animation: spin 1s infinite linear; }
-        .big-spinner { width: 36px; height: 36px; margin-bottom: 16px; border-radius: 50%; border: 3px solid var(--primary-light); border-top-color: var(--primary); animation: spin 1s infinite linear; }
-        @keyframes spin { to { transform: rotate(360deg); } }
+      .mini-spinner {
+        width: 18px;
+        height: 18px;
+        border-radius: 50%;
+        border: 2px solid var(--primary-light);
+        border-top-color: var(--primary);
+        animation: spin 1s infinite linear;
+      }
+      .big-spinner {
+        width: 36px;
+        height: 36px;
+        margin-bottom: 16px;
+        border-radius: 50%;
+        border: 3px solid var(--primary-light);
+        border-top-color: var(--primary);
+        animation: spin 1s infinite linear;
+      }
+      @keyframes spin {
+        to {
+          transform: rotate(360deg);
+        }
+      }
 
-        .state-placeholder { 
-            display: flex; flex-direction: column; justify-content: space-between; align-items: center; 
-            width: 100%; height: 100%; 
-            background: #9CA3AF; /* Match Figure 2 gray background */
-            padding: 16px;
-            border-radius: 12px;
-            position: relative;
-            transition: background 0.2s;
-        }
-        
-        /* Top Icons */
-        
-    
-        .ph-top-bar { 
-            display: flex; gap: 10px; width: 100%; justify-content: center; 
-            padding-top: 20px; /* Give it some space from top */
-        }
-        
-        .ph-icon-btn {
-            width: 36px; height: 36px; background: #fff; border-radius: 8px;
-            display: flex; align-items: center; justify-content: center;
-            color: #9CA3AF; cursor: pointer; transition: all 0.2s; font-size: 16px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-        }
-        .ph-icon-btn:hover { transform: translateY(-2px); color: var(--primary); box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
-        .ph-icon-btn.disabled { opacity: 0.5; pointer-events: none; cursor: not-allowed; filter: grayscale(100%); }
+      .state-placeholder {
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        align-items: center;
+        width: 100%;
+        height: 100%;
+        background: #9ca3af; /* Match Figure 2 gray background */
+        padding: 16px;
+        border-radius: 12px;
+        position: relative;
+        transition: background 0.2s;
+      }
 
-        /* Center Image */
-        .ph-center-img {
-            flex: 1; display: flex; align-items: center; justify-content: center;
-            color: rgba(255,255,255,0.15); pointer-events: none;
-        }
-        .ph-center-img svg, .ph-center-img i { font-size: 80px; fill: currentColor; }
+      /* Top Icons */
 
-        /* Bottom Buttons */
-        .ph-bottom-bar { 
-            display: flex; gap: 12px; width: 100%; justify-content: center; 
-            padding-bottom: 20px;
-        }
+      .ph-top-bar {
+        display: flex;
+        gap: 10px;
+        width: 100%;
+        justify-content: center;
+        padding-top: 20px; /* Give it some space from top */
+      }
 
-        .ph-btn-edit {
-            background: #fff; color: #9CA3AF; border: none;
-            height: 40px; padding: 0 24px; border-radius: 8px; font-weight: 500; font-size: 15px;
-            display: flex; align-items: center; justify-content: center; gap: 8px; 
-            cursor: pointer; min-width: 100px; transition: all 0.2s;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-        }
-        .ph-btn-edit:hover { background: #F9FAFB; color: #6B7280; }
-        .ph-btn-edit.disabled { opacity: 0.5; pointer-events: none; cursor: not-allowed; filter: grayscale(100%); }
+      .ph-icon-btn {
+        width: 36px;
+        height: 36px;
+        background: #fff;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #9ca3af;
+        cursor: pointer;
+        transition: all 0.2s;
+        font-size: 16px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+      }
+      .ph-icon-btn:hover {
+        transform: translateY(-2px);
+        color: var(--primary);
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      }
+      .ph-icon-btn.disabled {
+        opacity: 0.5;
+        pointer-events: none;
+        cursor: not-allowed;
+        filter: grayscale(100%);
+      }
 
-        .ph-btn-gen {
-            background: linear-gradient(135deg, #C084FC 0%, #A855F7 100%);
-            color: #fff; border: none;
-            height: 40px; padding: 0 24px; border-radius: 8px; font-weight: 600; font-size: 15px;
-            display: flex; align-items: center; justify-content: center; gap: 8px; 
-            cursor: pointer; min-width: 120px; transition: all 0.2s;
-            box-shadow: 0 4px 10px rgba(168, 85, 247, 0.3);
-        }
-        .ph-btn-gen:hover { filter: brightness(1.05); transform: translateY(-1px); }
+      /* Center Image */
+      .ph-center-img {
+        flex: 1;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: rgba(255, 255, 255, 0.15);
+        pointer-events: none;
+      }
+      .ph-center-img svg,
+      .ph-center-img i {
+        font-size: 80px;
+        fill: currentColor;
+      }
 
-        /* Hide original class */
-        .btn-placeholder-gen { display: none; }
-        
-        .state-loading, .state-result { position: absolute; inset: 0; width: 100%; height: 100%; }
-        .state-loading { 
-            background: rgba(255,255,255,0.95); z-index: 20; 
-            display: flex; flex-direction: column; justify-content: space-between; 
-            color: var(--primary); font-size: 13px; font-weight: 500; 
-        }
+      /* Bottom Buttons */
+      .ph-bottom-bar {
+        display: flex;
+        gap: 12px;
+        width: 100%;
+        justify-content: center;
+        padding-bottom: 20px;
+      }
 
-        .result-grid { display: grid; width: 100%; height: 100%; grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr; gap: 1px; background: #fff; }
-        .grid-img { width: 100%; height: 100%; object-fit: cover; }
-        .result-video { width: 100%; height: 100%; position: relative; }
-        .play-overlay {
-            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
-            width: 56px; height: 56px; background: rgba(0,0,0,0.3); border-radius: 50%;
-            display: flex; align-items: center; justify-content: center; backdrop-filter: blur(4px);
-            border: 1px solid rgba(255,255,255,0.3); transition: transform 0.2s;
-        }
-        .play-overlay:hover { transform: translate(-50%, -50%) scale(1.1); background: rgba(0,0,0,0.5); }
-        .play-overlay::after { content: ""; border-style: solid; border-width: 9px 0 9px 16px; border-color: transparent transparent transparent white; margin-left: 4px; }
+      .ph-btn-edit {
+        background: #fff;
+        color: #9ca3af;
+        border: none;
+        height: 40px;
+        padding: 0 24px;
+        border-radius: 8px;
+        font-weight: 500;
+        font-size: 15px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        cursor: pointer;
+        min-width: 100px;
+        transition: all 0.2s;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+      }
+      .ph-btn-edit:hover {
+        background: #f9fafb;
+        color: #6b7280;
+      }
+      .ph-btn-edit.disabled {
+        opacity: 0.5;
+        pointer-events: none;
+        cursor: not-allowed;
+        filter: grayscale(100%);
+      }
 
-        .hover-menu {
-            position: absolute; inset: 0; background: rgba(15, 23, 42, 0.8); opacity: 0; transition: opacity 0.2s; z-index: 30;
-            display: flex; flex-direction: column; justify-content: space-between; padding: 16px; pointer-events: none;
-        }
-        .visual-wrapper:hover .main-display:not(.loading) .hover-menu { opacity: 1; pointer-events: auto; }
-        .menu-top { display: flex; justify-content: center; gap: 12px; }
-        .icon-btn { width: 36px; height: 36px; background: rgba(255,255,255,0.15); border-radius: 8px; display: flex; align-items: center; justify-content: center; cursor: pointer; color: #fff; transition: bg 0.2s; }
-        .menu-bottom { display: flex; gap: 10px; }
-        .action-btn { flex: 1; height: 36px; border-radius: 8px; border: none; cursor: pointer; font-size: 13px; display: flex; align-items: center; justify-content: center; gap: 6px; font-weight: 500;}
-        .btn-gen-small { background: var(--primary); color: #fff; }
-        .btn-gen-small:hover { background: var(--primary-hover); }
+      .ph-btn-gen {
+        background: linear-gradient(135deg, #c084fc 0%, #a855f7 100%);
+        color: #fff;
+        border: none;
+        height: 40px;
+        padding: 0 24px;
+        border-radius: 8px;
+        font-weight: 600;
+        font-size: 15px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        cursor: pointer;
+        min-width: 120px;
+        transition: all 0.2s;
+        box-shadow: 0 4px 10px rgba(168, 85, 247, 0.3);
+      }
+      .ph-btn-gen:hover {
+        filter: brightness(1.05);
+        transform: translateY(-1px);
+      }
 
-        .avatar-box, .scene-box, .frame-box, .frame-upload { width: 100%; aspect-ratio: 1/1; border-radius: 8px; overflow: hidden; display: flex; align-items: center; justify-content: center; }
-        .avatar-box img { width: 100%; height: 100%; object-fit: cover; }
-        .scene-box { background: #F3F4F6; border: 1px solid #E5E7EB; color: #6B7280; font-size: 12px; text-align: center; padding: 4px; }
-        .frame-box { 
-            background: #F9FAFB; border: 1px solid #E5E7EB; color: #9CA3AF; 
-            font-size: 10px; flex-direction: column; gap: 4px; position: relative;
-        }
-        .frame-upload { 
-            background: #fff; border: 1px dashed #D1D5DB; color: var(--primary); 
-            cursor: pointer; transition: all 0.2s; flex-direction: column; gap: 2px; position: relative;
-        }
-        .frame-upload:hover { border-color: var(--primary); background: var(--primary-light); }
-        
-        .frame-img { width: 100%; height: 100%; object-fit: cover; }
-        .frame-placeholder { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; }
+      /* Hide original class */
+      .btn-placeholder-gen {
+        display: none;
+      }
 
-        .frame-hover-menu {
-            position: absolute; inset: 0; background: rgba(0,0,0,0.6); 
-            display: flex; align-items: center; justify-content: center; gap: 8px;
-            opacity: 0; transition: opacity 0.2s;
-        }
-        .frame-box:hover .frame-hover-menu, .frame-upload:hover .frame-hover-menu { opacity: 1; }
-        .frame-btn {
-            width: 28px; height: 28px; background: #fff; border-radius: 6px;
-            display: flex; align-items: center; justify-content: center; cursor: pointer;
-            color: #4B5563; font-size: 12px; transition: all 0.2s;
-        }
-        .frame-btn:hover { color: var(--primary); transform: scale(1.1); }
-        .frame-btn.delete:hover { color: #EF4444; }
-        
-        .mini-grid { display: grid; width: 100%; height: 100%; grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr; gap: 1px; }
-        .mini-grid img { width: 100%; height: 100%; object-fit: cover; }
-        .mini-video { width: 100%; height: 100%; position: relative; }
-        .mini-video img { width: 100%; height: 100%; object-fit: cover; }
-        .mini-video::after { content: "▶"; position: absolute; bottom: 4px; right: 4px; font-size: 8px; color: #fff; background: rgba(0,0,0,0.6); width: 16px; height: 16px; border-radius: 50%; display: flex; align-items: center; justify-content: center; }
-        .hidden { display: none !important; }
+      .state-loading,
+      .state-result {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+      }
+      .state-loading {
+        background: rgba(255, 255, 255, 0.95);
+        z-index: 20;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        color: var(--primary);
+        font-size: 13px;
+        font-weight: 500;
+      }
 
-        .modal-overlay {
-            position: fixed; inset: 0; background: rgba(0,0,0,0.6); backdrop-filter: blur(4px);
-            display: flex; align-items: center; justify-content: center; z-index: 1000;
-            opacity: 0; pointer-events: none; transition: opacity 0.3s;
-        }
-        .modal-overlay.active { opacity: 1; pointer-events: auto; }
-        .modal-content {
-            width: 95%; max-width: 1600px; height: 90vh;
-            background: #F3F4F6; display: flex; flex-direction: column;
-            border-radius: 16px; overflow: hidden;
-            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
-            transform: scale(0.95); transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-        }
-        .modal-overlay.active .modal-content { transform: scale(1); }
-        
-        .modal-header { 
-            padding: 20px 24px 10px; background: transparent; 
-            display: flex; justify-content: space-between; align-items: center; 
-        }
-        .modal-title { font-size: 16px; font-weight: 600; color: #374151; }
-        .modal-close { cursor: pointer; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; border-radius: 50%; transition: bg 0.2s; color: #6B7280; }
-        .modal-close:hover { background: rgba(0,0,0,0.05); }
+      .result-grid {
+        display: grid;
+        width: 100%;
+        height: 100%;
+        grid-template-columns: 1fr 1fr;
+        grid-template-rows: 1fr 1fr;
+        gap: 1px;
+        background: #fff;
+      }
+      .grid-img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+      }
+      .result-video {
+        width: 100%;
+        height: 100%;
+        position: relative;
+      }
+      .play-overlay {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: 56px;
+        height: 56px;
+        background: rgba(0, 0, 0, 0.3);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        backdrop-filter: blur(4px);
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        transition: transform 0.2s;
+      }
+      .play-overlay:hover {
+        transform: translate(-50%, -50%) scale(1.1);
+        background: rgba(0, 0, 0, 0.5);
+      }
+      .play-overlay::after {
+        content: '';
+        border-style: solid;
+        border-width: 9px 0 9px 16px;
+        border-color: transparent transparent transparent white;
+        margin-left: 4px;
+      }
 
-        .modal-body { 
-            flex: 1; padding: 0 24px 24px; overflow: hidden;
-            background: transparent; display: flex; gap: 20px;
-        }
+      .hover-menu {
+        position: absolute;
+        inset: 0;
+        background: rgba(15, 23, 42, 0.8);
+        opacity: 0;
+        transition: opacity 0.2s;
+        z-index: 30;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        padding: 16px;
+        pointer-events: none;
+      }
+      .visual-wrapper:hover .main-display:not(.loading) .hover-menu {
+        opacity: 1;
+        pointer-events: auto;
+      }
+      .menu-top {
+        display: flex;
+        justify-content: center;
+        gap: 12px;
+      }
+      .icon-btn {
+        width: 36px;
+        height: 36px;
+        background: rgba(255, 255, 255, 0.15);
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        color: #fff;
+        transition: bg 0.2s;
+      }
+      .menu-bottom {
+        display: flex;
+        gap: 10px;
+      }
+      .action-btn {
+        flex: 1;
+        height: 36px;
+        border-radius: 8px;
+        border: none;
+        cursor: pointer;
+        font-size: 13px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        font-weight: 500;
+      }
+      .btn-gen-small {
+        background: var(--primary);
+        color: #fff;
+      }
+      .btn-gen-small:hover {
+        background: var(--primary-hover);
+      }
 
-        /* 左侧预览区 */
-        .modal-left-col {
-            width: 400px; flex-shrink: 0; background: #fff; border-radius: 12px;
-            padding: 20px; display: flex; flex-direction: column;
-            box-shadow: 0 1px 2px rgba(0,0,0,0.05);
-        }
-        .preview-title { font-size: 14px; color: #6B7280; margin-bottom: 12px; font-weight: 500; }
-        .preview-box {
-            height: 220px; flex: none; /* Fixed height for image area */
-            background: #F9FAFB; border-radius: 8px; border: 1px dashed #E5E7EB;
-            display: flex; align-items: center; justify-content: center; flex-direction: column;
-            color: #9CA3AF; font-size: 13px; overflow: hidden; position: relative;
-            margin-bottom: 20px;
-        }
-        .preview-details {
-            flex: 1; display: flex; flex-direction: column; gap: 16px;
-            overflow-y: auto; 
-        }
-        .preview-settings-box {
-            background: #fff; padding: 16px; border-radius: 8px; border: 1px solid #E5E7EB;
-            display: flex; flex-direction: column; gap: 12px;
-        }
-        .setting-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
-        .setting-label { font-size: 13px; color: #6B7280; font-weight: 500; }
-        .setting-select { 
-            flex: 1; padding: 6px 10px; border: 1px solid #D1D5DB; border-radius: 6px; 
-            font-size: 13px; color: #374151; outline: none; background: #fff;
-        }
-        .setting-select:focus { border-color: var(--primary); }
-        .preview-prompt-box {
-            background: #fff; padding: 16px; border-radius: 8px; border: 1px solid #E5E7EB;
-            flex: 1; overflow-y: auto; font-size: 13px; color: #4B5563; line-height: 1.6;
-            outline: none; transition: border-color 0.2s;
-        }
-        .preview-prompt-box:focus { border-color: var(--primary); box-shadow: 0 0 0 2px var(--primary-light); }
-        .preview-prompt-title { font-size: 12px; font-weight: 600; color: #9CA3AF; margin-bottom: 8px; }
-        
-        .preview-actions {
-            display: flex; gap: 12px; margin-top: auto; padding-top: 10px;
-        }
-        .btn-modal-action {
-            flex: 1; height: 40px; border-radius: 8px; font-size: 14px; font-weight: 500;
-            cursor: pointer; display: flex; align-items: center; justify-content: center;
-            transition: all 0.2s;
-        }
-        .btn-modal-regen { background: #fff; border: 1px solid #D1D5DB; color: #374151; }
-        .btn-modal-regen:hover { background: #F3F4F6; border-color: #9CA3AF; }
-        .btn-modal-confirm { background: var(--primary); color: #fff; border: none; }
-        .btn-modal-confirm:hover { background: var(--primary-hover); }
-        .preview-box img, .preview-box video { width: 100%; height: 100%; object-fit: contain; }
-        .empty-state-icon { font-size: 48px; margin-bottom: 16px; opacity: 0.2; }
+      .avatar-box,
+      .scene-box,
+      .frame-box,
+      .frame-upload {
+        width: 100%;
+        aspect-ratio: 1/1;
+        border-radius: 8px;
+        overflow: hidden;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .avatar-box img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+      }
+      .scene-box {
+        background: #f3f4f6;
+        border: 1px solid #e5e7eb;
+        color: #6b7280;
+        font-size: 12px;
+        text-align: center;
+        padding: 4px;
+      }
+      .frame-box {
+        background: #f9fafb;
+        border: 1px solid #e5e7eb;
+        color: #9ca3af;
+        font-size: 10px;
+        flex-direction: column;
+        gap: 4px;
+        position: relative;
+      }
+      .frame-upload {
+        background: #fff;
+        border: 1px dashed #d1d5db;
+        color: var(--primary);
+        cursor: pointer;
+        transition: all 0.2s;
+        flex-direction: column;
+        gap: 2px;
+        position: relative;
+      }
+      .frame-upload:hover {
+        border-color: var(--primary);
+        background: var(--primary-light);
+      }
 
-        /* 右侧列表区 */
-        .modal-right-col {
-            flex: 1; background: #fff; border-radius: 12px;
-            padding: 20px; display: flex; flex-direction: column;
-            box-shadow: 0 1px 2px rgba(0,0,0,0.05); overflow: hidden;
-        }
-        .history-list-title { font-size: 14px; color: #6B7280; margin-bottom: 12px; font-weight: 500; }
-        .history-list {
-            flex: 1; overflow-y: auto; padding-right: 10px;
-        }
-        .history-list::-webkit-scrollbar { width: 6px; }
-        .history-list::-webkit-scrollbar-thumb { background: #E5E7EB; border-radius: 3px; }
+      .frame-img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+      }
+      .frame-placeholder {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 2px;
+      }
 
-        /* 历史记录项 */
-        .history-item {
-            background: #F9FAFB; border-radius: 12px; padding: 24px; margin-bottom: 20px;
-            border: 1px solid transparent; transition: all 0.2s;
-        }
-        .history-item:hover { border-color: #E5E7EB; background: #fff; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); }
+      .frame-hover-menu {
+        position: absolute;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.6);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        opacity: 0;
+        transition: opacity 0.2s;
+      }
+      .frame-box:hover .frame-hover-menu,
+      .frame-upload:hover .frame-hover-menu {
+        opacity: 1;
+      }
+      .frame-btn {
+        width: 28px;
+        height: 28px;
+        background: #fff;
+        border-radius: 6px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        color: #4b5563;
+        font-size: 12px;
+        transition: all 0.2s;
+      }
+      .frame-btn:hover {
+        color: var(--primary);
+        transform: scale(1.1);
+      }
+      .frame-btn.delete:hover {
+        color: #ef4444;
+      }
 
-        .hist-text { font-size: 14px; color: #374151; line-height: 1.6; margin-bottom: 20px; }
-        .hist-label { color: #6B7280; font-weight: 500; margin-right: 4px; }
+      .mini-grid {
+        display: grid;
+        width: 100%;
+        height: 100%;
+        grid-template-columns: 1fr 1fr;
+        grid-template-rows: 1fr 1fr;
+        gap: 1px;
+      }
+      .mini-grid img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+      }
+      .mini-video {
+        width: 100%;
+        height: 100%;
+        position: relative;
+      }
+      .mini-video img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+      }
+      .mini-video::after {
+        content: '▶';
+        position: absolute;
+        bottom: 4px;
+        right: 4px;
+        font-size: 8px;
+        color: #fff;
+        background: rgba(0, 0, 0, 0.6);
+        width: 16px;
+        height: 16px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .hidden {
+        display: none !important;
+      }
 
-        .hist-media-grid { display: flex; gap: 16px; margin-bottom: 16px; flex-wrap: wrap; }
-        .hist-img-box {
-            width: 280px; aspect-ratio: 16/9; border-radius: 8px; overflow: hidden;
-            cursor: pointer; border: 2px solid transparent; transition: all 0.2s; position: relative;
-        }
-        .hist-img-box:hover { border-color: var(--primary); transform: translateY(-2px); }
-        .hist-img-box img { width: 100%; height: 100%; object-fit: cover; }
-        .hist-img-box.active { border-color: var(--primary); box-shadow: 0 0 0 2px var(--primary-light); }
+      .modal-overlay {
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.6);
+        backdrop-filter: blur(4px);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 1000;
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.3s;
+      }
+      .modal-overlay.active {
+        opacity: 1;
+        pointer-events: auto;
+      }
+      .modal-content {
+        width: 95%;
+        max-width: 1600px;
+        height: 90vh;
+        background: #f3f4f6;
+        display: flex;
+        flex-direction: column;
+        border-radius: 16px;
+        overflow: hidden;
+        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+        transform: scale(0.95);
+        transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+      }
+      .modal-overlay.active .modal-content {
+        transform: scale(1);
+      }
 
-        .hist-meta {
-            display: flex; justify-content: flex-end; align-items: center; gap: 16px;
-            font-size: 12px; color: #9CA3AF; margin-top: 12px; border-top: 1px solid #E5E7EB; padding-top: 12px;
-        }
+      .modal-header {
+        padding: 20px 24px 10px;
+        background: transparent;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+      .modal-title {
+        font-size: 16px;
+        font-weight: 600;
+        color: #374151;
+      }
+      .modal-close {
+        cursor: pointer;
+        width: 32px;
+        height: 32px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 50%;
+        transition: bg 0.2s;
+        color: #6b7280;
+      }
+      .modal-close:hover {
+        background: rgba(0, 0, 0, 0.05);
+      }
 
+      .modal-body {
+        flex: 1;
+        padding: 0 24px 24px;
+        overflow: hidden;
+        background: transparent;
+        display: flex;
+        gap: 20px;
+      }
+
+      /* 左侧预览区 */
+      .modal-left-col {
+        width: 400px;
+        flex-shrink: 0;
+        background: #fff;
+        border-radius: 12px;
+        padding: 20px;
+        display: flex;
+        flex-direction: column;
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+      }
+      .preview-title {
+        font-size: 14px;
+        color: #6b7280;
+        margin-bottom: 12px;
+        font-weight: 500;
+      }
+      .preview-box {
+        height: 220px;
+        flex: none; /* Fixed height for image area */
+        background: #f9fafb;
+        border-radius: 8px;
+        border: 1px dashed #e5e7eb;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-direction: column;
+        color: #9ca3af;
+        font-size: 13px;
+        overflow: hidden;
+        position: relative;
+        margin-bottom: 20px;
+      }
+      .preview-details {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+        overflow-y: auto;
+      }
+      .preview-settings-box {
+        background: #fff;
+        padding: 16px;
+        border-radius: 8px;
+        border: 1px solid #e5e7eb;
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+      }
+      .setting-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+      }
+      .setting-label {
+        font-size: 13px;
+        color: #6b7280;
+        font-weight: 500;
+      }
+      .setting-select {
+        flex: 1;
+        padding: 6px 10px;
+        border: 1px solid #d1d5db;
+        border-radius: 6px;
+        font-size: 13px;
+        color: #374151;
+        outline: none;
+        background: #fff;
+      }
+      .setting-select:focus {
+        border-color: var(--primary);
+      }
+      .preview-prompt-box {
+        background: #fff;
+        padding: 16px;
+        border-radius: 8px;
+        border: 1px solid #e5e7eb;
+        flex: 1;
+        overflow-y: auto;
+        font-size: 13px;
+        color: #4b5563;
+        line-height: 1.6;
+        outline: none;
+        transition: border-color 0.2s;
+      }
+      .preview-prompt-box:focus {
+        border-color: var(--primary);
+        box-shadow: 0 0 0 2px var(--primary-light);
+      }
+      .preview-prompt-title {
+        font-size: 12px;
+        font-weight: 600;
+        color: #9ca3af;
+        margin-bottom: 8px;
+      }
+
+      .preview-actions {
+        display: flex;
+        gap: 12px;
+        margin-top: auto;
+        padding-top: 10px;
+      }
+      .btn-modal-action {
+        flex: 1;
+        height: 40px;
+        border-radius: 8px;
+        font-size: 14px;
+        font-weight: 500;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.2s;
+      }
+      .btn-modal-regen {
+        background: #fff;
+        border: 1px solid #d1d5db;
+        color: #374151;
+      }
+      .btn-modal-regen:hover {
+        background: #f3f4f6;
+        border-color: #9ca3af;
+      }
+      .btn-modal-confirm {
+        background: var(--primary);
+        color: #fff;
+        border: none;
+      }
+      .btn-modal-confirm:hover {
+        background: var(--primary-hover);
+      }
+      .preview-box img,
+      .preview-box video {
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+      }
+      .empty-state-icon {
+        font-size: 48px;
+        margin-bottom: 16px;
+        opacity: 0.2;
+      }
+
+      /* 右侧列表区 */
+      .modal-right-col {
+        flex: 1;
+        background: #fff;
+        border-radius: 12px;
+        padding: 20px;
+        display: flex;
+        flex-direction: column;
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+        overflow: hidden;
+      }
+      .history-list-title {
+        font-size: 14px;
+        color: #6b7280;
+        margin-bottom: 12px;
+        font-weight: 500;
+      }
+      .history-list {
+        flex: 1;
+        overflow-y: auto;
+        padding-right: 10px;
+      }
+      .history-list::-webkit-scrollbar {
+        width: 6px;
+      }
+      .history-list::-webkit-scrollbar-thumb {
+        background: #e5e7eb;
+        border-radius: 3px;
+      }
+
+      /* 历史记录项 */
+      .history-item {
+        background: #f9fafb;
+        border-radius: 12px;
+        padding: 24px;
+        margin-bottom: 20px;
+        border: 1px solid transparent;
+        transition: all 0.2s;
+      }
+      .history-item:hover {
+        border-color: #e5e7eb;
+        background: #fff;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+      }
+
+      .hist-text {
+        font-size: 14px;
+        color: #374151;
+        line-height: 1.6;
+        margin-bottom: 20px;
+      }
+      .hist-label {
+        color: #6b7280;
+        font-weight: 500;
+        margin-right: 4px;
+      }
+
+      .hist-media-grid {
+        display: flex;
+        gap: 16px;
+        margin-bottom: 16px;
+        flex-wrap: wrap;
+      }
+      .hist-img-box {
+        width: 280px;
+        aspect-ratio: 16/9;
+        border-radius: 8px;
+        overflow: hidden;
+        cursor: pointer;
+        border: 2px solid transparent;
+        transition: all 0.2s;
+        position: relative;
+      }
+      .hist-img-box:hover {
+        border-color: var(--primary);
+        transform: translateY(-2px);
+      }
+      .hist-img-box img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+      }
+      .hist-img-box.active {
+        border-color: var(--primary);
+        box-shadow: 0 0 0 2px var(--primary-light);
+      }
+
+      .hist-meta {
+        display: flex;
+        justify-content: flex-end;
+        align-items: center;
+        gap: 16px;
+        font-size: 12px;
+        color: #9ca3af;
+        margin-top: 12px;
+        border-top: 1px solid #e5e7eb;
+        padding-top: 12px;
+      }
     </style>
-</head>
-<body>
-
+  </head>
+  <body>
     <div class="toolbar">
-        <div class="tool-group-left">
-            <div class="dropdown-container">
-                <div class="dropdown-trigger" id="modelTrigger">
-                    <span id="currentModelText">即梦4.5</span>
-                    <svg style="width:12px;fill:#9CA3AF" viewBox="0 0 20 20"><path d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"/></svg>
-                </div>
-                <div class="mega-menu" id="modelMenu">
-                    <div class="menu-column">
-                        <div class="menu-header">文生图模型</div>
-                        <div class="menu-item selected" onclick="selectModel('即梦4.5', 't2i', this)">即梦4.5</div>
-                        <div class="menu-item" onclick="selectModel('香蕉', 't2i', this)">香蕉</div>
-                        <div class="menu-item" onclick="selectModel('香蕉Pro', 't2i', this)">香蕉Pro</div>
-                    </div>
-                    <div class="menu-column">
-                        <div class="menu-header">图生视频模型</div>
-                        <div class="menu-item" onclick="selectModel('海螺2.0', 'i2v', this)">海螺2.0</div>
-                        <div class="menu-item" onclick="selectModel('海螺2.3', 'i2v', this)">海螺2.3</div>
-                        <div class="menu-item" onclick="selectModel('Vidu Q2', 'i2v', this)">Vidu Q2</div>
-                        <div class="menu-item" onclick="selectModel('梭罗2.0', 'i2v', this)">梭罗2.0</div>
-                        <div class="menu-item" onclick="selectModel('唯艺欧3.1', 'i2v', this)">唯艺欧3.1</div>
-                        <div class="menu-item" onclick="selectModel('可灵2.6', 'i2v', this)">可灵2.6</div>
-                        <div class="menu-item" onclick="selectModel('即梦3.0-fast', 'i2v', this)">即梦3.0-fast</div>
-                        <div class="menu-item" onclick="selectModel('即梦3.5', 'i2v', this)">即梦3.5</div>
-                    </div>
-                    <div class="menu-column">
-                        <div class="menu-header">参考生视频模型</div>
-                        <div class="menu-item" onclick="selectModel('可灵01', 'r2v', this)">可灵01</div>
-                        <div class="menu-item" onclick="selectModel('Veo3.1', 'r2v', this)">Veo3.1</div>
-                        <div class="menu-item" onclick="selectModel('Sora2', 'r2v', this)">Sora2</div>
-                        <div class="menu-item" onclick="selectModel('Wan2.6', 'r2v', this)">Wan2.6</div>
-                        <div class="menu-item" onclick="selectModel('Vidu Q2', 'r2v', this)">Vidu Q2</div>
-                    </div>
-                </div>
+      <div class="tool-group-left">
+        <div class="dropdown-container">
+          <div class="dropdown-trigger" id="modelTrigger">
+            <span id="currentModelText">即梦4.5</span>
+            <svg style="width: 12px; fill: #9ca3af" viewBox="0 0 20 20">
+              <path
+                d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
+              />
+            </svg>
+          </div>
+          <div class="mega-menu" id="modelMenu">
+            <div class="menu-column">
+              <div class="menu-header">文生图模型</div>
+              <div class="menu-item selected" onclick="selectModel('即梦4.5', 't2i', this)">即梦4.5</div>
+              <div class="menu-item" onclick="selectModel('香蕉', 't2i', this)">香蕉</div>
+              <div class="menu-item" onclick="selectModel('香蕉Pro', 't2i', this)">香蕉Pro</div>
             </div>
-            <div class="dropdown-trigger video-opt" style="display:none; width:auto;">720p</div>
-            <div class="dropdown-trigger video-opt" style="display:none; width:auto;">5S</div>
+            <div class="menu-column">
+              <div class="menu-header">图生视频模型</div>
+              <div class="menu-item" onclick="selectModel('海螺2.0', 'i2v', this)">海螺2.0</div>
+              <div class="menu-item" onclick="selectModel('海螺2.3', 'i2v', this)">海螺2.3</div>
+              <div class="menu-item" onclick="selectModel('Vidu Q2', 'i2v', this)">Vidu Q2</div>
+              <div class="menu-item" onclick="selectModel('梭罗2.0', 'i2v', this)">梭罗2.0</div>
+              <div class="menu-item" onclick="selectModel('唯艺欧3.1', 'i2v', this)">唯艺欧3.1</div>
+              <div class="menu-item" onclick="selectModel('可灵2.6', 'i2v', this)">可灵2.6</div>
+              <div class="menu-item" onclick="selectModel('即梦3.0-fast', 'i2v', this)">即梦3.0-fast</div>
+              <div class="menu-item" onclick="selectModel('即梦3.5', 'i2v', this)">即梦3.5</div>
+            </div>
+            <div class="menu-column">
+              <div class="menu-header">参考生视频模型</div>
+              <div class="menu-item" onclick="selectModel('可灵01', 'r2v', this)">可灵01</div>
+              <div class="menu-item" onclick="selectModel('Veo3.1', 'r2v', this)">Veo3.1</div>
+              <div class="menu-item" onclick="selectModel('Sora2', 'r2v', this)">Sora2</div>
+              <div class="menu-item" onclick="selectModel('Wan2.6', 'r2v', this)">Wan2.6</div>
+              <div class="menu-item" onclick="selectModel('Vidu Q2', 'r2v', this)">Vidu Q2</div>
+            </div>
+          </div>
         </div>
-        <div><button class="btn-primary">导出项目</button></div>
+        <div class="dropdown-trigger video-opt" style="display: none; width: auto">720p</div>
+        <div class="dropdown-trigger video-opt" style="display: none; width: auto">5S</div>
+      </div>
+      <div><button class="btn-primary">导出项目</button></div>
     </div>
 
     <table class="storyboard-table">
-        <thead>
-            <tr>
-                <th class="col-index">#</th>
-                <th class="col-visual">分镜画面</th>
-                <th class="col-prompt" id="promptHeader">图片提示词</th>
-                <th class="col-dialogue">台词</th>
-                <th class="col-char show-t2i">人物</th>
-                <th class="col-scene show-t2i">场景</th>
-                <th class="col-frame-start hidden show-i2v">首帧</th>
-                <th class="col-frame-end hidden show-i2v">尾帧</th>
-            </tr>
-        </thead>
-        <tbody>
-            <tr>
-                <td class="col-index">1</td>
-                <td class="col-visual">
-                    <div class="visual-wrapper">
-                        <div class="main-display" id="mainDisplay">
-                            <div class="state-placeholder" id="placeholderView" onmouseenter="this.querySelectorAll('.ph-top-bar, .ph-bottom-bar').forEach(e=>e.style.opacity='1')" onmouseleave="this.querySelectorAll('.ph-top-bar, .ph-bottom-bar').forEach(e=>e.style.opacity='0')">
-                                <div class="ph-top-bar" style="opacity: 0; transition: opacity 0.2s;">
-                                    <div class="ph-icon-btn" title="本地上传"><i class="fa-solid fa-arrow-right-arrow-left"></i></div>
-                                    <div class="ph-icon-btn disabled" title="查看历史"><i class="fa-solid fa-clock-rotate-left"></i></div>
-                                    <div class="ph-icon-btn disabled" title="下载图片"><i class="fa-solid fa-download"></i></div>
-                                    <div class="ph-icon-btn disabled" title="裁剪"><i class="fa-solid fa-crop-simple"></i></div>
-                                    <div class="ph-icon-btn disabled" title="收藏"><i class="fa-regular fa-star"></i></div>
-                                </div>
-                                <div class="ph-center-img">
-                                    <i class="fa-regular fa-image"></i>
-                                </div>
-                                <div class="ph-bottom-bar" style="opacity: 0; transition: opacity 0.2s;">
-                                    <button class="ph-btn-edit disabled"><i class="fa-regular fa-pen-to-square"></i> 编辑</button>
-                                    <button class="ph-btn-gen" id="placeholderGenBtn"><i class="fa-solid fa-bolt"></i> 2 生成</button>
-                                </div>
-                            </div>
-                            <div class="state-loading hidden" id="loadingView">
-                                <div class="ph-top-bar">
-                                    <div class="ph-icon-btn"><i class="fa-solid fa-arrow-right-arrow-left"></i></div>
-                                    <div class="ph-icon-btn" title="查看历史" onclick="openModalFromMain()"><i class="fa-solid fa-clock-rotate-left"></i></div>
-                                    <div class="ph-icon-btn"><i class="fa-solid fa-download"></i></div>
-                                    <div class="ph-icon-btn"><i class="fa-solid fa-crop-simple"></i></div>
-                                    <div class="ph-icon-btn"><i class="fa-regular fa-star"></i></div>
-                                </div>
-                                <div style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center;">
-                                    <div class="big-spinner"></div>
-                                    <span>AI正在绘制...</span>
-                                </div>
-                                <div class="ph-bottom-bar" style="visibility:visible">
-                                    <button class="ph-btn-edit disabled"><i class="fa-regular fa-pen-to-square"></i> 编辑</button>
-                                    <button class="ph-btn-gen" id="loadingGenBtn"><i class="fa-solid fa-bolt"></i> 2 生成</button>
-                                </div>
-                            </div>
-                            <div class="state-result hidden" id="resultView" onclick="openModalFromMain()"></div>
-                            <div class="hover-menu hidden" id="hoverMenu">
-                                <div class="ph-top-bar" style="opacity: 1; padding-top: 0;">
-                                    <div class="ph-icon-btn" title="本地上传" onclick="event.stopPropagation()"><i class="fa-solid fa-arrow-right-arrow-left"></i></div>
-                                    <div class="ph-icon-btn" title="查看历史" onclick="openModalFromMain()"><i class="fa-solid fa-clock-rotate-left"></i></div>
-                                    <div class="ph-icon-btn" title="下载图片" onclick="event.stopPropagation()"><i class="fa-solid fa-download"></i></div>
-                                    <div class="ph-icon-btn" title="裁剪" onclick="event.stopPropagation()"><i class="fa-solid fa-crop-simple"></i></div>
-                                    <div class="ph-icon-btn" title="收藏" onclick="event.stopPropagation()"><i class="fa-regular fa-star"></i></div>
-                                </div>
-                                <div style="flex:1; cursor:pointer;" onclick="openModalFromMain()" title="点击查看详情"></div>
-                                <div class="ph-bottom-bar" style="opacity: 1; padding-bottom: 0;">
-                                    <button class="ph-btn-edit" onclick="event.stopPropagation()"><i class="fa-regular fa-pen-to-square"></i> 编辑</button>
-                                    <button class="ph-btn-gen" id="generateBtnMain" onclick="startNewTask(event)"><i class="fa-solid fa-bolt"></i> 2 生成</button>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="task-sidebar" id="taskSidebar"></div>
+      <thead>
+        <tr>
+          <th class="col-index">#</th>
+          <th class="col-visual">分镜画面</th>
+          <th class="col-prompt" id="promptHeader">图片提示词</th>
+          <th class="col-dialogue">台词</th>
+          <th class="col-char show-t2i">人物</th>
+          <th class="col-scene show-t2i">场景</th>
+          <th class="col-frame-start hidden show-i2v">首帧</th>
+          <th class="col-frame-end hidden show-i2v">尾帧</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="col-index">1</td>
+          <td class="col-visual">
+            <div class="visual-wrapper">
+              <div class="main-display" id="mainDisplay">
+                <div
+                  class="state-placeholder"
+                  id="placeholderView"
+                  onmouseenter="this.querySelectorAll('.ph-top-bar, .ph-bottom-bar').forEach(e=>e.style.opacity='1')"
+                  onmouseleave="this.querySelectorAll('.ph-top-bar, .ph-bottom-bar').forEach(e=>e.style.opacity='0')"
+                >
+                  <div class="ph-top-bar" style="opacity: 0; transition: opacity 0.2s">
+                    <div class="ph-icon-btn" title="本地上传"><i class="fa-solid fa-arrow-right-arrow-left"></i></div>
+                    <div class="ph-icon-btn disabled" title="查看历史">
+                      <i class="fa-solid fa-clock-rotate-left"></i>
                     </div>
-                </td>
-                <td>中景镜头: 镜头平视，侧面构图。高健迈步走向角落。江霏像受惊的小动物一样，身体猛地向后瑟缩，双手护在胸前，眼神中充满恐惧和戒备，死死盯着高健的每一个动作</td>
-                <td>高健: 别怕，我帮你解开。</td>
-                <td class="show-t2i"><div class="avatar-box"><img src="https://api.dicebear.com/7.x/avataaars/svg?seed=Felix"></div></td>
-                <td class="show-t2i"><div class="scene-box">客厅一角</div></td>
-                <td class="hidden show-i2v">
-                    <div class="frame-box" id="startFrameCell">
-                        <!-- Initial State -->
-                        <div class="frame-placeholder"><span>+</span><p>首帧</p></div>
-                        <div class="frame-hover-menu">
-                             <div class="frame-btn" title="历史记录" onclick="openModalForFrame('start')"><i class="fa-solid fa-clock-rotate-left"></i></div>
-                             <div class="frame-btn" title="本地上传" onclick="triggerUpload('start')"><i class="fa-solid fa-upload"></i></div>
-                        </div>
+                    <div class="ph-icon-btn disabled" title="下载图片"><i class="fa-solid fa-download"></i></div>
+                    <div class="ph-icon-btn disabled" title="裁剪"><i class="fa-solid fa-crop-simple"></i></div>
+                    <div class="ph-icon-btn disabled" title="收藏"><i class="fa-regular fa-star"></i></div>
+                  </div>
+                  <div class="ph-center-img">
+                    <i class="fa-regular fa-image"></i>
+                  </div>
+                  <div class="ph-bottom-bar" style="opacity: 0; transition: opacity 0.2s">
+                    <button class="ph-btn-edit disabled"><i class="fa-regular fa-pen-to-square"></i> 编辑</button>
+                    <button class="ph-btn-gen" id="placeholderGenBtn"><i class="fa-solid fa-bolt"></i> 2 生成</button>
+                  </div>
+                </div>
+                <div class="state-loading hidden" id="loadingView">
+                  <div class="ph-top-bar">
+                    <div class="ph-icon-btn"><i class="fa-solid fa-arrow-right-arrow-left"></i></div>
+                    <div class="ph-icon-btn" title="查看历史" onclick="openModalFromMain()">
+                      <i class="fa-solid fa-clock-rotate-left"></i>
                     </div>
-                </td>
-                <td class="hidden show-i2v">
-                    <div class="frame-upload" id="endFrameCell">
-                        <!-- Initial State -->
-                        <div class="frame-placeholder"><span>+</span><p>尾帧</p></div>
-                        <div class="frame-hover-menu">
-                             <div class="frame-btn" title="历史记录" onclick="openModalForFrame('end')"><i class="fa-solid fa-clock-rotate-left"></i></div>
-                             <div class="frame-btn" title="本地上传" onclick="triggerUpload('end')"><i class="fa-solid fa-upload"></i></div>
-                        </div>
+                    <div class="ph-icon-btn"><i class="fa-solid fa-download"></i></div>
+                    <div class="ph-icon-btn"><i class="fa-solid fa-crop-simple"></i></div>
+                    <div class="ph-icon-btn"><i class="fa-regular fa-star"></i></div>
+                  </div>
+                  <div
+                    style="flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center"
+                  >
+                    <div class="big-spinner"></div>
+                    <span>AI正在绘制...</span>
+                  </div>
+                  <div class="ph-bottom-bar" style="visibility: visible">
+                    <button class="ph-btn-edit disabled"><i class="fa-regular fa-pen-to-square"></i> 编辑</button>
+                    <button class="ph-btn-gen" id="loadingGenBtn"><i class="fa-solid fa-bolt"></i> 2 生成</button>
+                  </div>
+                </div>
+                <div class="state-result hidden" id="resultView" onclick="openModalFromMain()"></div>
+                <div class="hover-menu hidden" id="hoverMenu">
+                  <div class="ph-top-bar" style="opacity: 1; padding-top: 0">
+                    <div class="ph-icon-btn" title="本地上传" onclick="event.stopPropagation()">
+                      <i class="fa-solid fa-arrow-right-arrow-left"></i>
                     </div>
-                </td>
-            </tr>
-        </tbody>
+                    <div class="ph-icon-btn" title="查看历史" onclick="openModalFromMain()">
+                      <i class="fa-solid fa-clock-rotate-left"></i>
+                    </div>
+                    <div class="ph-icon-btn" title="下载图片" onclick="event.stopPropagation()">
+                      <i class="fa-solid fa-download"></i>
+                    </div>
+                    <div class="ph-icon-btn" title="裁剪" onclick="event.stopPropagation()">
+                      <i class="fa-solid fa-crop-simple"></i>
+                    </div>
+                    <div class="ph-icon-btn" title="收藏" onclick="event.stopPropagation()">
+                      <i class="fa-regular fa-star"></i>
+                    </div>
+                  </div>
+                  <div style="flex: 1; cursor: pointer" onclick="openModalFromMain()" title="点击查看详情"></div>
+                  <div class="ph-bottom-bar" style="opacity: 1; padding-bottom: 0">
+                    <button class="ph-btn-edit" onclick="event.stopPropagation()">
+                      <i class="fa-regular fa-pen-to-square"></i> 编辑
+                    </button>
+                    <button class="ph-btn-gen" id="generateBtnMain" onclick="startNewTask(event)">
+                      <i class="fa-solid fa-bolt"></i> 2 生成
+                    </button>
+                  </div>
+                </div>
+              </div>
+              <div class="task-sidebar" id="taskSidebar"></div>
+            </div>
+          </td>
+          <td>
+            中景镜头:
+            镜头平视，侧面构图。高健迈步走向角落。江霏像受惊的小动物一样，身体猛地向后瑟缩，双手护在胸前，眼神中充满恐惧和戒备，死死盯着高健的每一个动作
+          </td>
+          <td>高健: 别怕，我帮你解开。</td>
+          <td class="show-t2i">
+            <div class="avatar-box"><img src="https://api.dicebear.com/7.x/avataaars/svg?seed=Felix" /></div>
+          </td>
+          <td class="show-t2i"><div class="scene-box">客厅一角</div></td>
+          <td class="hidden show-i2v">
+            <div class="frame-box" id="startFrameCell">
+              <!-- Initial State -->
+              <div class="frame-placeholder">
+                <span>+</span>
+                <p>首帧</p>
+              </div>
+              <div class="frame-hover-menu">
+                <div class="frame-btn" title="历史记录" onclick="openModalForFrame('start')">
+                  <i class="fa-solid fa-clock-rotate-left"></i>
+                </div>
+                <div class="frame-btn" title="本地上传" onclick="triggerUpload('start')">
+                  <i class="fa-solid fa-upload"></i>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="hidden show-i2v">
+            <div class="frame-upload" id="endFrameCell">
+              <!-- Initial State -->
+              <div class="frame-placeholder">
+                <span>+</span>
+                <p>尾帧</p>
+              </div>
+              <div class="frame-hover-menu">
+                <div class="frame-btn" title="历史记录" onclick="openModalForFrame('end')">
+                  <i class="fa-solid fa-clock-rotate-left"></i>
+                </div>
+                <div class="frame-btn" title="本地上传" onclick="triggerUpload('end')">
+                  <i class="fa-solid fa-upload"></i>
+                </div>
+              </div>
+            </div>
+          </td>
+        </tr>
+      </tbody>
     </table>
 
     <div class="modal-overlay" id="historyModal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <span class="modal-title" id="modalTitle">历史记录</span>
-                <div class="modal-close" onclick="closeModal()">✕</div>
-            </div>
-            <div class="modal-body">
-                <!-- 左侧预览 -->
-                <div class="modal-left-col">
-                    <div class="preview-title" id="previewTitle">当前选中</div>
-                    <div class="preview-box" id="previewBox">
-                        <i class="fa-regular fa-image empty-state-icon"></i>
-                        <span>点击右侧内容进行查看</span>
-                    </div>
-                    
-                    <div class="preview-details" id="previewDetails" style="display:none">
-                        <div class="preview-prompt-box">
-                            <div class="preview-prompt-title">提示词描述</div>
-                            <div id="previewPromptText" contenteditable="true" style="outline:none; min-height:60px;">
-                                <!-- Prompt content here -->
-                            </div>
-                        </div>
-                        <div class="preview-settings-box" id="previewSettings">
-                            <!-- Dynamic Settings -->
-                        </div>
-                        <div class="preview-actions">
-                            <button class="btn-modal-action btn-modal-regen" id="modalRegenBtn">重新生成</button>
-                            <button class="btn-modal-action btn-modal-confirm" id="confirmSelectBtn">确 认</button>
-                        </div>
-                    </div>
-                </div>
-                <!-- 右侧列表 -->
-                <div class="modal-right-col">
-                    <div class="history-list-title">历史记录</div>
-                    <div class="history-list" id="historyList">
-                        <!-- 动态生成 -->
-                    </div>
-                </div>
-            </div>
+      <div class="modal-content">
+        <div class="modal-header">
+          <span class="modal-title" id="modalTitle">历史记录</span>
+          <div class="modal-close" onclick="closeModal()">✕</div>
         </div>
+        <div class="modal-body">
+          <!-- 左侧预览 -->
+          <div class="modal-left-col">
+            <div class="preview-title" id="previewTitle">当前选中</div>
+            <div class="preview-box" id="previewBox">
+              <i class="fa-regular fa-image empty-state-icon"></i>
+              <span>点击右侧内容进行查看</span>
+            </div>
+
+            <div class="preview-details" id="previewDetails" style="display: none">
+              <div class="preview-prompt-box">
+                <div class="preview-prompt-title">提示词描述</div>
+                <div id="previewPromptText" contenteditable="true" style="outline: none; min-height: 60px">
+                  <!-- Prompt content here -->
+                </div>
+              </div>
+              <div class="preview-settings-box" id="previewSettings">
+                <!-- Dynamic Settings -->
+              </div>
+              <div class="preview-actions">
+                <button class="btn-modal-action btn-modal-regen" id="modalRegenBtn">重新生成</button>
+                <button class="btn-modal-action btn-modal-confirm" id="confirmSelectBtn">确 认</button>
+              </div>
+            </div>
+          </div>
+          <!-- 右侧列表 -->
+          <div class="modal-right-col">
+            <div class="history-list-title">历史记录</div>
+            <div class="history-list" id="historyList">
+              <!-- 动态生成 -->
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
 
-    <input type="file" id="hiddenFileInput" style="display:none" accept="image/*">
+    <input type="file" id="hiddenFileInput" style="display: none" accept="image/*" />
 
     <script>
-        let currentMode = 't2i'; 
-        let taskIdCounter = 0;
-        let isFirstGeneration = true; 
-        const tasks = {}; 
+      let currentMode = 't2i';
+      let taskIdCounter = 0;
+      let isFirstGeneration = true;
+      const tasks = {};
 
-        // Model Constants
-        const MODEL_DATA = {
-            't2i': ['即梦4.5', '香蕉', '香蕉Pro'],
-            'i2v': ['海螺2.0', '海螺2.3', 'Vidu Q2', '梭罗2.0', '唯艺欧3.1', '可灵2.6', '即梦3.0-fast', '即梦3.5'],
-            'r2v': ['可灵01', 'Veo3.1', 'Sora2', 'Wan2.6', 'Vidu Q2']
+      // Model Constants
+      const MODEL_DATA = {
+        t2i: ['即梦4.5', '香蕉', '香蕉Pro'],
+        i2v: ['海螺2.0', '海螺2.3', 'Vidu Q2', '梭罗2.0', '唯艺欧3.1', '可灵2.6', '即梦3.0-fast', '即梦3.5'],
+        r2v: ['可灵01', 'Veo3.1', 'Sora2', 'Wan2.6', 'Vidu Q2']
+      };
+      const VIDEO_RESOLUTIONS = ['720p', '1080p'];
+      const VIDEO_DURATIONS = ['5s', '10s'];
+
+      // Frame State
+      let startFrameUrl = null;
+      let endFrameUrl = null;
+      let frameSelectionTarget = null; // 'start' or 'end'
+
+      const mainDisplay = document.getElementById('mainDisplay');
+      const placeholderView = document.getElementById('placeholderView');
+      const loadingView = document.getElementById('loadingView');
+      const resultView = document.getElementById('resultView');
+      const hoverMenu = document.getElementById('hoverMenu');
+      const taskSidebar = document.getElementById('taskSidebar');
+      const generateBtnMain = document.getElementById('generateBtnMain');
+      const modal = document.getElementById('historyModal');
+      // const modalBody = document.getElementById('modalBody'); // Removed
+      const modalTitle = document.getElementById('modalTitle');
+      const historyList = document.getElementById('historyList');
+      const previewBox = document.getElementById('previewBox');
+      const previewTitle = document.getElementById('previewTitle');
+      const previewDetails = document.getElementById('previewDetails');
+      const previewPromptText = document.getElementById('previewPromptText');
+      const confirmSelectBtn = document.getElementById('confirmSelectBtn');
+      const modalRegenBtn = document.getElementById('modalRegenBtn');
+      const hiddenFileInput = document.getElementById('hiddenFileInput');
+
+      let currentPreviewData = null;
+      let modalTarget = 'main'; // 'main', 'start', 'end'
+
+      // [NEW] 获取表头元素
+      const promptHeader = document.getElementById('promptHeader');
+
+      // generateBtnMain.addEventListener('click', startNewTask); // REMOVED: Fixed double triggering bug
+
+      const placeholderGenBtn = document.getElementById('placeholderGenBtn');
+      if (placeholderGenBtn) placeholderGenBtn.addEventListener('click', startNewTask);
+
+      const loadingGenBtn = document.getElementById('loadingGenBtn');
+      if (loadingGenBtn) loadingGenBtn.addEventListener('click', startNewTask);
+
+      function getGeneratingCount() {
+        return Object.values(tasks).filter((t) => t.status === 'generating').length;
+      }
+
+      function updateGenButtonState() {
+        const count = getGeneratingCount();
+        const isLimitReached = count >= 3;
+
+        const buttons = [document.getElementById('loadingGenBtn'), document.getElementById('generateBtnMain')];
+
+        buttons.forEach((btn) => {
+          if (btn) {
+            if (isLimitReached) {
+              btn.classList.add('disabled');
+              btn.innerHTML = `<i class="fa-solid fa-ban"></i> 队列满`;
+            } else {
+              btn.classList.remove('disabled');
+              btn.innerHTML = `<i class="fa-solid fa-bolt"></i> 2 生成`;
+            }
+          }
+        });
+      }
+
+      modalRegenBtn.addEventListener('click', () => {
+        if (getGeneratingCount() >= 3) {
+          alert('队列已满，请稍后');
+          return;
+        }
+
+        if (!currentPreviewData) return;
+
+        // Get edited prompt
+        const editedPrompt = previewPromptText.innerText;
+
+        // Get Settings
+        const selects = document.querySelectorAll('#previewSettings select');
+        const config = {
+          mode: currentPreviewData.mode,
+          model: '',
+          resolution: '1080p',
+          duration: '5s'
         };
-        const VIDEO_RESOLUTIONS = ['720p', '1080p'];
-        const VIDEO_DURATIONS = ['5s', '10s'];
-        
-        // Frame State
-        let startFrameUrl = null;
-        let endFrameUrl = null;
-        let frameSelectionTarget = null; // 'start' or 'end'
 
-        const mainDisplay = document.getElementById('mainDisplay');
-        const placeholderView = document.getElementById('placeholderView');
-        const loadingView = document.getElementById('loadingView');
-        const resultView = document.getElementById('resultView');
-        const hoverMenu = document.getElementById('hoverMenu');
-        const taskSidebar = document.getElementById('taskSidebar');
-        const generateBtnMain = document.getElementById('generateBtnMain');
-        const modal = document.getElementById('historyModal');
-        // const modalBody = document.getElementById('modalBody'); // Removed
-        const modalTitle = document.getElementById('modalTitle');
-        const historyList = document.getElementById('historyList');
-        const previewBox = document.getElementById('previewBox');
-        const previewTitle = document.getElementById('previewTitle');
-        const previewDetails = document.getElementById('previewDetails');
-        const previewPromptText = document.getElementById('previewPromptText');
-        const confirmSelectBtn = document.getElementById('confirmSelectBtn');
-        const modalRegenBtn = document.getElementById('modalRegenBtn');
-        const hiddenFileInput = document.getElementById('hiddenFileInput');
-        
-        let currentPreviewData = null;
-        let modalTarget = 'main'; // 'main', 'start', 'end'
-
-        // [NEW] 获取表头元素
-        const promptHeader = document.getElementById('promptHeader');
-
-        // generateBtnMain.addEventListener('click', startNewTask); // REMOVED: Fixed double triggering bug
-        
-        const placeholderGenBtn = document.getElementById('placeholderGenBtn');
-        if(placeholderGenBtn) placeholderGenBtn.addEventListener('click', startNewTask);
-        
-        const loadingGenBtn = document.getElementById('loadingGenBtn');
-        if(loadingGenBtn) loadingGenBtn.addEventListener('click', startNewTask);
-
-        function getGeneratingCount() {
-            return Object.values(tasks).filter(t => t.status === 'generating').length;
-        }
-
-        function updateGenButtonState() {
-            const count = getGeneratingCount();
-            const isLimitReached = count >= 3;
-            
-            const buttons = [
-                document.getElementById('loadingGenBtn'),
-                document.getElementById('generateBtnMain')
-            ];
-            
-            buttons.forEach(btn => {
-                if(btn) {
-                    if (isLimitReached) {
-                        btn.classList.add('disabled');
-                        btn.innerHTML = `<i class="fa-solid fa-ban"></i> 队列满`;
-                    } else {
-                        btn.classList.remove('disabled');
-                        btn.innerHTML = `<i class="fa-solid fa-bolt"></i> 2 生成`;
-                    }
-                }
-            });
-        }
-
-        modalRegenBtn.addEventListener('click', () => {
-            if (getGeneratingCount() >= 3) {
-                alert('队列已满，请稍后');
-                return;
-            }
-            
-            if (!currentPreviewData) return;
-
-            // Get edited prompt
-            const editedPrompt = previewPromptText.innerText;
-            
-            // Get Settings
-            const selects = document.querySelectorAll('#previewSettings select');
-            const config = {
-                mode: currentPreviewData.mode,
-                model: '',
-                resolution: '1080p',
-                duration: '5s'
-            };
-            
-            selects.forEach(sel => {
-                if (sel.dataset.label === '模型') config.model = sel.value;
-                if (sel.dataset.label === '分辨率') config.resolution = sel.value;
-                if (sel.dataset.label === '时长') config.duration = sel.value;
-            });
-            
-            // Fallback
-            if (!config.model && tasks[currentPreviewData.taskId]) {
-                config.model = tasks[currentPreviewData.taskId].model;
-            }
-
-            // Trigger new task
-            startNewTask(null, editedPrompt, config);
-            closeModal();
+        selects.forEach((sel) => {
+          if (sel.dataset.label === '模型') config.model = sel.value;
+          if (sel.dataset.label === '分辨率') config.resolution = sel.value;
+          if (sel.dataset.label === '时长') config.duration = sel.value;
         });
 
-        // ... startNewTask ... (restored below)
-        function startNewTask(e, overridePrompt = null, overrideConfig = null) {
-            if(e) e.stopPropagation();
-            
-            if (getGeneratingCount() >= 3) return;
-
-            // Use overrides or globals
-            const mode = overrideConfig ? overrideConfig.mode : currentMode;
-
-            // i2v check
-            if (mode === 'i2v') {
-                if (!startFrameUrl && !overrideConfig) { 
-                     if (!startFrameUrl) {
-                          alert('该镜头未选择图片');
-                          return;
-                     }
-                }
-            }
-
-            const taskId = ++taskIdCounter;
-            // 存储 Prompt 信息
-            const promptText = overridePrompt || document.querySelector('td:nth-child(3)').innerText; 
-            
-            // Get current model settings
-            const currentModel = overrideConfig ? overrideConfig.model : document.getElementById('currentModelText').innerText;
-            const currentRes = overrideConfig ? overrideConfig.resolution : '1080p'; 
-            const currentDur = overrideConfig ? overrideConfig.duration : '5s';
-
-            tasks[taskId] = { 
-                id: taskId, 
-                mode: mode, 
-                status: 'generating', 
-                prompt: promptText,
-                timestamp: new Date().toLocaleString(),
-                model: currentModel,
-                resolution: currentRes,
-                duration: currentDur
-            };
-            
-            updateGenButtonState();
-
-            if (isFirstGeneration) {
-                isFirstGeneration = false;
-                placeholderView.classList.add('hidden');
-                loadingView.classList.remove('hidden');
-                mainDisplay.classList.add('loading');
-            } else {
-                const sideCard = document.createElement('div');
-                sideCard.className = 'task-card loading'; 
-                sideCard.id = `card-${taskId}`;
-                sideCard.innerHTML = `<div class="mini-spinner"></div>`;
-                taskSidebar.insertBefore(sideCard, taskSidebar.firstChild);
-            }
-            setTimeout(() => completeTask(taskId), 2000);
+        // Fallback
+        if (!config.model && tasks[currentPreviewData.taskId]) {
+          config.model = tasks[currentPreviewData.taskId].model;
         }
 
-        function completeTask(taskId) {
-            const task = tasks[taskId];
-            task.status = 'done';
-            updateGenButtonState();
-            
-            // Generate Data
-            if (task.mode === 't2i') {
-                task.images = [
-                    `https://picsum.photos/640/360?random=${taskId}1`,
-                    `https://picsum.photos/640/360?random=${taskId}2`,
-                    `https://picsum.photos/640/360?random=${taskId}3`,
-                    `https://picsum.photos/640/360?random=${taskId}4`
-                ];
-            } else {
-                task.videoCover = `https://picsum.photos/640/360?grayscale&random=${taskId}`;
-            }
+        // Trigger new task
+        startNewTask(null, editedPrompt, config);
+        closeModal();
+      });
 
-            let bigHtml = '';
-            if (task.mode === 't2i') {
-                bigHtml = `
+      // ... startNewTask ... (restored below)
+      function startNewTask(e, overridePrompt = null, overrideConfig = null) {
+        if (e) e.stopPropagation();
+
+        if (getGeneratingCount() >= 3) return;
+
+        // Use overrides or globals
+        const mode = overrideConfig ? overrideConfig.mode : currentMode;
+
+        // i2v check
+        if (mode === 'i2v') {
+          if (!startFrameUrl && !overrideConfig) {
+            if (!startFrameUrl) {
+              alert('该镜头未选择图片');
+              return;
+            }
+          }
+        }
+
+        const taskId = ++taskIdCounter;
+        // 存储 Prompt 信息
+        const promptText = overridePrompt || document.querySelector('td:nth-child(3)').innerText;
+
+        // Get current model settings
+        const currentModel = overrideConfig
+          ? overrideConfig.model
+          : document.getElementById('currentModelText').innerText;
+        const currentRes = overrideConfig ? overrideConfig.resolution : '1080p';
+        const currentDur = overrideConfig ? overrideConfig.duration : '5s';
+
+        tasks[taskId] = {
+          id: taskId,
+          mode: mode,
+          status: 'generating',
+          prompt: promptText,
+          timestamp: new Date().toLocaleString(),
+          model: currentModel,
+          resolution: currentRes,
+          duration: currentDur
+        };
+
+        updateGenButtonState();
+
+        if (isFirstGeneration) {
+          isFirstGeneration = false;
+          placeholderView.classList.add('hidden');
+          loadingView.classList.remove('hidden');
+          mainDisplay.classList.add('loading');
+        } else {
+          const sideCard = document.createElement('div');
+          sideCard.className = 'task-card loading';
+          sideCard.id = `card-${taskId}`;
+          sideCard.innerHTML = `<div class="mini-spinner"></div>`;
+          taskSidebar.insertBefore(sideCard, taskSidebar.firstChild);
+        }
+        setTimeout(() => completeTask(taskId), 2000);
+      }
+
+      function completeTask(taskId) {
+        const task = tasks[taskId];
+        task.status = 'done';
+        updateGenButtonState();
+
+        // Generate Data
+        if (task.mode === 't2i') {
+          task.images = [
+            `https://picsum.photos/640/360?random=${taskId}1`,
+            `https://picsum.photos/640/360?random=${taskId}2`,
+            `https://picsum.photos/640/360?random=${taskId}3`,
+            `https://picsum.photos/640/360?random=${taskId}4`
+          ];
+        } else {
+          task.videoCover = `https://picsum.photos/640/360?grayscale&random=${taskId}`;
+        }
+
+        let bigHtml = '';
+        if (task.mode === 't2i') {
+          bigHtml = `
                     <div class="result-grid">
-                        ${task.images.map(url => `<img src="${url}" class="grid-img">`).join('')}
+                        ${task.images.map((url) => `<img src="${url}" class="grid-img">`).join('')}
                     </div>`;
-            } else {
-                bigHtml = `
+        } else {
+          bigHtml = `
                     <div class="result-video">
                         <img src="${task.videoCover}" style="width:100%;height:100%;object-fit:cover;">
                         <div class="play-overlay"></div>
                     </div>`;
-            }
-            task.resultHtml = bigHtml; 
+        }
+        task.resultHtml = bigHtml;
 
-            const sideCard = document.getElementById(`card-${taskId}`);
-            
-            if (sideCard) {
-                sideCard.classList.remove('loading');
-                sideCard.onclick = () => {
-                    openModal(taskId, true); 
-                    removeSideCard(taskId);
-                };
+        const sideCard = document.getElementById(`card-${taskId}`);
 
-                if (task.mode === 't2i') {
-                    sideCard.innerHTML = `
+        if (sideCard) {
+          sideCard.classList.remove('loading');
+          sideCard.onclick = () => {
+            openModal(taskId, true);
+            removeSideCard(taskId);
+          };
+
+          if (task.mode === 't2i') {
+            sideCard.innerHTML = `
                         <div class="mini-grid">
-                            ${task.images.map(url => `<img src="${url}">`).join('')}
+                            ${task.images.map((url) => `<img src="${url}">`).join('')}
                         </div>`;
-                } else {
-                    sideCard.innerHTML = `
+          } else {
+            sideCard.innerHTML = `
                         <div class="mini-video">
                             <img src="${task.videoCover}">
                         </div>`;
-                    sideCard.classList.add('type-video');
-                }
-            } else {
-                loadingView.classList.add('hidden');
-                resultView.classList.remove('hidden');
-                resultView.innerHTML = bigHtml;
-                hoverMenu.classList.remove('hidden');
-                mainDisplay.classList.remove('loading');
-            }
+            sideCard.classList.add('type-video');
+          }
+        } else {
+          loadingView.classList.add('hidden');
+          resultView.classList.remove('hidden');
+          resultView.innerHTML = bigHtml;
+          hoverMenu.classList.remove('hidden');
+          mainDisplay.classList.remove('loading');
         }
+      }
 
-        function removeSideCard(taskId) {
-            const card = document.getElementById(`card-${taskId}`);
-            if(card) {
-                card.classList.add('hiding');
-                setTimeout(() => card.remove(), 300);
-            }
+      function removeSideCard(taskId) {
+        const card = document.getElementById(`card-${taskId}`);
+        if (card) {
+          card.classList.add('hiding');
+          setTimeout(() => card.remove(), 300);
         }
+      }
 
-        function openModalFromMain() {
-            openModal(null, false, 'main');
-        }
-        
-        function openModalForFrame(type) {
-            openModal(null, false, type);
-        }
+      function openModalFromMain() {
+        openModal(null, false, 'main');
+      }
 
-        function openModal(taskId, isSingleTask = false, target = 'main') {
-            modalTarget = target;
-            
-            modalTitle.innerText = '历史记录';
-            previewTitle.innerText = '当前选中';
-            
-            previewBox.innerHTML = `
+      function openModalForFrame(type) {
+        openModal(null, false, type);
+      }
+
+      function openModal(taskId, isSingleTask = false, target = 'main') {
+        modalTarget = target;
+
+        modalTitle.innerText = '历史记录';
+        previewTitle.innerText = '当前选中';
+
+        previewBox.innerHTML = `
                 <i class="fa-regular fa-image empty-state-icon"></i>
                 <span>点击右侧内容进行查看</span>
             `;
-            previewDetails.style.display = 'none';
+        previewDetails.style.display = 'none';
 
-            let listHtml = '';
-            let tasksToShow = [];
-            
-            if (isSingleTask && taskId) {
-                if (tasks[taskId] && tasks[taskId].status === 'done') {
-                    tasksToShow.push(tasks[taskId]);
-                }
-            } else {
-                const allIds = Object.keys(tasks).map(id => parseInt(id)).sort((a,b) => b-a);
-                allIds.forEach(id => {
-                    if (tasks[id].status === 'done') {
-                        if (target !== 'main' && tasks[id].mode !== 't2i') {
-                            return;
-                        }
-                        tasksToShow.push(tasks[id]);
-                    }
-                });
-            }
+        let listHtml = '';
+        let tasksToShow = [];
 
-            if (tasksToShow.length === 0) {
-                historyList.innerHTML = '<div style="text-align:center; padding:40px; color:#9CA3AF;">暂无历史记录</div>';
-                modal.classList.add('active');
+        if (isSingleTask && taskId) {
+          if (tasks[taskId] && tasks[taskId].status === 'done') {
+            tasksToShow.push(tasks[taskId]);
+          }
+        } else {
+          const allIds = Object.keys(tasks)
+            .map((id) => parseInt(id))
+            .sort((a, b) => b - a);
+          allIds.forEach((id) => {
+            if (tasks[id].status === 'done') {
+              if (target !== 'main' && tasks[id].mode !== 't2i') {
                 return;
+              }
+              tasksToShow.push(tasks[id]);
             }
+          });
+        }
 
-            tasksToShow.forEach(task => {
-                const isVideo = task.mode !== 't2i';
-                const typeLabel = isVideo ? '视频生成' : '镜头描述';
-                const modelName = task.model || document.getElementById('currentModelText').innerText;
-                
-                let mediaHtml = '';
-                if (isVideo) {
-                     mediaHtml = `
+        if (tasksToShow.length === 0) {
+          historyList.innerHTML = '<div style="text-align:center; padding:40px; color:#9CA3AF;">暂无历史记录</div>';
+          modal.classList.add('active');
+          return;
+        }
+
+        tasksToShow.forEach((task) => {
+          const isVideo = task.mode !== 't2i';
+          const typeLabel = isVideo ? '视频生成' : '镜头描述';
+          const modelName = task.model || document.getElementById('currentModelText').innerText;
+
+          let mediaHtml = '';
+          if (isVideo) {
+            mediaHtml = `
                         <div class="hist-img-box" onclick="setPreview(${task.id}, '${task.videoCover}')">
                             <img src="${task.videoCover}">
                             <div class="play-overlay" style="width:40px;height:40px;border-width:2px;"></div>
                         </div>
                      `;
-                } else {
-                    mediaHtml = task.images.map(url => `
+          } else {
+            mediaHtml = task.images
+              .map(
+                (url) => `
                         <div class="hist-img-box" onclick="setPreview(${task.id}, '${url}')">
                             <img src="${url}">
                         </div>
-                    `).join('');
-                }
+                    `
+              )
+              .join('');
+          }
 
-                const metaHtml = isVideo 
-                    ? `<span class="meta-tag">${modelName}</span> <span class="meta-tag">${task.resolution || '1080p'}</span> <span class="meta-tag">${task.duration || '5s'}</span> <span>${task.timestamp}</span>`
-                    : `<span class="meta-tag">${modelName}</span> <span class="meta-tag">16:9</span> <span>${task.timestamp}</span> <i class="fa-solid fa-ellipsis" style="margin-left:8px"></i>`;
+          const metaHtml = isVideo
+            ? `<span class="meta-tag">${modelName}</span> <span class="meta-tag">${
+                task.resolution || '1080p'
+              }</span> <span class="meta-tag">${task.duration || '5s'}</span> <span>${task.timestamp}</span>`
+            : `<span class="meta-tag">${modelName}</span> <span class="meta-tag">16:9</span> <span>${task.timestamp}</span> <i class="fa-solid fa-ellipsis" style="margin-left:8px"></i>`;
 
-                listHtml += `
+          listHtml += `
                     <div class="history-item">
                         <div class="hist-text">
                             <span class="hist-label">· ${typeLabel}:</span> ${task.prompt}
@@ -878,136 +1571,135 @@
                         </div>
                     </div>
                 `;
-            });
-            
-            historyList.innerHTML = listHtml;
-            modal.classList.add('active');
-        }
-        
-        window.setPreview = function(taskId, url) {
-            const task = tasks[taskId];
-            if (!task) return;
-            
-            const isVideo = task.mode !== 't2i';
-            currentPreviewData = { taskId, url, isVideo, mode: task.mode }; 
-            
-            if (isVideo) {
-                previewBox.innerHTML = `
+        });
+
+        historyList.innerHTML = listHtml;
+        modal.classList.add('active');
+      }
+
+      window.setPreview = function (taskId, url) {
+        const task = tasks[taskId];
+        if (!task) return;
+
+        const isVideo = task.mode !== 't2i';
+        currentPreviewData = { taskId, url, isVideo, mode: task.mode };
+
+        if (isVideo) {
+          previewBox.innerHTML = `
                     <div style="width:100%;height:100%;position:relative;background:#000;">
                         <img src="${url}" style="width:100%;height:100%;object-fit:contain;opacity:0.8;">
                         <div class="play-overlay"></div>
                     </div>
                 `;
-            } else {
-                previewBox.innerHTML = `<img src="${url}" style="width:100%;height:100%;object-fit:contain;">`;
-            }
-            
-            // Update Details
-            previewDetails.style.display = 'flex';
-            previewPromptText.innerText = task.prompt || '无描述';
-            
-            // Render Settings
-            const settingsBox = document.getElementById('previewSettings');
-            settingsBox.innerHTML = ''; 
-
-            // Model Selector
-            const modelOptions = MODEL_DATA[task.mode] || [];
-            const modelSelect = createSelect('模型', modelOptions, task.model);
-            settingsBox.appendChild(modelSelect);
-
-            // If I2V/R2V, add Res and Duration
-            if (isVideo) {
-                const resSelect = createSelect('分辨率', VIDEO_RESOLUTIONS, task.resolution || '1080p');
-                settingsBox.appendChild(resSelect);
-                
-                const durSelect = createSelect('时长', VIDEO_DURATIONS, task.duration || '5s');
-                settingsBox.appendChild(durSelect);
-            }
-        };
-
-        function createSelect(label, options, selectedValue) {
-            const row = document.createElement('div');
-            row.className = 'setting-row';
-            
-            const labelEl = document.createElement('span');
-            labelEl.className = 'setting-label';
-            labelEl.innerText = label;
-            
-            const select = document.createElement('select');
-            select.className = 'setting-select';
-            select.dataset.label = label;
-            
-            options.forEach(opt => {
-                const option = document.createElement('option');
-                option.value = opt;
-                option.innerText = opt;
-                if (opt === selectedValue) option.selected = true;
-                select.appendChild(option);
-            });
-            
-            row.appendChild(labelEl);
-            row.appendChild(select);
-            return row;
+        } else {
+          previewBox.innerHTML = `<img src="${url}" style="width:100%;height:100%;object-fit:contain;">`;
         }
 
-        confirmSelectBtn.addEventListener('click', () => {
-            if(!currentPreviewData) return;
-            
-            if (modalTarget === 'main') {
-                const resultView = document.getElementById('resultView');
-                let html = '';
-                
-                if (currentPreviewData.isVideo) {
-                    html = `
+        // Update Details
+        previewDetails.style.display = 'flex';
+        previewPromptText.innerText = task.prompt || '无描述';
+
+        // Render Settings
+        const settingsBox = document.getElementById('previewSettings');
+        settingsBox.innerHTML = '';
+
+        // Model Selector
+        const modelOptions = MODEL_DATA[task.mode] || [];
+        const modelSelect = createSelect('模型', modelOptions, task.model);
+        settingsBox.appendChild(modelSelect);
+
+        // If I2V/R2V, add Res and Duration
+        if (isVideo) {
+          const resSelect = createSelect('分辨率', VIDEO_RESOLUTIONS, task.resolution || '1080p');
+          settingsBox.appendChild(resSelect);
+
+          const durSelect = createSelect('时长', VIDEO_DURATIONS, task.duration || '5s');
+          settingsBox.appendChild(durSelect);
+        }
+      };
+
+      function createSelect(label, options, selectedValue) {
+        const row = document.createElement('div');
+        row.className = 'setting-row';
+
+        const labelEl = document.createElement('span');
+        labelEl.className = 'setting-label';
+        labelEl.innerText = label;
+
+        const select = document.createElement('select');
+        select.className = 'setting-select';
+        select.dataset.label = label;
+
+        options.forEach((opt) => {
+          const option = document.createElement('option');
+          option.value = opt;
+          option.innerText = opt;
+          if (opt === selectedValue) option.selected = true;
+          select.appendChild(option);
+        });
+
+        row.appendChild(labelEl);
+        row.appendChild(select);
+        return row;
+      }
+
+      confirmSelectBtn.addEventListener('click', () => {
+        if (!currentPreviewData) return;
+
+        if (modalTarget === 'main') {
+          const resultView = document.getElementById('resultView');
+          let html = '';
+
+          if (currentPreviewData.isVideo) {
+            html = `
                         <div class="result-video">
                             <img src="${currentPreviewData.url}" style="width:100%;height:100%;object-fit:cover;">
                             <div class="play-overlay"></div>
                         </div>`;
-                } else {
-                    // Replace with single image
-                    html = `
+          } else {
+            // Replace with single image
+            html = `
                         <div class="result-grid" style="display:block;">
                             <img src="${currentPreviewData.url}" style="width:100%;height:100%;object-fit:cover;">
                         </div>`;
-                }
-                
-                resultView.innerHTML = html;
+          }
 
-                // Sync to Start Frame if in i2v mode and it's an image
-                if (currentMode === 'i2v' && !currentPreviewData.isVideo) {
-                    updateFrameCell('start', currentPreviewData.url);
-                } else if (currentMode === 't2i' && !currentPreviewData.isVideo) {
-                    // Even in t2i mode, we should update the variable so if user switches to i2v, it's ready
-                    // Or if we want immediate visual sync when switching modes?
-                    // Let's store it. When switching to i2v, we can use it.
-                    // But requirement says: "Auto sync... recent selection".
-                    // So we update the variable.
-                    startFrameUrl = currentPreviewData.url;
-                    // Visual update will happen when switching mode or if column is visible?
-                    // Actually, if we are in t2i, the column is hidden. 
-                    // But we should update the cell content anyway so it's there when shown.
-                    updateFrameCell('start', currentPreviewData.url);
-                }
+          resultView.innerHTML = html;
 
-            } else {
-                // Update Start/End Frame
-                updateFrameCell(modalTarget, currentPreviewData.url);
-            }
+          // Sync to Start Frame if in i2v mode and it's an image
+          if (currentMode === 'i2v' && !currentPreviewData.isVideo) {
+            updateFrameCell('start', currentPreviewData.url);
+          } else if (currentMode === 't2i' && !currentPreviewData.isVideo) {
+            // Even in t2i mode, we should update the variable so if user switches to i2v, it's ready
+            // Or if we want immediate visual sync when switching modes?
+            // Let's store it. When switching to i2v, we can use it.
+            // But requirement says: "Auto sync... recent selection".
+            // So we update the variable.
+            startFrameUrl = currentPreviewData.url;
+            // Visual update will happen when switching mode or if column is visible?
+            // Actually, if we are in t2i, the column is hidden.
+            // But we should update the cell content anyway so it's there when shown.
+            updateFrameCell('start', currentPreviewData.url);
+          }
+        } else {
+          // Update Start/End Frame
+          updateFrameCell(modalTarget, currentPreviewData.url);
+        }
 
-            closeModal();
-        });
+        closeModal();
+      });
 
-        // Frame Handling
-        function updateFrameCell(type, url) {
-            const cellId = type === 'start' ? 'startFrameCell' : 'endFrameCell';
-            const cell = document.getElementById(cellId);
-            const label = type === 'start' ? '首帧' : '尾帧';
-            
-            if (type === 'start') startFrameUrl = url;
-            else endFrameUrl = url;
+      // Frame Handling
+      function updateFrameCell(type, url) {
+        const cellId = type === 'start' ? 'startFrameCell' : 'endFrameCell';
+        const cell = document.getElementById(cellId);
+        const label = type === 'start' ? '首帧' : '尾帧';
 
-            if (url) {
-                cell.innerHTML = `
+        if (type === 'start') startFrameUrl = url;
+        else endFrameUrl = url;
+
+        if (url) {
+          cell.innerHTML = `
                     <img src="${url}" class="frame-img">
                     <div class="frame-hover-menu">
                          <div class="frame-btn" title="历史记录" onclick="openModalForFrame('${type}')"><i class="fa-solid fa-clock-rotate-left"></i></div>
@@ -1015,83 +1707,90 @@
                          <div class="frame-btn delete" title="删除" onclick="clearFrame('${type}')"><i class="fa-solid fa-trash"></i></div>
                     </div>
                 `;
-            } else {
-                cell.innerHTML = `
+        } else {
+          cell.innerHTML = `
                     <div class="frame-placeholder"><span>+</span><p>${label}</p></div>
                     <div class="frame-hover-menu">
                          <div class="frame-btn" title="历史记录" onclick="openModalForFrame('${type}')"><i class="fa-solid fa-clock-rotate-left"></i></div>
                          <div class="frame-btn" title="本地上传" onclick="triggerUpload('${type}')"><i class="fa-solid fa-upload"></i></div>
                     </div>
                 `;
-            }
         }
+      }
 
-        function clearFrame(type) {
-            // Stop propagation handled by layout? No, need to be careful with onclicks.
-            // But here the button is inside hover menu.
-            event.stopPropagation();
-            updateFrameCell(type, null);
+      function clearFrame(type) {
+        // Stop propagation handled by layout? No, need to be careful with onclicks.
+        // But here the button is inside hover menu.
+        event.stopPropagation();
+        updateFrameCell(type, null);
+      }
+
+      function triggerUpload(type) {
+        event.stopPropagation();
+        frameSelectionTarget = type;
+        hiddenFileInput.click();
+      }
+
+      hiddenFileInput.addEventListener('change', (e) => {
+        const file = e.target.files[0];
+        if (file) {
+          const url = URL.createObjectURL(file);
+          updateFrameCell(frameSelectionTarget, url);
+
+          // If uploading to main window... (not implemented here, logical to support?)
+          // Requirement says: auto sync from main window selection.
+          // Requirement also says: upload button on frame cell.
         }
+        hiddenFileInput.value = ''; // reset
+      });
 
-        function triggerUpload(type) {
-            event.stopPropagation();
-            frameSelectionTarget = type;
-            hiddenFileInput.click();
+      function closeModal() {
+        modal.classList.remove('active');
+      }
+      modal.onclick = (e) => {
+        if (e.target === modal) closeModal();
+      };
+
+      const menu = document.getElementById('modelMenu');
+      const trigger = document.getElementById('modelTrigger');
+      const currentText = document.getElementById('currentModelText');
+      const videoOpts = document.querySelectorAll('.video-opt');
+      const t2iCols = document.querySelectorAll('.show-t2i');
+      const i2vCols = document.querySelectorAll('.show-i2v');
+
+      trigger.onclick = (e) => {
+        e.stopPropagation();
+        menu.classList.toggle('active');
+      };
+      document.onclick = () => menu.classList.remove('active');
+
+      window.selectModel = function (name, type, el) {
+        currentMode = type;
+        currentText.innerText = name;
+        document.querySelectorAll('.menu-item').forEach((i) => i.classList.remove('selected'));
+        el.classList.add('selected');
+
+        if (type === 'i2v') {
+          t2iCols.forEach((e) => e.classList.add('hidden'));
+          i2vCols.forEach((e) => e.classList.remove('hidden'));
+          videoOpts.forEach((o) => (o.style.display = 'flex'));
+          // [NEW] 切换为“视频提示词”
+          promptHeader.textContent = '视频提示词';
+        } else if (type === 't2i') {
+          i2vCols.forEach((e) => e.classList.add('hidden'));
+          t2iCols.forEach((e) => e.classList.remove('hidden'));
+          videoOpts.forEach((o) => (o.style.display = 'none'));
+          // [NEW] 切换为“图片提示词”
+          promptHeader.textContent = '图片提示词';
+        } else {
+          // R2V 也是视频，但需要显示人物场景列
+          i2vCols.forEach((e) => e.classList.add('hidden'));
+          t2iCols.forEach((e) => e.classList.remove('hidden'));
+          videoOpts.forEach((o) => (o.style.display = 'flex'));
+          // [NEW] R2V 也是视频提示词
+          promptHeader.textContent = '视频提示词';
         }
-
-        hiddenFileInput.addEventListener('change', (e) => {
-            const file = e.target.files[0];
-            if (file) {
-                const url = URL.createObjectURL(file);
-                updateFrameCell(frameSelectionTarget, url);
-                
-                // If uploading to main window... (not implemented here, logical to support?)
-                // Requirement says: auto sync from main window selection.
-                // Requirement also says: upload button on frame cell.
-            }
-            hiddenFileInput.value = ''; // reset
-        });
-
-        function closeModal() { modal.classList.remove('active'); }
-        modal.onclick = (e) => { if(e.target === modal) closeModal(); };
-
-        const menu = document.getElementById('modelMenu');
-        const trigger = document.getElementById('modelTrigger');
-        const currentText = document.getElementById('currentModelText');
-        const videoOpts = document.querySelectorAll('.video-opt');
-        const t2iCols = document.querySelectorAll('.show-t2i');
-        const i2vCols = document.querySelectorAll('.show-i2v');
-
-        trigger.onclick = (e) => { e.stopPropagation(); menu.classList.toggle('active'); };
-        document.onclick = () => menu.classList.remove('active');
-
-        window.selectModel = function(name, type, el) {
-            currentMode = type;
-            currentText.innerText = name;
-            document.querySelectorAll('.menu-item').forEach(i => i.classList.remove('selected'));
-            el.classList.add('selected');
-
-            if (type === 'i2v') {
-                t2iCols.forEach(e => e.classList.add('hidden'));
-                i2vCols.forEach(e => e.classList.remove('hidden'));
-                videoOpts.forEach(o => o.style.display = 'flex');
-                // [NEW] 切换为“视频提示词”
-                promptHeader.textContent = '视频提示词';
-            } else if (type === 't2i') {
-                i2vCols.forEach(e => e.classList.add('hidden'));
-                t2iCols.forEach(e => e.classList.remove('hidden'));
-                videoOpts.forEach(o => o.style.display = 'none');
-                // [NEW] 切换为“图片提示词”
-                promptHeader.textContent = '图片提示词';
-            } else {
-                // R2V 也是视频，但需要显示人物场景列
-                i2vCols.forEach(e => e.classList.add('hidden'));
-                t2iCols.forEach(e => e.classList.remove('hidden'));
-                videoOpts.forEach(o => o.style.display = 'flex');
-                // [NEW] R2V 也是视频提示词
-                promptHeader.textContent = '视频提示词';
-            }
-        };
+      };
     </script>
-</body>
+  </body>
 </html>

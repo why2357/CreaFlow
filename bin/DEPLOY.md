@@ -6,12 +6,12 @@
 
 ## 服务器配置
 
-| 配置项 | 值 |
-|--------|-----|
-| 服务器 IP | 172.28.104.54 |
-| 用户名 | ahui |
-| 密码 | ln2718281828 |
-| 部署路径 | /opt/1panel/www/sites/creaflow/index |
+| 配置项    | 值                                   |
+| --------- | ------------------------------------ |
+| 服务器 IP | 172.28.104.54                        |
+| 用户名    | ahui                                 |
+| 密码      | ln2718281828                         |
+| 部署路径  | /opt/1panel/www/sites/creaflow/index |
 
 ## 使用方法
 
@@ -28,6 +28,7 @@ npm run deploy:prod
 ### 方法二：直接运行脚本
 
 **Windows:**
+
 ```bash
 # 使用 Node.js 脚本（推荐）
 node bin/deploy.js
@@ -37,6 +38,7 @@ bin\deploy.bat
 ```
 
 **Linux/Mac:**
+
 ```bash
 # 添加执行权限
 chmod +x bin/deploy.sh

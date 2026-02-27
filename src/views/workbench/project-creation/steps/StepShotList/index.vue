@@ -638,7 +638,12 @@
       // 清空临时保存的工作流模式
       pendingWorkflowMode.value = null;
     } else {
-      console.log('[handleAddEpisodeSuccess] 跳过保存工作流模式 - newEpisodeId:', newEpisodeId, 'pendingWorkflowMode:', pendingWorkflowMode.value);
+      console.log(
+        '[handleAddEpisodeSuccess] 跳过保存工作流模式 - newEpisodeId:',
+        newEpisodeId,
+        'pendingWorkflowMode:',
+        pendingWorkflowMode.value
+      );
     }
 
     // 重新加载项目信息以获取最新的剧集列表

@@ -60,7 +60,7 @@ function extractApiInfo(content) {
         method: methodMatch[1].toUpperCase(),
         url: urlMatch[1],
         request: requestType,
-        response: responseType,
+        response: responseType
       });
     }
   });
@@ -100,23 +100,23 @@ function generateOpenApi(apiData) {
     info: {
       title: 'Forge HiVision API',
       description: '创流视频制作工作台 API 文档',
-      version: '1.0.0',
+      version: '1.0.0'
     },
     servers: [
       {
         url: 'http://172.28.44.150:16020',
-        description: '开发环境',
-      },
+        description: '开发环境'
+      }
     ],
     paths: {},
-    tags: [],
+    tags: []
   };
 
   // 添加标签
   const tagNames = Object.keys(apiData);
   openapi.tags = tagNames.map((name) => ({
     name: name,
-    description: name + ' 模块',
+    description: name + ' 模块'
   }));
 
   // 生成路径
@@ -133,7 +133,7 @@ function generateOpenApi(apiData) {
         operationId: api.name,
         description: `函数名: ${api.name}\n请求类型: ${api.request}\n返回类型: ${api.response}`,
         responses: {
-          '200': {
+          200: {
             description: '成功',
             content: {
               'application/json': {
@@ -144,14 +144,14 @@ function generateOpenApi(apiData) {
                     msg: { type: 'string' },
                     data: {
                       type: 'object',
-                      description: api.response,
-                    },
-                  },
-                },
-              },
-            },
-          },
-        },
+                      description: api.response
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
       };
 
       // 添加请求参数
@@ -162,8 +162,8 @@ function generateOpenApi(apiData) {
             in: 'query',
             description: `查询参数: ${api.request}`,
             required: false,
-            schema: { type: 'object' },
-          },
+            schema: { type: 'object' }
+          }
         ];
       } else {
         operation.requestBody = {
@@ -172,10 +172,10 @@ function generateOpenApi(apiData) {
             'application/json': {
               schema: {
                 type: 'object',
-                description: api.request,
-              },
-            },
-          },
+                description: api.request
+              }
+            }
+          }
         };
       }
 
