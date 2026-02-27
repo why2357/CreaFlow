@@ -9,7 +9,10 @@
       "Bash(node scripts/generate-openapi.js)",
       "Read(//c/Users/admin/**)",
       "mcp__ceraflow_-_API_____read_project_oas_drvivi",
-      "mcp__ceraflow_-_API_____refresh_project_oas_drvivi"
+      "mcp__ceraflow_-_API_____refresh_project_oas_drvivi",
+      "mcp__ceraflow_-_API_____read_project_oas_4ci7kr",
+      "mcp__ceraflow_-_API_____read_project_oas_ref_resources_4ci7kr",
+      "mcp__web-reader__webReader"
     ],
     "deny": [],
     "ask": []

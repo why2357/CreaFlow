@@ -74,20 +74,24 @@
         @drop="handleDrop"
         @dragover="handleDragOver"
       ></div>
-      <!-- 圆形上传按钮 -->
+      <!-- 参考图上传按钮（堆叠样式） -->
       <div class="input-actions">
-        <div class="circular-upload-button-wrapper">
-          <el-upload
-            :show-file-list="false"
-            :before-upload="handleBeforeUpload"
-            :http-request="handleUpload"
-            :multiple="true"
-            class="circular-upload"
-          >
-            <div class="circular-upload-button">
-              <svg-icon icon-class="fy-add" style="height: 18px; width: 18px" />
-            </div>
-          </el-upload>
+        <div class="reference-images-section">
+          <div class="reference-images-stack">
+            <el-upload
+              :show-file-list="false"
+              :before-upload="handleBeforeUpload"
+              :http-request="handleUpload"
+              :multiple="true"
+              class="add-more-upload"
+            >
+              <div class="reference-image-item add-more-button is-empty">
+                <div class="add-more-content">
+                  <svg-icon icon-class="fy-add" style="height: 16px; width: 16px" />
+                </div>
+              </div>
+            </el-upload>
+          </div>
         </div>
       </div>
     </div>
@@ -1494,39 +1498,166 @@ const handleDragLeave = (event: DragEvent) => {
   align-items: center;
   flex-shrink: 0;
 
-  .circular-upload-button-wrapper {
+  // 参考图上传区域（堆叠样式）
+  .reference-images-section {
+    flex-shrink: 0;
+    width: 60px;
+    height: 80px;
     position: relative;
-    width: 32px;
-    height: 32px;
+    transition: width 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
 
-    .circular-upload {
-      :deep(.el-upload) {
-        display: block;
-        width: 100%;
-        height: 100%;
-      }
-    }
-
-    .circular-upload-button {
-      width: 32px;
-      height: 32px;
-      border-radius: 50%;
-      background: #f7f8fa;
-      box-shadow: 0 4px 6px rgba(224, 231, 255, 0.25), 0 10px 15px rgba(224, 231, 255, 0.5);
-      display: flex;
-      align-items: center;
-      justify-content: center;
+    .reference-images-stack {
+      position: relative;
+      width: 100%;
+      height: 100%;
       cursor: pointer;
-      transition: all 0.3s ease;
-      color: #5252ff;
 
-      &:hover {
-        background: #f3f3ff;
-        transform: rotate(90deg);
+      // el-upload 包装器
+      .add-more-upload {
+        :deep(.el-upload) {
+          display: block;
+          width: 100%;
+          height: 100%;
+        }
       }
 
-      &:active {
-        transform: scale(0.95) rotate(90deg);
+      .reference-image-item {
+        width: 60px;
+        height: 80px;
+        border: 2px solid white;
+        border-radius: 4px;
+        overflow: visible;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+        cursor: pointer;
+        transition: transform 0.3s ease;
+        position: relative;
+
+        &:hover {
+          transform: scale(1.133);
+        }
+
+        .reference-thumbnail {
+          width: 100%;
+          height: 100%;
+          border-radius: 2px;
+          overflow: hidden;
+
+          :deep(img) {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+          }
+        }
+
+        .delete-button {
+          position: absolute;
+          top: -8px;
+          right: -8px;
+          width: 24px;
+          height: 24px;
+          border-radius: 50%;
+          background: #ff4d4f;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          cursor: pointer;
+          color: white;
+          box-shadow: 0 2px 8px rgba(255, 77, 79, 0.4);
+          transition: all 0.2s;
+          z-index: 3;
+
+          &:hover {
+            background: #ff7875;
+            transform: scale(1.15);
+          }
+
+          &:active {
+            transform: scale(0.95);
+          }
+        }
+      }
+
+      // 添加按钮样式（继承 reference-image-item 的基础样式）
+      .add-more-button {
+        width: 60px;
+        height: 80px;
+        border: 2px solid white;
+        border-radius: 4px;
+        background: #f7f8fa;
+        transform: rotate(-5deg);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+        position: relative;
+        overflow: visible;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+
+        .add-more-content {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          width: 100%;
+          height: 100%;
+          gap: 6px;
+          color: #5252ff;
+          transition: all 0.3s;
+
+          .svg-icon {
+            color: #86909c;
+            transition: all 0.3s;
+          }
+
+          .empty-text {
+            font-size: 12px;
+            color: #86909c;
+            margin: 0;
+            white-space: nowrap;
+            transition: color 0.3s;
+          }
+        }
+
+        &:hover {
+          background: #f3f3ff;
+          transform: scale(1.133);
+
+          .add-more-content {
+            color: #5252ff;
+
+            .svg-icon {
+              transform: rotate(90deg) scale(1.1);
+            }
+          }
+
+          .empty-text {
+            color: #5252ff;
+          }
+        }
+
+        &:active {
+          transform: rotate(-5deg) scale(0.95);
+        }
+
+        &.is-hovered {
+          box-shadow: 0 4px 16px rgba(82, 82, 255, 0.15);
+        }
+
+        // 空状态样式
+        &.is-empty {
+          .add-more-content {
+            color: #86909c;
+          }
+
+          &:hover {
+            transform: scale(1.133);
+
+            .add-more-content {
+              color: #5252ff;
+            }
+          }
+        }
       }
     }
   }
