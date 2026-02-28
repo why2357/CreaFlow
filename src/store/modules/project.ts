@@ -489,7 +489,7 @@ export const useProjectStore = defineStore('project', {
                   name: sub.detailName || item.name,
                   alias: sub.detailName !== item.name ? item.name : undefined,
                   images: sub.ossUrl ? [sub.ossUrl] : [],
-                  episodes: data.episodeInfoList?.map((ep: any) => ep.episodeName) || []
+                  episodes: sub.episodeList?.map((ep: any) => ep.episodeName) || []
                 });
               });
             }
@@ -534,7 +534,7 @@ export const useProjectStore = defineStore('project', {
               projectId: this.currentProjectId!,
               category: item.name || '',
               images: images,
-              episodes: data.episodeInfoList?.map((ep: any) => ep.episodeName) || []
+              episodes: item.episodeList?.map((ep: any) => ep.episodeName) || []
             });
           });
           this.scenes = scenes;

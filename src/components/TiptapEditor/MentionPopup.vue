@@ -23,6 +23,21 @@
           </div>
         </div>
 
+        <!-- 剧集筛选器（角色和场景共用） -->
+        <div
+          v-if="(state.activeTab === MentionType.CHARACTER || state.activeTab === MentionType.SCENE) && episodeList.length > 1"
+          class="episode-filter"
+        >
+          <div
+            v-for="episode in episodeList"
+            :key="episode.episodeId || 'all'"
+            :class="['episode-chip', { active: selectedEpisodeId === episode.episodeId }]"
+            @click="handleEpisodeChange(episode.episodeId)"
+          >
+            {{ episode.episodeName }}
+          </div>
+        </div>
+
         <!-- 选项列表 -->
         <div class="mention-options">
           <div
@@ -42,6 +57,22 @@
             <div class="mention-option-content">
               <div class="mention-option-label">{{ option.label }}</div>
               <div v-if="option.subtitle" class="mention-option-subtitle">{{ option.subtitle }}</div>
+              <!-- 剧集标签（角色和场景） -->
+              <div
+                v-if="option.episodes && option.episodes.length > 0 && (state.activeTab === MentionType.CHARACTER || state.activeTab === MentionType.SCENE)"
+                class="mention-option-episodes"
+              >
+                <span
+                  v-for="(ep, idx) in option.episodes.slice(0, 2)"
+                  :key="idx"
+                  class="episode-tag"
+                >
+                  {{ ep }}
+                </span>
+                <span v-if="option.episodes.length > 2" class="episode-tag-more">
+                  +{{ option.episodes.length - 2 }}
+                </span>
+              </div>
             </div>
           </div>
 
@@ -49,13 +80,18 @@
           <div v-if="filteredOptions.length === 0" class="mention-empty">
             <svg-icon icon-class="fy-empty" style="width: 48px; height: 48px; color: #c0c4cc" />
             <p>
-              暂无{{
-                state.activeTab === MentionType.REFERENCE
-                  ? '参考图'
-                  : state.activeTab === MentionType.CHARACTER
-                  ? '角色'
-                  : '场景'
-              }}
+              <template v-if="selectedEpisodeId !== null && (state.activeTab === MentionType.CHARACTER || state.activeTab === MentionType.SCENE)">
+                该剧集暂无{{ state.activeTab === MentionType.CHARACTER ? '角色' : '场景' }}
+              </template>
+              <template v-else>
+                暂无{{
+                  state.activeTab === MentionType.REFERENCE
+                    ? '参考图'
+                    : state.activeTab === MentionType.CHARACTER
+                    ? '角色'
+                    : '场景'
+                }}
+              </template>
             </p>
           </div>
         </div>
@@ -85,9 +121,10 @@
 
 <script setup lang="ts">
   import { ref, reactive, computed, watch, onMounted, onUnmounted, nextTick } from 'vue';
-  import { useReferenceStore } from '@/store/modules/reference';
   import { useProjectStore } from '@/store/modules/project';
   import { MentionType, type MentionOption, type MentionPopupState } from '@/types/mention';
+  import type { ReferenceImage } from '@/types/mention';
+  import type { EpisodeInfo } from '@/api/workbench/project/types';
 
   interface Props {
     /** 查询关键词 */
@@ -98,12 +135,13 @@
     onClose: () => void;
     /** 打开图库回调 */
     onOpenLibrary?: (type: 'character' | 'scene') => void;
+    /** 分镜级别的参考图列表（可选，如果不传则使用全局 referenceStore） */
+    referenceImages?: ReferenceImage[];
   }
 
   const props = defineProps<Props>();
 
   // Store
-  const referenceStore = useReferenceStore();
   const projectStore = useProjectStore();
 
   // Refs
@@ -114,6 +152,9 @@
     character: false,
     scene: false
   });
+
+  // 剧集筛选状态（仅角色标签页使用）
+  const selectedEpisodeId = ref<number | null>(null);
 
   // State
   const state = reactive<MentionPopupState>({
@@ -136,6 +177,18 @@
     return getFilteredOptions(state.activeTab);
   });
 
+  // 剧集列表（从 projectStore 获取，包含"全部"选项）
+  const episodeList = computed<{ episodeId: number | null; episodeName: string }[]>(() => {
+    const episodes = projectStore.episodeInfoList || [];
+    return [
+      { episodeId: null, episodeName: '全部' },
+      ...episodes.map((ep) => ({
+        episodeId: ep.episodeId,
+        episodeName: ep.episodeName
+      }))
+    ];
+  });
+
   // 根据类型获取过滤后的选项
   const getFilteredOptions = (type: MentionType): MentionOption[] => {
     const query = state.query.toLowerCase();
@@ -143,7 +196,9 @@
 
     switch (type) {
       case MentionType.REFERENCE:
-        options = referenceStore.images
+        // 优先使用传入的分镜级参考图列表，如果没有则使用全局列表
+        const images = props.referenceImages || [];
+        options = images
           .filter((img) => img.label.toLowerCase().includes(query))
           .map((img) => ({
             id: img.id,
@@ -159,8 +214,20 @@
         if (projectStore.characters && projectStore.characters.length > 0) {
           options = projectStore.characters
             .filter((char) => {
+              // 名称搜索过滤
               const name = (char.alias || char.name || '').toLowerCase();
-              return name.includes(query) || (char.name && char.name.toLowerCase().includes(query));
+              const nameMatch = name.includes(query) || (char.name && char.name.toLowerCase().includes(query));
+
+              // 剧集过滤：如果选择了特定剧集，只显示关联该剧集的角色
+              let episodeMatch = true;
+              if (selectedEpisodeId.value !== null) {
+                const selectedEpisode = episodeList.value.find((ep) => ep.episodeId === selectedEpisodeId.value);
+                if (selectedEpisode) {
+                  episodeMatch = char.episodes && char.episodes.includes(selectedEpisode.episodeName);
+                }
+              }
+
+              return nameMatch && episodeMatch;
             })
             .flatMap((char) => {
               const result: MentionOption[] = [];
@@ -173,7 +240,8 @@
                     src: imgUrl,
                     label: char.alias || char.name,
                     subtitle: char.name,
-                    alias: char.alias
+                    alias: char.alias,
+                    episodes: char.episodes
                   });
                 });
               } else {
@@ -183,7 +251,8 @@
                   type: MentionType.CHARACTER,
                   label: char.alias || char.name,
                   subtitle: char.name,
-                  alias: char.alias
+                  alias: char.alias,
+                  episodes: char.episodes
                 });
               }
               return result;
@@ -195,7 +264,21 @@
         // 从 projectStore 获取场景数据
         if (projectStore.scenes && projectStore.scenes.length > 0) {
           options = projectStore.scenes
-            .filter((scene) => scene.category && scene.category.toLowerCase().includes(query))
+            .filter((scene) => {
+              // 类别搜索过滤
+              const categoryMatch = scene.category && scene.category.toLowerCase().includes(query);
+
+              // 剧集过滤：如果选择了特定剧集，只显示关联该剧集的场景
+              let episodeMatch = true;
+              if (selectedEpisodeId.value !== null) {
+                const selectedEpisode = episodeList.value.find((ep) => ep.episodeId === selectedEpisodeId.value);
+                if (selectedEpisode) {
+                  episodeMatch = scene.episodes && scene.episodes.includes(selectedEpisode.episodeName);
+                }
+              }
+
+              return categoryMatch && episodeMatch;
+            })
             .flatMap((scene) => {
               const result: MentionOption[] = [];
               // 为每个场景的每张图片创建一个选项
@@ -207,7 +290,8 @@
                     src: imgUrl,
                     label: scene.category,
                     subtitle: `场景 ${idx + 1}`,
-                    category: scene.category
+                    category: scene.category,
+                    episodes: scene.episodes
                   });
                 });
               } else {
@@ -216,7 +300,8 @@
                   id: String(scene.id),
                   type: MentionType.SCENE,
                   label: scene.category,
-                  category: scene.category
+                  category: scene.category,
+                  episodes: scene.episodes
                 });
               }
               return result;
@@ -277,7 +362,17 @@
   const handleTabClick = async (tab: MentionType) => {
     state.activeTab = tab;
     state.activeIndex = 0;
+    // 切换标签时重置剧集筛选（仅当切换到参考图标签时）
+    if (tab === MentionType.REFERENCE) {
+      selectedEpisodeId.value = null;
+    }
     await loadTabData(tab);
+  };
+
+  // 处理剧集筛选切换
+  const handleEpisodeChange = (episodeId: number | null) => {
+    selectedEpisodeId.value = episodeId;
+    state.activeIndex = 0; // 重置选中索引
   };
 
   // 隐藏弹窗
@@ -285,6 +380,7 @@
     state.visible = false;
     state.query = '';
     state.activeIndex = 0;
+    selectedEpisodeId.value = null; // 重置剧集筛选
   };
 
   // 选择选项
@@ -444,6 +540,59 @@
     color: #5252ff;
   }
 
+  // 剧集筛选器
+  .episode-filter {
+    display: flex;
+    gap: 6px;
+    padding: 10px 12px;
+    border-bottom: 1px solid #f0f0f0;
+    background: #fff;
+    overflow-x: auto;
+    overflow-y: hidden;
+    // 滚动条样式
+    scrollbar-width: thin;
+    scrollbar-color: #dcdfe6 transparent;
+
+    &::-webkit-scrollbar {
+      height: 4px;
+    }
+
+    &::-webkit-scrollbar-track {
+      background: transparent;
+    }
+
+    &::-webkit-scrollbar-thumb {
+      background: #dcdfe6;
+      border-radius: 2px;
+
+      &:hover {
+        background: #c0c4cc;
+      }
+    }
+  }
+
+  .episode-chip {
+    flex-shrink: 0;
+    padding: 4px 10px;
+    font-size: 12px;
+    border-radius: 12px;
+    background: #f5f7fa;
+    color: #606266;
+    cursor: pointer;
+    transition: all 0.2s;
+    white-space: nowrap;
+
+    &:hover {
+      background: rgba(82, 82, 255, 0.08);
+      color: #5252ff;
+    }
+
+    &.active {
+      background: #5252ff;
+      color: #fff;
+    }
+  }
+
   .mention-options {
     max-height: 280px;
     overflow-y: auto;
@@ -522,6 +671,31 @@
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+  }
+
+  // 角色剧集标签
+  .mention-option-episodes {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    margin-top: 4px;
+    flex-wrap: wrap;
+  }
+
+  .episode-tag {
+    font-size: 10px;
+    padding: 2px 6px;
+    border-radius: 8px;
+    background: #fff7e8;
+    color: #e6a23c;
+    border: 1px solid #ffcf8b;
+    white-space: nowrap;
+  }
+
+  .episode-tag-more {
+    font-size: 10px;
+    padding: 2px 4px;
+    color: #909399;
   }
 
   .mention-empty {

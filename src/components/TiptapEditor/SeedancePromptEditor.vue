@@ -2,9 +2,9 @@
   <div class="seedance-prompt-container" ref="containerRef">
     <!-- 参考图区域（堆叠样式） -->
     <div
-      v-if="showReferenceBar && referenceStore.images.length > 0"
+      v-if="showReferenceBar && localImages.length > 0"
       class="reference-images-section"
-      :class="{ 'drag-over': isDragOver, 'has-images': referenceStore.images.length > 0 }"
+      :class="{ 'drag-over': isDragOver, 'has-images': localImages.length > 0 }"
       @drop="handleDrop"
       @dragover="handleDragOverSection"
       @dragenter="handleDragEnter"
@@ -18,7 +18,7 @@
       >
         <TransitionGroup name="stack-slide">
           <div
-            v-for="(image, index) in referenceStore.images"
+            v-for="(image, index) in localImages"
             :key="image.id"
             class="reference-image-item"
             :class="{ 'is-hovered': isHoveringImages }"
@@ -42,11 +42,11 @@
 
           <!-- 添加按钮 -->
           <div
-            v-if="referenceStore.images.length < 5"
+            v-if="localImages.length < maxImages"
             :key="'add-button'"
             class="reference-image-item add-more-button"
-            :class="{ 'is-hovered': isHoveringImages, 'is-empty': referenceStore.images.length === 0 }"
-            :style="getAddButtonStyle(referenceStore.images.length, isHoveringImages)"
+            :class="{ 'is-hovered': isHoveringImages, 'is-empty': localImages.length === 0 }"
+            :style="getAddButtonStyle(localImages.length, isHoveringImages)"
           >
             <el-upload
               :show-file-list="false"
@@ -65,7 +65,7 @@
     </div>
 
     <!-- 输入框区域（没有参考图时显示） -->
-    <div v-if="!showReferenceBar || referenceStore.images.length === 0" class="input-wrapper">
+    <div v-if="!showReferenceBar || localImages.length === 0" class="input-wrapper">
       <div
         ref="editorRef"
         class="prompt-editor"
@@ -80,7 +80,7 @@
       ></div>
       <!-- 参考图上传按钮（堆叠样式） -->
       <div class="input-actions">
-        <div class="reference-images-section" :class="{ 'has-images': referenceStore.images.length > 0 }">
+        <div class="reference-images-section" :class="{ 'has-images': localImages.length > 0 }">
           <div
             class="reference-images-stack"
             :class="{ 'is-expanded': isHoveringImages }"
@@ -90,7 +90,7 @@
             <TransitionGroup name="stack-slide">
               <!-- 已上传的参考图 -->
               <div
-                v-for="(image, index) in referenceStore.images"
+                v-for="(image, index) in localImages"
                 :key="image.id"
                 class="reference-image-item"
                 :class="{ 'is-hovered': isHoveringImages }"
@@ -114,11 +114,11 @@
 
               <!-- 添加按钮 -->
               <div
-                v-if="referenceStore.images.length < 5"
+                v-if="localImages.length < maxImages"
                 :key="'add-button'"
                 class="reference-image-item add-more-button"
-                :class="{ 'is-hovered': isHoveringImages, 'is-empty': referenceStore.images.length === 0 }"
-                :style="getAddButtonStyle(referenceStore.images.length, isHoveringImages)"
+                :class="{ 'is-hovered': isHoveringImages, 'is-empty': localImages.length === 0 }"
+                :style="getAddButtonStyle(localImages.length, isHoveringImages)"
               >
                 <el-upload
                   :show-file-list="false"
@@ -139,7 +139,7 @@
     </div>
 
     <!-- 只在有参考图时显示输入框（独立于上传区域） -->
-    <div v-if="showReferenceBar && referenceStore.images.length > 0" class="input-wrapper-alone">
+    <div v-if="showReferenceBar && localImages.length > 0" class="input-wrapper-alone">
       <div
         ref="editorRef"
         class="prompt-editor"
@@ -181,6 +181,7 @@
       :on-select="handleMentionSelect"
       :on-close="handleMentionClose"
       :on-open-library="handleOpenLibrary"
+      :reference-images="localImages"
     />
 
     <!-- 场景库对话框 -->
@@ -202,7 +203,6 @@
 </template>
 
 <script setup lang="ts">
-  import { useReferenceStore } from '@/store/modules/reference';
   import { useProjectStore } from '@/store/modules/project';
   import { ElMessage } from 'element-plus';
   import type { ReferenceImage, DragData, MentionOption, MentionType } from '@/types/mention';
@@ -211,6 +211,7 @@
   import SceneLibraryDialog from '@/views/workbench/project-creation/steps/StepShotList/components/SceneLibraryDialog.vue';
   import CharacterLibraryDialog from '@/views/workbench/project-creation/steps/StepShotList/components/CharacterLibraryDialog.vue';
   import { ref, watch, nextTick, computed } from 'vue';
+  import { cloneDeep } from 'lodash-es';
   import type { LibrarySubInfo } from '@/api/workbench/project/types';
   import type { EpisodeInfo } from '@/api/workbench/project/types';
 
@@ -218,21 +219,33 @@
     modelValue: string;
     placeholder?: string;
     showReferenceBar?: boolean;
+    /** 分镜级别的参考图片列表 */
+    images?: ReferenceImage[];
+    /** 最大图片数量 */
+    maxImages?: number;
   }
 
   interface Emits {
     (e: 'update:modelValue', value: string): void;
+    (e: 'update:images', value: ReferenceImage[]): void;
   }
 
   const props = withDefaults(defineProps<Props>(), {
     placeholder: '请输入提示词，输入@可提及图片、角色或场景',
-    showReferenceBar: true
+    showReferenceBar: true,
+    images: () => [],
+    maxImages: 5
   });
 
   const emit = defineEmits<Emits>();
 
-  const referenceStore = useReferenceStore();
   const projectStore = useProjectStore();
+
+  // 本地图片列表（使用 prop 传入的图片）
+  const localImages = computed({
+    get: () => props.images || [],
+    set: (value) => emit('update:images', value)
+  });
 
   // Refs
   const containerRef = ref<HTMLElement>();
@@ -406,28 +419,69 @@
     const selection = window.getSelection();
     if (selection && selection.rangeCount > 0) {
       const range = selection.getRangeAt(0);
-      const startRange = document.createRange();
-      startRange.selectNodeContents(target);
-      startRange.setEnd(range.startContainer, range.startOffset);
-      const beforeCursor = startRange.toString();
-      const atMatch = beforeCursor.match(/@(\w*)$/);
 
-      if (atMatch) {
-        // 更新查询内容
-        mentionQuery.value = atMatch[1];
+      // 检查光标前一个字符是否是 @
+      let charBeforeCursor = '';
+      let textNode: Node | null = range.startContainer;
+      let offset = range.startOffset;
 
-        // 只在弹窗未打开时才触发（第一次输入 @ 时）
-        if (!mentionTriggerPos.value) {
-          mentionTriggerPos.value = {
-            start: beforeCursor.length - atMatch[0].length,
-            end: beforeCursor.length
-          };
-          showMentionPopup();
+      // 如果在文本节点中
+      if (textNode.nodeType === Node.TEXT_NODE) {
+        const textContent = textNode.textContent || '';
+        if (offset > 0) {
+          charBeforeCursor = textContent[offset - 1];
         }
       } else {
-        // 不再匹配 @ 模式，关闭弹窗
-        mentionPopupRef.value?.hide();
-        mentionTriggerPos.value = null;
+        // 如果不在文本节点中（比如在元素后面），尝试检查前一个节点
+        if (offset === 0 && textNode.childNodes.length > 0) {
+          const lastChild = textNode.childNodes[textNode.childNodes.length - 1];
+          if (lastChild.nodeType === Node.TEXT_NODE) {
+            const lastText = lastChild.textContent || '';
+            if (lastText.length > 0) {
+              charBeforeCursor = lastText[lastText.length - 1];
+            }
+          }
+        }
+      }
+
+      // 如果光标前是 @ 符号，触发提及
+      if (charBeforeCursor === '@') {
+        mentionQuery.value = '';
+        mentionTriggerPos.value = {
+          start: 0,
+          end: 0
+        };
+        showMentionPopup();
+      } else if (mentionTriggerPos.value) {
+        // 如果弹窗已打开，检查是否还在有效的查询输入中
+        // 向前查找 @ 符号
+        let foundAt = false;
+        let queryText = '';
+
+        if (textNode.nodeType === Node.TEXT_NODE) {
+          const textContent = textNode.textContent || '';
+          // 从光标位置向前查找
+          for (let i = offset - 1; i >= 0; i--) {
+            const char = textContent[i];
+            if (char === '@') {
+              foundAt = true;
+              break;
+            }
+            if (char === ' ' || char === '\n') {
+              break;
+            }
+            queryText = char + queryText;
+          }
+        }
+
+        if (foundAt) {
+          // 仍在查询中，更新查询内容
+          mentionQuery.value = queryText;
+        } else {
+          // 不再有效的提及查询，关闭弹窗
+          mentionPopupRef.value?.hide();
+          mentionTriggerPos.value = null;
+        }
       }
     }
 
@@ -586,47 +640,99 @@
 
   // 处理提及选择
   const handleMentionSelect = (option: MentionOption) => {
-    if (!mentionTriggerPos.value || !editorRef.value) return;
+    if (!editorRef.value) return;
 
     const selection = window.getSelection();
     if (!selection || selection.rangeCount === 0) return;
 
     const range = selection.getRangeAt(0);
 
-    // 删除 @ 符号
-    const { start } = mentionTriggerPos.value;
-    // 找到 @ 的位置并删除
-    const editorRange = document.createRange();
-    const walker = document.createTreeWalker(editorRef.value, NodeFilter.SHOW_TEXT, null);
+    // 找到并删除 @ 符号及其后的查询文本
+    // 光标应该位于查询文本之后
+    let textNode: Node | null = range.startContainer;
+    let offset = range.startOffset;
 
-    let charCount = 0;
-    let targetNode: Node | null = null;
-    let targetOffset = 0;
+    // 确保在文本节点中
+    if (textNode.nodeType !== Node.TEXT_NODE) {
+      // 尝试找到前面的文本节点
+      const walker = document.createTreeWalker(
+        editorRef.value,
+        NodeFilter.SHOW_TEXT,
+        null
+      );
 
-    while (walker.nextNode()) {
-      const node = walker.currentNode;
-      if (charCount + node.length >= start) {
-        targetNode = node;
-        targetOffset = start - charCount;
-        break;
+      let currentNode: Node | null = null;
+      while (walker.nextNode()) {
+        if (walker.currentNode === textNode ||
+            (textNode as any).contains?.(walker.currentNode)) {
+          currentNode = walker.currentNode;
+          break;
+        }
+        currentNode = walker.currentNode;
       }
-      charCount += node.length;
+
+      if (currentNode) {
+        textNode = currentNode;
+        offset = (currentNode as Text).length;
+      } else {
+        // 无法找到合适的文本节点，直接在当前位置插入
+        textNode = range.startContainer;
+        offset = range.startOffset;
+      }
     }
 
-    if (targetNode) {
-      editorRange.setStart(targetNode, targetOffset);
-      editorRange.setEnd(targetNode, targetOffset + 1);
-      editorRange.deleteContents();
+    if (textNode && textNode.nodeType === Node.TEXT_NODE) {
+      const textContent = (textNode as Text).textContent || '';
 
-      // 插入图片
-      const img = createInlineImage(option.src || '', option.label, option.type);
-      editorRange.insertNode(img);
+      // 从光标位置向前查找 @ 符号
+      let atOffset = -1;
+      for (let i = offset - 1; i >= 0; i--) {
+        const char = textContent[i];
+        if (char === '@') {
+          atOffset = i;
+          break;
+        }
+        if (char === ' ' || char === '\n') {
+          break;
+        }
+      }
 
-      // 移动光标到图片后面
-      editorRange.setStartAfter(img);
-      editorRange.setEndAfter(img);
-      selection.removeAllRanges();
-      selection.addRange(editorRange);
+      if (atOffset >= 0) {
+        // 删除从 @ 到光标的所有内容
+        const deleteRange = document.createRange();
+        deleteRange.setStart(textNode, atOffset);
+        deleteRange.setEnd(textNode, offset);
+        deleteRange.deleteContents();
+
+        // 插入提及元素
+        const img = createInlineImage(option.src || '', option.label, option.type);
+
+        // 在删除位置插入
+        const insertRange = document.createRange();
+        insertRange.setStart(textNode, atOffset);
+        insertRange.collapse(true);
+        insertRange.insertNode(img);
+
+        // 确保元素后面有文本节点供用户输入
+        let nextSibling = img.nextSibling;
+        if (!nextSibling || nextSibling.nodeType !== Node.TEXT_NODE) {
+          const textNodeToInsert = document.createTextNode('\u200B'); // 零宽空格
+          img.parentNode?.insertBefore(textNodeToInsert, img.nextSibling);
+          nextSibling = textNodeToInsert;
+        }
+
+        // 移动光标到图片后面的文本节点
+        const newRange = document.createRange();
+        if (nextSibling && nextSibling.nodeType === Node.TEXT_NODE) {
+          newRange.setStart(nextSibling, 0);
+          newRange.setEnd(nextSibling, 0);
+        } else {
+          newRange.setStartAfter(img);
+          newRange.setEndAfter(img);
+        }
+        selection.removeAllRanges();
+        selection.addRange(newRange);
+      }
     }
 
     // 更新输出
@@ -1058,8 +1164,12 @@
 
       for (const file of validFiles) {
         try {
-          await referenceStore.addImage(file);
-          successCount++;
+          const result = await addImageToList(file);
+          if (result) {
+            successCount++;
+          } else {
+            failCount++;
+          }
         } catch (error) {
           console.error('上传失败:', error);
           failCount++;
@@ -1079,9 +1189,68 @@
   const handleRemoveReference = (e: Event, id: string) => {
     e.preventDefault();
     e.stopPropagation();
-    referenceStore.removeImage(id);
+    // 从本地图片列表中删除
+    const newImages = localImages.value.filter((img) => img.id !== id);
+    emit('update:images', newImages);
     // 同时删除提及标签
     handleRemoveMentionTag(id);
+  };
+
+  // 添加图片到本地列表
+  const addImageToList = async (file: File): Promise<ReferenceImage | null> => {
+    // 验证文件类型
+    if (!file.type.startsWith('image/')) {
+      ElMessage.warning('请选择图片文件');
+      return null;
+    }
+
+    // 验证文件大小 (限制 10MB)
+    const maxSize = 10 * 1024 * 1024;
+    if (file.size > maxSize) {
+      ElMessage.warning('图片大小不能超过 10MB');
+      return null;
+    }
+
+    // 检查是否达到最大数量
+    if (localImages.value.length >= props.maxImages) {
+      ElMessage.warning(`最多只能上传 ${props.maxImages} 张图片`);
+      return null;
+    }
+
+    // 创建本地预览 URL
+    const localUrl = URL.createObjectURL(file);
+
+    // 生成唯一 ID
+    const id = `ref_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+
+    // 计算当前最大索引
+    const currentMaxIndex = localImages.value.reduce((max, img) => {
+      const match = img.label.match(/图片(\d+)/);
+      if (match) {
+        return Math.max(max, parseInt(match[1], 10));
+      }
+      return max;
+    }, 0);
+
+    // 生成标签
+    const label = `图片${currentMaxIndex + 1}`;
+
+    // 创建参考图对象
+    const referenceImage: ReferenceImage = {
+      id,
+      src: localUrl,
+      thumbnail: localUrl,
+      label,
+      file,
+      uploadStatus: 'pending',
+      uploadProgress: 0
+    };
+
+    // 添加到列表
+    const newImages = [...localImages.value, referenceImage];
+    emit('update:images', newImages);
+
+    return referenceImage;
   };
 
   // 上传前验证
@@ -1104,7 +1273,7 @@
   const handleUpload = async (options: any) => {
     const file = options.file;
     try {
-      await referenceStore.addImage(file);
+      await addImageToList(file);
       // 单个文件上传成功时不显示消息，避免多文件上传时消息过多
     } catch (error) {
       console.error('上传失败:', error);
@@ -1121,13 +1290,14 @@
     const stackOrder = index + 1;
 
     if (isExpanded) {
-      // 展开状态：横向紧密排列（5张）
+      // 展开状态：紧凑重叠排列（保持重叠效果，参考即梦AI）
+      // 图片之间保持重叠，偏移较小
       const expandedOffsets = [
         { left: '0px', top: '0px' },
+        { left: '20px', top: '0px' },
+        { left: '40px', top: '0px' },
         { left: '60px', top: '0px' },
-        { left: '120px', top: '0px' },
-        { left: '180px', top: '0px' },
-        { left: '240px', top: '0px' }
+        { left: '80px', top: '0px' }
       ];
       const expandedRotations = [-8, 4, -6, 10, -3];
 
@@ -1182,33 +1352,24 @@
       };
     }
 
-    // 收起状态位置（4个位置，对应1-4张图片时）
-    const collapsedPositions = [
-      { right: '-8px', bottom: '-8px' },
-      { right: '-8px', bottom: '-8px' },
-      { right: '-8px', bottom: '-8px' },
-      { right: '-8px', bottom: '-8px' }
-    ];
+    // 收起状态：始终在右下角
+    const collapsedPosition = { right: '-8px', bottom: '-8px' };
 
-    // 展开状态位置（4个位置，对应1-4张图片时）
-    const expandedOffsets = [
-      { left: '60px', top: '0px' },
-      { left: '120px', top: '0px' },
-      { left: '180px', top: '0px' },
-      { left: '240px', top: '0px' }
-    ];
+    // 展开状态：紧凑排列，按钮位置 = currentCount * 20px
+    const expandedLeft = `${currentCount * 20}px`;
+    const expandedPosition = { left: expandedLeft, top: '0px' };
 
     if (isExpanded) {
       return {
         position: 'absolute' as const,
-        ...expandedOffsets[currentCount - 1],
+        ...expandedPosition,
         zIndex: 20 + currentCount,
         transition: 'all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)'
       };
     } else {
       return {
         position: 'absolute' as const,
-        ...collapsedPositions[currentCount - 1],
+        ...collapsedPosition,
         zIndex: 5,
         transition: 'all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)'
       };
@@ -1277,9 +1438,9 @@
     position: relative;
     transition: width 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
 
-    // 有图片时展开宽度
+    // 有图片时展开宽度（紧凑布局：5张图片 * 40px + 上传按钮宽度）
     &.has-images {
-      width: 300px; // 5张图片展开后的宽度 (5 * 60px)
+      width: 260px;
     }
 
     // 拖拽悬停状态
@@ -1578,9 +1739,9 @@
       position: relative;
       transition: width 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
 
-      // 有图片时展开宽度
+      // 有图片时展开宽度（紧凑布局：5张图片 * 40px + 上传按钮宽度）
       &.has-images {
-        width: 300px; // 5张图片展开后的宽度 (5 * 60px)
+        width: 260px;
       }
 
       .reference-images-stack {

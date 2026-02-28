@@ -1,3 +1,5 @@
+import type { ReferenceImage } from '@/types/mention';
+
 /**
  * 协作者信息
  */
@@ -465,7 +467,7 @@ export interface Shot {
   commentInfo?: any; // 最新一条评论信息（SceneCommentVo类型）
   imgStatus?: number; // 图片状态 0-白色 1-橙色 2-绿色 3-红色
   seedancePrompt?: string; // Seedance 2.0 模式提示词
-  seedancePromptImages?: string[]; // Seedance 2.0 模式上传的参考图片列表
+  seedancePromptImages?: ReferenceImage[]; // Seedance 2.0 模式上传的参考图片列表
   createTime?: string;
   updateTime?: string;
 }

@@ -87,6 +87,8 @@ export interface MentionOption {
   alias?: string;
   /** 场景类别 (仅场景类型) */
   category?: string;
+  /** 关联的剧集标签 (仅角色类型) */
+  episodes?: string[];
 }
 
 /**

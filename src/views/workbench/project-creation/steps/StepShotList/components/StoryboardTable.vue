@@ -85,6 +85,8 @@
             <div v-if="props.workflowMode === 'seedance'" class="seedance-prompt-wrapper">
               <SeedancePromptEditor
                 v-model="row.seedancePrompt"
+                :images="row.seedancePromptImages"
+                @update:images="(images) => handleUpdateImages(row, images)"
                 :show-reference-bar="false"
                 placeholder="请输入提示词，可拖入参考图片或点击参考图插入"
               />
@@ -340,6 +342,7 @@
   import ShotNumberActions from './ShotNumberActions.vue';
   import SingleCharacterEditDialog from './SingleCharacterEditDialog.vue';
   import { SeedancePromptEditor } from '@/components/TiptapEditor';
+  import type { ReferenceImage } from '@/types/mention';
 
   interface Props {
     shots: Shot[];
@@ -756,6 +759,11 @@
   };
 
   // Seedance 2.0 上传功能已迁移到 SeedancePromptEditor 组件中
+
+  // 处理分镜图片更新
+  const handleUpdateImages = (shot: Shot, images: ReferenceImage[]) => {
+    shot.seedancePromptImages = images;
+  };
 
   // 保存当前编辑
   const saveCurrentEdit = async () => {
