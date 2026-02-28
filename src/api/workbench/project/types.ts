@@ -696,10 +696,10 @@ export interface MetaVo {
  * 任务状态枚举
  */
 export enum TaskStatus {
-  Queued = 0,      // 排队中
-  Generating = 1,  // 生成中
-  Success = 2,     // 成功
-  Failed = 3       // 失败
+  Queued = 0, // 排队中
+  Generating = 1, // 生成中
+  Success = 2, // 成功
+  Failed = 3 // 失败
 }
 
 /**

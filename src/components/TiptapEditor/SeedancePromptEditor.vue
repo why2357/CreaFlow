@@ -655,16 +655,11 @@
     // 确保在文本节点中
     if (textNode.nodeType !== Node.TEXT_NODE) {
       // 尝试找到前面的文本节点
-      const walker = document.createTreeWalker(
-        editorRef.value,
-        NodeFilter.SHOW_TEXT,
-        null
-      );
+      const walker = document.createTreeWalker(editorRef.value, NodeFilter.SHOW_TEXT, null);
 
       let currentNode: Node | null = null;
       while (walker.nextNode()) {
-        if (walker.currentNode === textNode ||
-            (textNode as any).contains?.(walker.currentNode)) {
+        if (walker.currentNode === textNode || (textNode as any).contains?.(walker.currentNode)) {
           currentNode = walker.currentNode;
           break;
         }

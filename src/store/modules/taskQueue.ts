@@ -2,12 +2,13 @@ import type { AddTaskRequest, GenerationMode, TaskQueueItem, TaskStatus } from '
 import { defineStore } from 'pinia';
 
 /**
- * 任务队列最大并发数量
+ * 单个镜头最大并发任务数量
  */
-const MAX_CONCURRENT_TASKS = 3;
+const MAX_CONCURRENT_PER_SHOT = 4;
 
 /**
  * 任务队列状态管理
+ * 改为镜头级别：每个镜头最多4个并发任务
  */
 export const useTaskQueueStore = defineStore('taskQueue', () => {
   // ==================== 状态 ====================
@@ -18,14 +19,41 @@ export const useTaskQueueStore = defineStore('taskQueue', () => {
   const tasks = ref<TaskQueueItem[]>([]);
 
   /**
-   * 最大并发任务数量
+   * 单个镜头最大并发任务数量
    */
-  const maxConcurrent = ref<number>(MAX_CONCURRENT_TASKS);
+  const maxConcurrentPerShot = ref<number>(MAX_CONCURRENT_PER_SHOT);
 
   /**
    * 当前活跃的剧集ID（用于切换剧集时清空队列）
    */
   const currentEpisodeId = ref<string | number | null>(null);
+
+  /**
+   * 完成任务清理定时器
+   */
+  let cleanupTimer: ReturnType<typeof setInterval> | null = null;
+
+  /**
+   * 启动自动清理已完成的任务（每30秒清理一次超过5分钟前完成的任务）
+   */
+  const startAutoCleanup = () => {
+    if (cleanupTimer) return;
+
+    cleanupTimer = setInterval(() => {
+      const now = Date.now();
+      const fiveMinutesAgo = now - 5 * 60 * 1000;
+
+      tasks.value = tasks.value.filter((task) => {
+        // 保留活跃任务和最近完成的任务
+        if (task.status === 0 || task.status === 1) return true;
+        if (task.endTime && task.endTime > fiveMinutesAgo) return true;
+        return false;
+      });
+    }, 30000);
+  };
+
+  // 启动自动清理
+  startAutoCleanup();
 
   // ==================== Getters ====================
 
@@ -51,34 +79,34 @@ export const useTaskQueueStore = defineStore('taskQueue', () => {
   });
 
   /**
-   * 判断队列是否已满
+   * 队列是否已满（已弃用，保留兼容性）
+   * 现在每个镜头独立计算并发数
    */
   const isQueueFull = computed(() => {
-    return activeTasks.value.length >= maxConcurrent.value;
+    return false; // 不再使用全局队列限制
   });
 
   /**
-   * 获取当前正在执行和排队中的任务总数
+   * 根据镜头ID获取该镜头的所有任务
    */
-  const pendingTaskCount = computed(() => {
-    return activeTasks.value.length + queuedTasks.value.length;
-  });
+  const getTasksByShotId = (shotId: string | number) => {
+    return tasks.value.filter((task) => task.shotId === shotId);
+  };
 
   /**
-   * 判断是否可以添加新任务
+   * 根据镜头ID获取该镜头正在执行的任务数量
    */
-  const canAddTask = computed(() => {
-    return activeTasks.value.length < maxConcurrent.value;
-  });
+  const getActiveTaskCountByShotId = (shotId: string | number) => {
+    return tasks.value.filter((task) => task.shotId === shotId && task.status === 1).length;
+  };
 
   /**
-   * 根据镜头基础ID获取任务
+   * 根据镜头ID判断该镜头是否可以添加新任务
    */
-  const getTaskByBasicId = computed(() => {
-    return (basicId: number) => {
-      return tasks.value.find((task) => task.basicId === basicId);
-    };
-  });
+  const canAddTaskForShot = (shotId: string | number) => {
+    const activeCount = getActiveTaskCountByShotId(shotId);
+    return activeCount < maxConcurrentPerShot.value;
+  };
 
   /**
    * 根据任务ID获取任务
@@ -88,6 +116,13 @@ export const useTaskQueueStore = defineStore('taskQueue', () => {
       return tasks.value.find((task) => task.id === taskId);
     };
   });
+
+  /**
+   * 根据 basicId 获取任务
+   */
+  const getTaskByBasicId = (basicId: number) => {
+    return tasks.value.find((task) => task.basicId === basicId);
+  };
 
   // ==================== Actions ====================
 
@@ -101,64 +136,47 @@ export const useTaskQueueStore = defineStore('taskQueue', () => {
   /**
    * 添加任务到队列
    * @param request 任务请求参数
-   * @returns 创建的任务对象，如果队列已满返回 null
+   * @returns 创建的任务对象，如果该镜头队列已满返回 null
    */
   const addTask = (request: AddTaskRequest): TaskQueueItem | null => {
-    // 检查是否可以添加新任务
-    if (!canAddTask.value) {
-      console.warn('[TaskQueue] 队列已满，无法添加新任务');
+    // 检查该镜头是否可以添加新任务
+    if (!canAddTaskForShot(request.shotId)) {
+      console.warn(
+        `[TaskQueue] 镜头 ${request.shotId} 并发任务已满（最大${maxConcurrentPerShot.value}个），无法添加新任务`
+      );
       return null;
     }
 
-    // 检查是否已存在相同镜头的任务
-    const existingTask = tasks.value.find((t) => t.basicId === request.basicId && t.status !== 2 && t.status !== 3);
-    if (existingTask) {
-      console.warn('[TaskQueue] 该镜头已在队列中:', request.basicId);
-      return null;
-    }
-
-    // 创建新任务
-    const newTask: TaskQueueItem = {
+    // 创建任务对象
+    const task: TaskQueueItem = {
       id: generateTaskId(),
       basicId: request.basicId,
-      shotId: request.shotId,
       shotNumber: request.shotNumber,
+      shotId: request.shotId,
       episodeId: request.episodeId,
       projectId: request.projectId,
-      status: 0, // 默认为排队中
+      status: 1, // 直接设为生成中（排队逻辑由后端控制）
       mode: request.mode,
       prompt: request.prompt,
       dialogue: request.dialogue,
       startTime: Date.now()
     };
 
-    // 添加到队列
-    tasks.value.push(newTask);
+    tasks.value.push(task);
+    console.log(`[TaskQueue] 任务已添加:`, task);
 
-    console.log('[TaskQueue] 任务已添加到队列:', newTask.id, newTask.shotNumber);
-
-    // 如果当前活跃任务数未达上限，立即开始执行
-    if (activeTasks.value.length < maxConcurrent.value) {
-      startTask(newTask.id);
-    }
-
-    return newTask;
+    return task;
   };
 
   /**
-   * 开始执行任务
-   * @param taskId 任务ID
+   * 开始任务（将排队中的任务改为执行中）
    */
-  const startTask = (taskId: string): void => {
+  const startTask = (taskId: string) => {
     const task = tasks.value.find((t) => t.id === taskId);
-    if (!task) {
-      console.warn('[TaskQueue] 任务不存在:', taskId);
-      return;
+    if (task && task.status === 0) {
+      task.status = 1;
+      task.startTime = Date.now();
     }
-
-    // 更新任务状态为生成中
-    task.status = 1;
-    console.log('[TaskQueue] 任务开始执行:', taskId, task.shotNumber);
   };
 
   /**
@@ -168,37 +186,38 @@ export const useTaskQueueStore = defineStore('taskQueue', () => {
    * @param resultUrls 结果URL列表（可选）
    * @param errorMessage 错误信息（可选）
    */
-  const updateTask = (
-    taskId: string,
-    status: TaskStatus,
-    resultUrls?: string[],
-    errorMessage?: string
-  ): void => {
+  const updateTask = (taskId: string, status: TaskStatus, resultUrls?: string[], errorMessage?: string) => {
     const task = tasks.value.find((t) => t.id === taskId);
     if (!task) {
-      console.warn('[TaskQueue] 任务不存在:', taskId);
+      console.warn(`[TaskQueue] 未找到任务: ${taskId}`);
       return;
     }
 
-    // 更新状态
     task.status = status;
-    task.endTime = Date.now();
 
-    // 更新结果
+    if (status === 2 || status === 3) {
+      // 任务完成或失败
+      task.endTime = Date.now();
+    }
+
     if (resultUrls) {
       task.resultUrls = resultUrls;
     }
 
-    // 更新错误信息
     if (errorMessage) {
       task.errorMessage = errorMessage;
     }
 
-    console.log('[TaskQueue] 任务状态已更新:', taskId, 'status:', status);
+    console.log(`[TaskQueue] 任务状态已更新:`, task);
+  };
 
-    // 如果任务完成或失败，检查是否有排队中的任务需要启动
-    if (status === 2 || status === 3) {
-      checkAndStartNextTask();
+  /**
+   * 根据 basicId 更新任务状态
+   */
+  const updateTaskByBasicId = (basicId: number, status: TaskStatus, resultUrls?: string[], errorMessage?: string) => {
+    const task = tasks.value.find((t) => t.basicId === basicId);
+    if (task) {
+      updateTask(task.id, status, resultUrls, errorMessage);
     }
   };
 
@@ -206,107 +225,67 @@ export const useTaskQueueStore = defineStore('taskQueue', () => {
    * 移除任务
    * @param taskId 任务ID
    */
-  const removeTask = (taskId: string): void => {
+  const removeTask = (taskId: string) => {
     const index = tasks.value.findIndex((t) => t.id === taskId);
-    if (index === -1) {
-      console.warn('[TaskQueue] 任务不存在:', taskId);
-      return;
-    }
-
-    tasks.value.splice(index, 1);
-    console.log('[TaskQueue] 任务已移除:', taskId);
-
-    // 检查是否有排队中的任务需要启动
-    checkAndStartNextTask();
-  };
-
-  /**
-   * 检查并启动下一个排队中的任务
-   */
-  const checkAndStartNextTask = (): void => {
-    // 如果当前活跃任务数未达上限，且有排队中的任务
-    if (activeTasks.value.length < maxConcurrent.value && queuedTasks.value.length > 0) {
-      const nextTask = queuedTasks.value[0];
-      startTask(nextTask.id);
-    }
-  };
-
-  /**
-   * 获取当前队列数量
-   * @returns 活跃任务数
-   */
-  const getQueueCount = (): number => {
-    return activeTasks.value.length;
-  };
-
-  /**
-   * 清空所有任务
-   */
-  const clearAllTasks = (): void => {
-    tasks.value = [];
-    console.log('[TaskQueue] 所有任务已清空');
-  };
-
-  /**
-   * 清空已完成和失败的任务
-   */
-  const clearCompletedTasks = (): void => {
-    tasks.value = tasks.value.filter((task) => task.status === 0 || task.status === 1);
-    console.log('[TaskQueue] 已完成任务已清空');
-  };
-
-  /**
-   * 切换剧集时清空队列
-   * @param episodeId 新的剧集ID
-   */
-  const switchEpisode = (episodeId: string | number): void => {
-    if (currentEpisodeId.value !== episodeId) {
-      currentEpisodeId.value = episodeId;
-      clearAllTasks();
-      console.log('[TaskQueue] 剧集切换，队列已清空');
+    if (index !== -1) {
+      tasks.value.splice(index, 1);
+      console.log(`[TaskQueue] 任务已移除: ${taskId}`);
     }
   };
 
   /**
    * 重试失败的任务
    * @param taskId 任务ID
+   * @returns 是否成功重试
    */
   const retryTask = (taskId: string): boolean => {
     const task = tasks.value.find((t) => t.id === taskId);
     if (!task) {
-      console.warn('[TaskQueue] 任务不存在:', taskId);
       return false;
     }
 
-    if (task.status !== 3) {
-      console.warn('[TaskQueue] 只有失败的任务可以重试:', taskId);
+    // 检查该镜头是否可以添加新任务
+    if (!canAddTaskForShot(task.shotId)) {
+      console.warn(`[TaskQueue] 镜头 ${task.shotId} 并发任务已满，无法重试`);
       return false;
     }
 
     // 重置任务状态
-    task.status = 0;
+    task.status = 1;
     task.startTime = Date.now();
     task.endTime = undefined;
-    task.errorMessage = undefined;
     task.resultUrls = undefined;
+    task.errorMessage = undefined;
 
-    console.log('[TaskQueue] 任务已重置，将重新排队:', taskId);
-
-    // 如果当前活跃任务数未达上限，立即开始执行
-    if (activeTasks.value.length < maxConcurrent.value) {
-      startTask(taskId);
-    }
-
+    console.log(`[TaskQueue] 任务已重试:`, task);
     return true;
   };
 
   /**
-   * 设置最大并发任务数量
-   * @param count 最大并发数量
+   * 清空所有已完成和失败的任务
    */
-  const setMaxConcurrent = (count: number): void => {
-    maxConcurrent.value = Math.max(1, count);
-    console.log('[TaskQueue] 最大并发任务数量已设置为:', maxConcurrent.value);
+  const clearCompletedTasks = () => {
+    tasks.value = tasks.value.filter((task) => task.status !== 2 && task.status !== 3);
+    console.log(`[TaskQueue] 已清空已完成任务`);
+  };
+
+  /**
+   * 切换剧集时清空队列
+   */
+  const switchEpisode = (episodeId: string | number) => {
+    if (currentEpisodeId.value !== episodeId) {
+      currentEpisodeId.value = episodeId;
+      tasks.value = [];
+      console.log(`[TaskQueue] 已切换到剧集 ${episodeId}，队列已清空`);
+    }
+  };
+
+  /**
+   * 清空整个队列
+   */
+  const clearAll = () => {
+    tasks.value = [];
+    console.log(`[TaskQueue] 队列已清空`);
   };
 
   // ==================== 返回 ====================
@@ -314,7 +293,7 @@ export const useTaskQueueStore = defineStore('taskQueue', () => {
   return {
     // 状态
     tasks,
-    maxConcurrent,
+    maxConcurrentPerShot,
     currentEpisodeId,
 
     // Getters
@@ -322,24 +301,21 @@ export const useTaskQueueStore = defineStore('taskQueue', () => {
     queuedTasks,
     completedTasks,
     isQueueFull,
-    pendingTaskCount,
-    canAddTask,
-    getTaskByBasicId,
+    getTasksByShotId,
+    getActiveTaskCountByShotId,
+    canAddTaskForShot,
     getTaskById,
+    getTaskByBasicId,
 
     // Actions
     addTask,
     startTask,
     updateTask,
+    updateTaskByBasicId,
     removeTask,
-    checkAndStartNextTask,
-    getQueueCount,
-    clearAllTasks,
+    retryTask,
     clearCompletedTasks,
     switchEpisode,
-    retryTask,
-    setMaxConcurrent
+    clearAll
   };
 });
-
-export default useTaskQueueStore;

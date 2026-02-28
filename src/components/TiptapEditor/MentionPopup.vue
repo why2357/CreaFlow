@@ -25,7 +25,10 @@
 
         <!-- 剧集筛选器（角色和场景共用） -->
         <div
-          v-if="(state.activeTab === MentionType.CHARACTER || state.activeTab === MentionType.SCENE) && episodeList.length > 1"
+          v-if="
+            (state.activeTab === MentionType.CHARACTER || state.activeTab === MentionType.SCENE) &&
+            episodeList.length > 1
+          "
           class="episode-filter"
         >
           <div
@@ -59,14 +62,14 @@
               <div v-if="option.subtitle" class="mention-option-subtitle">{{ option.subtitle }}</div>
               <!-- 剧集标签（角色和场景） -->
               <div
-                v-if="option.episodes && option.episodes.length > 0 && (state.activeTab === MentionType.CHARACTER || state.activeTab === MentionType.SCENE)"
+                v-if="
+                  option.episodes &&
+                  option.episodes.length > 0 &&
+                  (state.activeTab === MentionType.CHARACTER || state.activeTab === MentionType.SCENE)
+                "
                 class="mention-option-episodes"
               >
-                <span
-                  v-for="(ep, idx) in option.episodes.slice(0, 2)"
-                  :key="idx"
-                  class="episode-tag"
-                >
+                <span v-for="(ep, idx) in option.episodes.slice(0, 2)" :key="idx" class="episode-tag">
                   {{ ep }}
                 </span>
                 <span v-if="option.episodes.length > 2" class="episode-tag-more">
@@ -80,7 +83,12 @@
           <div v-if="filteredOptions.length === 0" class="mention-empty">
             <svg-icon icon-class="fy-empty" style="width: 48px; height: 48px; color: #c0c4cc" />
             <p>
-              <template v-if="selectedEpisodeId !== null && (state.activeTab === MentionType.CHARACTER || state.activeTab === MentionType.SCENE)">
+              <template
+                v-if="
+                  selectedEpisodeId !== null &&
+                  (state.activeTab === MentionType.CHARACTER || state.activeTab === MentionType.SCENE)
+                "
+              >
                 该剧集暂无{{ state.activeTab === MentionType.CHARACTER ? '角色' : '场景' }}
               </template>
               <template v-else>

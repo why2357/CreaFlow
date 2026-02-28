@@ -62,12 +62,16 @@
               :material-info-vo-list="row.materialInfoVoList"
               :aspect-ratio="aspectRatio"
               :shot-id="row.id"
+              :shot-number="row.shotNumber"
               :basic-id="row.basicId"
               :history-detail-id="row.historyDetailId"
               :isCollect="row.isCollect"
               :loading="row.imageLoading"
               :task-status="row.taskStatus"
               :model-points="modelPoints"
+              :scene-description="row.sceneDescription"
+              :scene-hint="row.sceneHint"
+              :dialogue="row.dialogue"
               @upload="(file:any) => handleImageUpload(row, file)"
               @show-history="handleShowHistory(row)"
               @download="handleImageDownload(row)"
@@ -86,7 +90,7 @@
               <SeedancePromptEditor
                 v-model="row.seedancePrompt"
                 :images="row.seedancePromptImages"
-                @update:images="(images) => handleUpdateImages(row, images)"
+                @update:images="(images: ReferenceImage[]) => handleUpdateImages(row, images)"
                 :show-reference-bar="false"
                 placeholder="请输入提示词，可拖入参考图片或点击参考图插入"
               />
@@ -328,6 +332,9 @@
   import type { EpisodeInfo, LibrarySubInfo, Shot } from '@/api/workbench/project/types';
   import { addScene, deleteScene } from '@/api/workbench/storyboard';
   import { useAutoScroll } from '@/composables/useAutoScroll';
+  import { useTaskQueue } from '@/composables/useTaskQueue';
+  import { useTaskQueueListener, type TaskQueueUpdateDetail } from '@/composables/useSSEListener';
+  import { useProjectStore } from '@/store/modules/project';
   import { uploadFile } from '@/utils/uploadFile';
   import { Loading } from '@element-plus/icons-vue';
   import { ElMessage, ElMessageBox } from 'element-plus';
@@ -367,6 +374,23 @@
     (e: 'refresh'): void;
     (e: 'deleteSuccess', basicId: number): void;
   }>();
+
+  // ==================== 任务队列集成 ====================
+  const projectStore = useProjectStore();
+  const { handleBatchTaskUpdate } = useTaskQueue();
+
+  // 监听SSE任务队列更新
+  useTaskQueueListener(
+    (detail: TaskQueueUpdateDetail) => {
+      handleBatchTaskUpdate(detail);
+      // 刷新分镜数据
+      emit('refresh');
+    },
+    {
+      projectId: projectStore.currentProjectId,
+      episodeId: projectStore.currentEpisodeId
+    }
+  );
 
   // 表格引用和本地数据
   const tableRef = ref();
@@ -1288,8 +1312,7 @@
 <style scoped lang="scss">
   .storyboard-table-container {
     display: flex;
-    justify-content: center;
-    align-items: center;
+    gap: 0;
     width: 100%;
     height: 100%;
     position: relative;
@@ -1342,7 +1365,8 @@
     }
 
     .table-wrapper {
-      width: 100%;
+      flex: 1;
+      min-width: 0; // 允许 flex 子元素缩小
       height: 100%;
       // padding: 0px 20px 0 0;
       overflow-x: auto; // 允许横向滚动
