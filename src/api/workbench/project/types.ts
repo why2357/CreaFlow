@@ -689,3 +689,88 @@ export interface MetaVo {
   title?: string;
   [property: string]: any;
 }
+
+// ==================== 任务队列相关类型 ====================
+
+/**
+ * 任务状态枚举
+ */
+export enum TaskStatus {
+  Queued = 0,      // 排队中
+  Generating = 1,  // 生成中
+  Success = 2,     // 成功
+  Failed = 3       // 失败
+}
+
+/**
+ * 生成模式类型
+ */
+export type GenerationMode = 't2i' | 'i2v' | 'r2v';
+
+/**
+ * 任务队列项
+ */
+export interface TaskQueueItem {
+  /** 任务唯一ID */
+  id: string;
+  /** 镜头基础信息ID */
+  basicId: number;
+  /** 镜号 */
+  shotNumber: string;
+  /** 镜头ID */
+  shotId: string | number;
+  /** 剧集ID */
+  episodeId: string | number;
+  /** 项目ID */
+  projectId: number;
+  /** 任务状态 */
+  status: TaskStatus;
+  /** 生成模式 */
+  mode: GenerationMode;
+  /** 提示词描述 */
+  prompt?: string;
+  /** 台词 */
+  dialogue?: string;
+  /** 任务开始时间戳 */
+  startTime?: number;
+  /** 任务结束时间戳 */
+  endTime?: number;
+  /** 结果图片URL列表 */
+  resultUrls?: string[];
+  /** 错误信息 */
+  errorMessage?: string;
+  /** 模型代码 */
+  modelCode?: string;
+  /** 分辨率 */
+  resolution?: string;
+  /** 时长 */
+  duration?: number;
+  /** 是否收藏 */
+  isCollect?: boolean;
+  /** 历史明细ID */
+  historyDetailId?: number;
+}
+
+/**
+ * 添加任务到队列的请求参数
+ */
+export interface AddTaskRequest {
+  basicId: number;
+  shotId: string | number;
+  shotNumber: string;
+  episodeId: string | number;
+  projectId: number;
+  mode: GenerationMode;
+  prompt?: string;
+  dialogue?: string;
+}
+
+/**
+ * 任务状态更新事件
+ */
+export interface TaskStatusUpdateEvent {
+  taskId: string;
+  status: TaskStatus;
+  resultUrls?: string[];
+  errorMessage?: string;
+}
