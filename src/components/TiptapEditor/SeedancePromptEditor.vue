@@ -643,9 +643,27 @@
     if (!editorRef.value) return;
 
     const selection = window.getSelection();
-    if (!selection || selection.rangeCount === 0) return;
+    if (!selection) return;
 
-    const range = selection.getRangeAt(0);
+    let range: Range;
+
+    // 检查当前选择是否在编辑器内
+    if (selection.rangeCount === 0 || !editorRef.value.contains(selection.anchorNode)) {
+      // 如果不在编辑器内，将光标移动到编辑器末尾
+      range = document.createRange();
+      // 找到编辑器的最后一个文本节点或直接在编辑器末尾
+      if (editorRef.value.lastChild) {
+        range.setStartAfter(editorRef.value.lastChild);
+        range.collapse(true);
+      } else {
+        range.setStart(editorRef.value, 0);
+        range.collapse(true);
+      }
+      selection.removeAllRanges();
+      selection.addRange(range);
+    } else {
+      range = selection.getRangeAt(0);
+    }
 
     // 找到并删除 @ 符号及其后的查询文本
     // 光标应该位于查询文本之后
@@ -777,9 +795,26 @@
 
     // 直接插入到编辑器，不依赖 mentionTriggerPos
     const selection = window.getSelection();
-    if (!selection || selection.rangeCount === 0) return;
+    if (!selection) return;
 
-    const range = selection.getRangeAt(0);
+    let range: Range;
+
+    // 检查当前选择是否在编辑器内
+    if (selection.rangeCount === 0 || !editorRef.value.contains(selection.anchorNode)) {
+      // 如果不在编辑器内，将光标移动到编辑器末尾
+      range = document.createRange();
+      if (editorRef.value.lastChild) {
+        range.setStartAfter(editorRef.value.lastChild);
+        range.collapse(true);
+      } else {
+        range.setStart(editorRef.value, 0);
+        range.collapse(true);
+      }
+      selection.removeAllRanges();
+      selection.addRange(range);
+    } else {
+      range = selection.getRangeAt(0);
+    }
 
     // 创建内联图片元素
     const img = createInlineImage(sceneSrc, label, MentionTypeEnum.SCENE);
@@ -837,9 +872,25 @@
     if (!editorRef.value) return;
 
     const selection = window.getSelection();
-    if (!selection || selection.rangeCount === 0) return;
+    if (!selection) return;
 
-    const range = selection.getRangeAt(0);
+    let range: Range;
+
+    // 检查当前选择是否在编辑器内
+    if (selection.rangeCount === 0 || !editorRef.value.contains(selection.anchorNode)) {
+      // 如果不在编辑器内，将光标移动到编辑器末尾
+      range = document.createRange();
+      // 找到编辑器的最后一个文本节点或直接在编辑器末尾
+      if (editorRef.value.lastChild) {
+        range.setStartAfter(editorRef.value.lastChild);
+        range.collapse(true);
+      } else {
+        range.setStart(editorRef.value, 0);
+        range.collapse(true);
+      }
+    } else {
+      range = selection.getRangeAt(0);
+    }
 
     // 插入图片
     const img = createInlineImage(image.src, image.label, MentionTypeEnum.REFERENCE);

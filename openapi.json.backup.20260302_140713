@@ -69,8 +69,7 @@
               "type": "object"
             }
           }
-        ],
-        "security": []
+        ]
       }
     },
     "/demo/tree/list": {
@@ -127,8 +126,7 @@
               "type": "object"
             }
           }
-        ],
-        "security": []
+        ]
       }
     },
     "/hivision/getRouters": {
@@ -174,8 +172,7 @@
               "type": "object"
             }
           }
-        ],
-        "security": []
+        ]
       }
     },
     "/hivision/model/config/list": {
@@ -234,11 +231,6 @@
               "type": "object"
             }
           }
-        ],
-        "security": [
-          {
-            "BearerAuth": []
-          }
         ]
       }
     },
@@ -293,12 +285,7 @@
               }
             }
           }
-        },
-        "security": [
-          {
-            "BearerAuth": []
-          }
-        ]
+        }
       }
     },
     "/hivision/model/main/list": {
@@ -357,11 +344,6 @@
               "type": "object"
             }
           }
-        ],
-        "security": [
-          {
-            "BearerAuth": []
-          }
         ]
       }
     },
@@ -408,12 +390,7 @@
               }
             }
           }
-        },
-        "security": [
-          {
-            "BearerAuth": []
-          }
-        ]
+        }
       }
     },
     "/monitor/cache": {
@@ -478,11 +455,6 @@
               "type": "object"
             }
           }
-        ],
-        "security": [
-          {
-            "BearerAuth": []
-          }
         ]
       }
     },
@@ -528,11 +500,6 @@
             "schema": {
               "type": "object"
             }
-          }
-        ],
-        "security": [
-          {
-            "BearerAuth": []
           }
         ]
       }
@@ -580,11 +547,6 @@
               "type": "object"
             }
           }
-        ],
-        "security": [
-          {
-            "BearerAuth": []
-          }
         ]
       }
     },
@@ -630,11 +592,6 @@
             "schema": {
               "type": "object"
             }
-          }
-        ],
-        "security": [
-          {
-            "BearerAuth": []
           }
         ]
       }
@@ -682,12 +639,7 @@
               }
             }
           }
-        },
-        "security": [
-          {
-            "BearerAuth": []
-          }
-        ]
+        }
       }
     },
     "/monitor/cache/clearCacheKey/": {
@@ -733,12 +685,7 @@
               }
             }
           }
-        },
-        "security": [
-          {
-            "BearerAuth": []
-          }
-        ]
+        }
       }
     },
     "/monitor/cache/clearCacheAll": {
@@ -784,12 +731,7 @@
               }
             }
           }
-        },
-        "security": [
-          {
-            "BearerAuth": []
-          }
-        ]
+        }
       }
     },
     "/monitor/logininfor/list": {
@@ -849,11 +791,6 @@
               "type": "object"
             }
           }
-        ],
-        "security": [
-          {
-            "BearerAuth": []
-          }
         ]
       }
     },
@@ -900,12 +837,7 @@
               }
             }
           }
-        },
-        "security": [
-          {
-            "BearerAuth": []
-          }
-        ]
+        }
       }
     },
     "/monitor/logininfor/unlock/": {
@@ -950,11 +882,6 @@
             "schema": {
               "type": "object"
             }
-          }
-        ],
-        "security": [
-          {
-            "BearerAuth": []
           }
         ]
       }
@@ -1002,12 +929,7 @@
               }
             }
           }
-        },
-        "security": [
-          {
-            "BearerAuth": []
-          }
-        ]
+        }
       }
     },
     "/monitor/online/list": {
@@ -1067,11 +989,6 @@
               "type": "object"
             }
           }
-        ],
-        "security": [
-          {
-            "BearerAuth": []
-          }
         ]
       }
     },
@@ -1118,12 +1035,7 @@
               }
             }
           }
-        },
-        "security": [
-          {
-            "BearerAuth": []
-          }
-        ]
+        }
       }
     },
     "/monitor/operlog/list": {
@@ -1185,11 +1097,6 @@
               "type": "object"
             }
           }
-        ],
-        "security": [
-          {
-            "BearerAuth": []
-          }
         ]
       }
     },
@@ -1236,12 +1143,7 @@
               }
             }
           }
-        },
-        "security": [
-          {
-            "BearerAuth": []
-          }
-        ]
+        }
       }
     },
     "/monitor/operlog/clean": {
@@ -1287,12 +1189,7 @@
               }
             }
           }
-        },
-        "security": [
-          {
-            "BearerAuth": []
-          }
-        ]
+        }
       }
     },
     "/hivision/system/client/list": {
@@ -1352,11 +1249,6 @@
               "type": "object"
             }
           }
-        ],
-        "security": [
-          {
-            "BearerAuth": []
-          }
         ]
       }
     },
@@ -1403,12 +1295,7 @@
               }
             }
           }
-        },
-        "security": [
-          {
-            "BearerAuth": []
-          }
-        ]
+        }
       }
     },
     "/hivision/system/config/list": {
@@ -1467,11 +1354,6 @@
               "type": "object"
             }
           }
-        ],
-        "security": [
-          {
-            "BearerAuth": []
-          }
         ]
       }
     },
@@ -1518,11 +1400,6 @@
               "type": "object"
             }
           }
-        ],
-        "security": [
-          {
-            "BearerAuth": []
-          }
         ]
       },
       "delete": {
@@ -1567,12 +1444,7 @@
               }
             }
           }
-        },
-        "security": [
-          {
-            "BearerAuth": []
-          }
-        ]
+        }
       }
     },
     "/hivision/system/config/configKey/": {
@@ -1617,11 +1489,6 @@
             "schema": {
               "type": "object"
             }
-          }
-        ],
-        "security": [
-          {
-            "BearerAuth": []
           }
         ]
       }
@@ -1678,12 +1545,7 @@
               }
             }
           }
-        },
-        "security": [
-          {
-            "BearerAuth": []
-          }
-        ]
+        }
       },
       "put": {
         "tags": [
@@ -1736,12 +1598,7 @@
               }
             }
           }
-        },
-        "security": [
-          {
-            "BearerAuth": []
-          }
-        ]
+        }
       }
     },
     "/hivision/system/config/updateByKey": {
@@ -1787,12 +1644,7 @@
               }
             }
           }
-        },
-        "security": [
-          {
-            "BearerAuth": []
-          }
-        ]
+        }
       }
     },
     "/hivision/system/config/refreshCache": {
@@ -1838,12 +1690,7 @@
               }
             }
           }
-        },
-        "security": [
-          {
-            "BearerAuth": []
-          }
-        ]
+        }
       }
     },
     "/hivision/system/dept/list": {
@@ -1911,11 +1758,6 @@
               "type": "object"
             }
           }
-        ],
-        "security": [
-          {
-            "BearerAuth": []
-          }
         ]
       }
     },
@@ -1961,11 +1803,6 @@
             "schema": {
               "type": "object"
             }
-          }
-        ],
-        "security": [
-          {
-            "BearerAuth": []
           }
         ]
       }
@@ -2027,11 +1864,6 @@
               "type": "object"
             }
           }
-        ],
-        "security": [
-          {
-            "BearerAuth": []
-          }
         ]
       }
     },
@@ -2078,11 +1910,6 @@
               "type": "object"
             }
           }
-        ],
-        "security": [
-          {
-            "BearerAuth": []
-          }
         ]
       },
       "delete": {
@@ -2127,12 +1954,7 @@
               }
             }
           }
-        },
-        "security": [
-          {
-            "BearerAuth": []
-          }
-        ]
+        }
       }
     },
     "/hivision/system/dict/data": {
@@ -2189,12 +2011,7 @@
               }
             }
           }
-        },
-        "security": [
-          {
-            "BearerAuth": []
-          }
-        ]
+        }
       },
       "put": {
         "tags": [
@@ -2249,12 +2066,7 @@
               }
             }
           }
-        },
-        "security": [
-          {
-            "BearerAuth": []
-          }
-        ]
+        }
       }
     },
     "/hivision/system/dict/type/list": {
@@ -2313,11 +2125,6 @@
               "type": "object"
             }
           }
-        ],
-        "security": [
-          {
-            "BearerAuth": []
-          }
         ]
       }
     },
@@ -2364,11 +2171,6 @@
               "type": "object"
             }
           }
-        ],
-        "security": [
-          {
-            "BearerAuth": []
-          }
         ]
       },
       "delete": {
@@ -2413,12 +2215,7 @@
               }
             }
           }
-        },
-        "security": [
-          {
-            "BearerAuth": []
-          }
-        ]
+        }
       }
     },
     "/hivision/system/dict/type": {
@@ -2473,12 +2270,7 @@
               }
             }
           }
-        },
-        "security": [
-          {
-            "BearerAuth": []
-          }
-        ]
+        }
       },
       "put": {
         "tags": [
@@ -2531,12 +2323,7 @@
               }
             }
           }
-        },
-        "security": [
-          {
-            "BearerAuth": []
-          }
-        ]
+        }
       }
     },
     "/hivision/system/dict/type/refreshCache": {
@@ -2582,12 +2369,7 @@
               }
             }
           }
-        },
-        "security": [
-          {
-            "BearerAuth": []
-          }
-        ]
+        }
       }
     },
     "/hivision/system/dict/type/optionselect": {
@@ -2632,11 +2414,6 @@
             "schema": {
               "type": "object"
             }
-          }
-        ],
-        "security": [
-          {
-            "BearerAuth": []
           }
         ]
       }
@@ -2708,11 +2485,6 @@
               "type": "object"
             }
           }
-        ],
-        "security": [
-          {
-            "BearerAuth": []
-          }
         ]
       }
     },
@@ -2773,11 +2545,6 @@
               "type": "object"
             }
           }
-        ],
-        "security": [
-          {
-            "BearerAuth": []
-          }
         ]
       }
     },
@@ -2824,11 +2591,6 @@
               "type": "object"
             }
           }
-        ],
-        "security": [
-          {
-            "BearerAuth": []
-          }
         ]
       },
       "delete": {
@@ -2873,12 +2635,7 @@
               }
             }
           }
-        },
-        "security": [
-          {
-            "BearerAuth": []
-          }
-        ]
+        }
       }
     },
     "/system/notice": {
@@ -2934,12 +2691,7 @@
               }
             }
           }
-        },
-        "security": [
-          {
-            "BearerAuth": []
-          }
-        ]
+        }
       },
       "put": {
         "tags": [
@@ -2993,12 +2745,7 @@
               }
             }
           }
-        },
-        "security": [
-          {
-            "BearerAuth": []
-          }
-        ]
+        }
       }
     },
     "/resource/oss/list": {
@@ -3057,11 +2804,6 @@
               "type": "object"
             }
           }
-        ],
-        "security": [
-          {
-            "BearerAuth": []
-          }
         ]
       }
     },
@@ -3107,11 +2849,6 @@
             "schema": {
               "type": "object"
             }
-          }
-        ],
-        "security": [
-          {
-            "BearerAuth": []
           }
         ]
       }
@@ -3159,12 +2896,7 @@
               }
             }
           }
-        },
-        "security": [
-          {
-            "BearerAuth": []
-          }
-        ]
+        }
       }
     },
     "/resource/oss/config/list": {
@@ -3223,11 +2955,6 @@
               "type": "object"
             }
           }
-        ],
-        "security": [
-          {
-            "BearerAuth": []
-          }
         ]
       }
     },
@@ -3274,11 +3001,6 @@
               "type": "object"
             }
           }
-        ],
-        "security": [
-          {
-            "BearerAuth": []
-          }
         ]
       },
       "delete": {
@@ -3323,12 +3045,7 @@
               }
             }
           }
-        },
-        "security": [
-          {
-            "BearerAuth": []
-          }
-        ]
+        }
       }
     },
     "/resource/oss/config": {
@@ -3385,12 +3102,7 @@
               }
             }
           }
-        },
-        "security": [
-          {
-            "BearerAuth": []
-          }
-        ]
+        }
       },
       "put": {
         "tags": [
@@ -3445,12 +3157,7 @@
               }
             }
           }
-        },
-        "security": [
-          {
-            "BearerAuth": []
-          }
-        ]
+        }
       }
     },
     "/resource/oss/config/changeStatus": {
@@ -3496,12 +3203,7 @@
               }
             }
           }
-        },
-        "security": [
-          {
-            "BearerAuth": []
-          }
-        ]
+        }
       }
     },
     "/system/post/list": {
@@ -3560,11 +3262,6 @@
               "type": "object"
             }
           }
-        ],
-        "security": [
-          {
-            "BearerAuth": []
-          }
         ]
       }
     },
@@ -3611,11 +3308,6 @@
               "type": "object"
             }
           }
-        ],
-        "security": [
-          {
-            "BearerAuth": []
-          }
         ]
       },
       "delete": {
@@ -3660,12 +3352,7 @@
               }
             }
           }
-        },
-        "security": [
-          {
-            "BearerAuth": []
-          }
-        ]
+        }
       }
     },
     "/system/post": {
@@ -3721,12 +3408,7 @@
               }
             }
           }
-        },
-        "security": [
-          {
-            "BearerAuth": []
-          }
-        ]
+        }
       },
       "put": {
         "tags": [
@@ -3780,12 +3462,7 @@
               }
             }
           }
-        },
-        "security": [
-          {
-            "BearerAuth": []
-          }
-        ]
+        }
       }
     },
     "/system/role/list": {
@@ -3845,11 +3522,6 @@
             "schema": {
               "type": "object"
             }
-          }
-        ],
-        "security": [
-          {
-            "BearerAuth": []
           }
         ]
       }
@@ -3911,11 +3583,6 @@
               "type": "object"
             }
           }
-        ],
-        "security": [
-          {
-            "BearerAuth": []
-          }
         ]
       }
     },
@@ -3962,11 +3629,6 @@
               "type": "object"
             }
           }
-        ],
-        "security": [
-          {
-            "BearerAuth": []
-          }
         ]
       },
       "delete": {
@@ -4011,12 +3673,7 @@
               }
             }
           }
-        },
-        "security": [
-          {
-            "BearerAuth": []
-          }
-        ]
+        }
       }
     },
     "/system/tenant": {
@@ -4072,12 +3729,7 @@
               }
             }
           }
-        },
-        "security": [
-          {
-            "BearerAuth": []
-          }
-        ]
+        }
       },
       "put": {
         "tags": [
@@ -4131,12 +3783,7 @@
               }
             }
           }
-        },
-        "security": [
-          {
-            "BearerAuth": []
-          }
-        ]
+        }
       }
     },
     "/system/tenant/changeStatus": {
@@ -4182,12 +3829,7 @@
               }
             }
           }
-        },
-        "security": [
-          {
-            "BearerAuth": []
-          }
-        ]
+        }
       }
     },
     "/system/tenant/dynamic/": {
@@ -4232,11 +3874,6 @@
             "schema": {
               "type": "object"
             }
-          }
-        ],
-        "security": [
-          {
-            "BearerAuth": []
           }
         ]
       }
@@ -4284,11 +3921,6 @@
               "type": "object"
             }
           }
-        ],
-        "security": [
-          {
-            "BearerAuth": []
-          }
         ]
       }
     },
@@ -4334,11 +3966,6 @@
             "schema": {
               "type": "object"
             }
-          }
-        ],
-        "security": [
-          {
-            "BearerAuth": []
           }
         ]
       }
@@ -4386,12 +4013,7 @@
               }
             }
           }
-        },
-        "security": [
-          {
-            "BearerAuth": []
-          }
-        ]
+        }
       }
     },
     "/hivision/system/tenant/update-status": {
@@ -4437,12 +4059,7 @@
               }
             }
           }
-        },
-        "security": [
-          {
-            "BearerAuth": []
-          }
-        ]
+        }
       }
     },
     "/hivision/system/tenant/add-pm": {
@@ -4488,12 +4105,7 @@
               }
             }
           }
-        },
-        "security": [
-          {
-            "BearerAuth": []
-          }
-        ]
+        }
       }
     },
     "/hivision/system/tenant/delete-pm": {
@@ -4539,12 +4151,7 @@
               }
             }
           }
-        },
-        "security": [
-          {
-            "BearerAuth": []
-          }
-        ]
+        }
       }
     },
     "/hivision/system/tenant/list": {
@@ -4589,11 +4196,6 @@
             "schema": {
               "type": "object"
             }
-          }
-        ],
-        "security": [
-          {
-            "BearerAuth": []
           }
         ]
       }
@@ -4641,12 +4243,7 @@
               }
             }
           }
-        },
-        "security": [
-          {
-            "BearerAuth": []
-          }
-        ]
+        }
       }
     },
     "/hivision/wallet-recharge/list": {
@@ -4691,11 +4288,6 @@
             "schema": {
               "type": "object"
             }
-          }
-        ],
-        "security": [
-          {
-            "BearerAuth": []
           }
         ]
       }
@@ -4756,11 +4348,6 @@
               "type": "object"
             }
           }
-        ],
-        "security": [
-          {
-            "BearerAuth": []
-          }
         ]
       }
     },
@@ -4806,11 +4393,6 @@
             "schema": {
               "type": "object"
             }
-          }
-        ],
-        "security": [
-          {
-            "BearerAuth": []
           }
         ]
       }
@@ -4858,11 +4440,6 @@
               "type": "object"
             }
           }
-        ],
-        "security": [
-          {
-            "BearerAuth": []
-          }
         ]
       },
       "delete": {
@@ -4907,12 +4484,7 @@
               }
             }
           }
-        },
-        "security": [
-          {
-            "BearerAuth": []
-          }
-        ]
+        }
       }
     },
     "/system/tenant/package": {
@@ -4958,12 +4530,7 @@
               }
             }
           }
-        },
-        "security": [
-          {
-            "BearerAuth": []
-          }
-        ]
+        }
       },
       "put": {
         "tags": [
@@ -5007,12 +4574,7 @@
               }
             }
           }
-        },
-        "security": [
-          {
-            "BearerAuth": []
-          }
-        ]
+        }
       }
     },
     "/system/tenant/package/changeStatus": {
@@ -5058,12 +4620,7 @@
               }
             }
           }
-        },
-        "security": [
-          {
-            "BearerAuth": []
-          }
-        ]
+        }
       }
     },
     "/system/user/list": {
@@ -5125,11 +4682,6 @@
               "type": "object"
             }
           }
-        ],
-        "security": [
-          {
-            "BearerAuth": []
-          }
         ]
       }
     },
@@ -5175,11 +4727,6 @@
             "schema": {
               "type": "object"
             }
-          }
-        ],
-        "security": [
-          {
-            "BearerAuth": []
           }
         ]
       }
@@ -5241,11 +4788,6 @@
               "type": "object"
             }
           }
-        ],
-        "security": [
-          {
-            "BearerAuth": []
-          }
         ]
       }
     },
@@ -5305,12 +4847,7 @@
               }
             }
           }
-        },
-        "security": [
-          {
-            "BearerAuth": []
-          }
-        ]
+        }
       }
     },
     "/hivision/wallet/transaction/page-list": {
@@ -5371,11 +4908,6 @@
             "schema": {
               "type": "object"
             }
-          }
-        ],
-        "security": [
-          {
-            "BearerAuth": []
           }
         ]
       }
@@ -5439,11 +4971,6 @@
               "type": "object"
             }
           }
-        ],
-        "security": [
-          {
-            "BearerAuth": []
-          }
         ]
       }
     },
@@ -5489,11 +5016,6 @@
             "schema": {
               "type": "object"
             }
-          }
-        ],
-        "security": [
-          {
-            "BearerAuth": []
           }
         ]
       }
@@ -5554,11 +5076,6 @@
             "schema": {
               "type": "object"
             }
-          }
-        ],
-        "security": [
-          {
-            "BearerAuth": []
           }
         ]
       }
@@ -5627,11 +5144,6 @@
               "type": "object"
             }
           }
-        ],
-        "security": [
-          {
-            "BearerAuth": []
-          }
         ]
       }
     },
@@ -5695,8 +5207,7 @@
               "type": "object"
             }
           }
-        ],
-        "security": []
+        ]
       }
     },
     "/hivision/story/project-data/list": {
@@ -5760,12 +5271,7 @@
               }
             }
           }
-        },
-        "security": [
-          {
-            "BearerAuth": []
-          }
-        ]
+        }
       }
     },
     "/hivision/story/scene/query-episode-role": {
@@ -5828,11 +5334,6 @@
             "schema": {
               "type": "object"
             }
-          }
-        ],
-        "security": [
-          {
-            "BearerAuth": []
           }
         ]
       }
@@ -5897,12 +5398,7 @@
               }
             }
           }
-        },
-        "security": [
-          {
-            "BearerAuth": []
-          }
-        ]
+        }
       }
     },
     "/hivision/story/scene/query-scene-role": {
@@ -5947,11 +5443,6 @@
             "schema": {
               "type": "object"
             }
-          }
-        ],
-        "security": [
-          {
-            "BearerAuth": []
           }
         ]
       }
@@ -5999,12 +5490,7 @@
               }
             }
           }
-        },
-        "security": [
-          {
-            "BearerAuth": []
-          }
-        ]
+        }
       }
     },
     "/hivision/story/episode/story-board": {
@@ -6076,12 +5562,7 @@
               }
             }
           }
-        },
-        "security": [
-          {
-            "BearerAuth": []
-          }
-        ]
+        }
       }
     },
     "/hivision/story/comment": {
@@ -6136,12 +5617,7 @@
               }
             }
           }
-        },
-        "security": [
-          {
-            "BearerAuth": []
-          }
-        ]
+        }
       }
     },
     "/hivision/story/comment/list": {
@@ -6203,12 +5679,7 @@
               }
             }
           }
-        },
-        "security": [
-          {
-            "BearerAuth": []
-          }
-        ]
+        }
       }
     },
     "/hivision/story/comment/${ids.join(": {
@@ -6254,12 +5725,7 @@
               }
             }
           }
-        },
-        "security": [
-          {
-            "BearerAuth": []
-          }
-        ]
+        }
       }
     },
     "/hivision/story/scene/review": {
@@ -6314,12 +5780,7 @@
               }
             }
           }
-        },
-        "security": [
-          {
-            "BearerAuth": []
-          }
-        ]
+        }
       }
     },
     "/hivision/story/scene/add": {
@@ -6373,12 +5834,7 @@
               }
             }
           }
-        },
-        "security": [
-          {
-            "BearerAuth": []
-          }
-        ]
+        }
       }
     },
     "/hivision/story/scene/${ids.join(": {
@@ -6424,12 +5880,7 @@
               }
             }
           }
-        },
-        "security": [
-          {
-            "BearerAuth": []
-          }
-        ]
+        }
       }
     },
     "/hivision/story/scene/edit-img": {
@@ -6488,12 +5939,7 @@
               }
             }
           }
-        },
-        "security": [
-          {
-            "BearerAuth": []
-          }
-        ]
+        }
       }
     },
     "/hivision/login": {
@@ -6555,8 +6001,7 @@
               }
             }
           }
-        },
-        "security": []
+        }
       }
     },
     "/hivision/logout": {
@@ -6595,12 +6040,7 @@
               }
             }
           }
-        },
-        "security": [
-          {
-            "BearerAuth": []
-          }
-        ]
+        }
       }
     },
     "/hivision/getInfo": {
@@ -6673,11 +6113,6 @@
               "type": "object"
             }
           }
-        ],
-        "security": [
-          {
-            "BearerAuth": []
-          }
         ]
       }
     },
@@ -6733,8 +6168,7 @@
               "example": "13800138000"
             }
           }
-        ],
-        "security": []
+        ]
       }
     },
     "/auth/register": {
@@ -6790,8 +6224,7 @@
               }
             }
           }
-        },
-        "security": []
+        }
       }
     },
     "/auth/binding/{source}": {
@@ -6848,12 +6281,7 @@
               }
             }
           }
-        },
-        "security": [
-          {
-            "BearerAuth": []
-          }
-        ]
+        }
       }
     },
     "/auth/unlock/{authId}": {
@@ -6910,12 +6338,7 @@
               }
             }
           }
-        },
-        "security": [
-          {
-            "BearerAuth": []
-          }
-        ]
+        }
       }
     },
     "/system/social/list": {
@@ -6960,11 +6383,6 @@
             "schema": {
               "type": "object"
             }
-          }
-        ],
-        "security": [
-          {
-            "BearerAuth": []
           }
         ]
       }
@@ -7022,8 +6440,7 @@
               }
             }
           }
-        },
-        "security": []
+        }
       }
     },
     "/hivision/qrcode/check": {
@@ -7077,8 +6494,7 @@
               "example": "qrcode_key_123456"
             }
           }
-        ],
-        "security": []
+        ]
       }
     },
     "/hivision/qrcode/bind-phone": {
@@ -7137,8 +6553,7 @@
               }
             }
           }
-        },
-        "security": []
+        }
       }
     },
     "/hivision/story/episode/create": {
@@ -7199,12 +6614,7 @@
               }
             }
           }
-        },
-        "security": [
-          {
-            "BearerAuth": []
-          }
-        ]
+        }
       }
     },
     "/hivision/story/episode/template/upload": {
@@ -7260,12 +6670,7 @@
               "schema": {}
             }
           }
-        },
-        "security": [
-          {
-            "BearerAuth": []
-          }
-        ]
+        }
       }
     },
     "/hivision/story/episode/rename": {
@@ -7319,12 +6724,7 @@
               }
             }
           }
-        },
-        "security": [
-          {
-            "BearerAuth": []
-          }
-        ]
+        }
       }
     },
     "/hivision/story/episode/img-scene-list": {
@@ -7369,11 +6769,6 @@
             "schema": {
               "type": "number"
             }
-          }
-        ],
-        "security": [
-          {
-            "BearerAuth": []
           }
         ]
       }
@@ -7432,12 +6827,7 @@
               }
             }
           }
-        },
-        "security": [
-          {
-            "BearerAuth": []
-          }
-        ]
+        }
       }
     },
     "/hivision/story/scene/edit": {
@@ -7494,12 +6884,7 @@
               }
             }
           }
-        },
-        "security": [
-          {
-            "BearerAuth": []
-          }
-        ]
+        }
       }
     },
     "/hivision/story/scene/env": {
@@ -7553,12 +6938,7 @@
               }
             }
           }
-        },
-        "security": [
-          {
-            "BearerAuth": []
-          }
-        ]
+        }
       }
     },
     "/hivision/story/scene/env/clear": {
@@ -7611,12 +6991,7 @@
               }
             }
           }
-        },
-        "security": [
-          {
-            "BearerAuth": []
-          }
-        ]
+        }
       }
     },
     "/hivision/story/episode/check-img": {
@@ -7685,11 +7060,6 @@
               "example": "sd-xl"
             }
           }
-        ],
-        "security": [
-          {
-            "BearerAuth": []
-          }
         ]
       }
     },
@@ -7745,12 +7115,7 @@
               }
             }
           }
-        },
-        "security": [
-          {
-            "BearerAuth": []
-          }
-        ]
+        }
       }
     },
     "/hivision/story/history-detail/chose": {
@@ -7803,12 +7168,7 @@
               }
             }
           }
-        },
-        "security": [
-          {
-            "BearerAuth": []
-          }
-        ]
+        }
       }
     },
     "/hivision/story/history-detail/collect": {
@@ -7861,12 +7221,7 @@
               }
             }
           }
-        },
-        "security": [
-          {
-            "BearerAuth": []
-          }
-        ]
+        }
       }
     },
     "/hivision/story/history-detail/cancel-collect": {
@@ -7919,12 +7274,7 @@
               }
             }
           }
-        },
-        "security": [
-          {
-            "BearerAuth": []
-          }
-        ]
+        }
       }
     },
     "/hivision/story/history/{ids}": {
@@ -7969,11 +7319,6 @@
             "schema": {
               "type": "string"
             }
-          }
-        ],
-        "security": [
-          {
-            "BearerAuth": []
           }
         ]
       }
@@ -8020,11 +7365,6 @@
             "schema": {
               "type": "string"
             }
-          }
-        ],
-        "security": [
-          {
-            "BearerAuth": []
           }
         ]
       }
@@ -8109,11 +7449,6 @@
               "example": 1
             }
           }
-        ],
-        "security": [
-          {
-            "BearerAuth": []
-          }
         ]
       }
     },
@@ -8169,12 +7504,7 @@
               }
             }
           }
-        },
-        "security": [
-          {
-            "BearerAuth": []
-          }
-        ]
+        }
       }
     },
     "/hivision/story/episode/video-scene-list": {
@@ -8238,11 +7568,6 @@
               "example": 1
             }
           }
-        ],
-        "security": [
-          {
-            "BearerAuth": []
-          }
         ]
       }
     },
@@ -8288,11 +7613,6 @@
             "schema": {
               "type": "object"
             }
-          }
-        ],
-        "security": [
-          {
-            "BearerAuth": []
           }
         ]
       }
@@ -8355,12 +7675,7 @@
               }
             }
           }
-        },
-        "security": [
-          {
-            "BearerAuth": []
-          }
-        ]
+        }
       }
     },
     "/hivision/story/episode/video/prompt-template/import": {
@@ -8406,12 +7721,7 @@
               }
             }
           }
-        },
-        "security": [
-          {
-            "BearerAuth": []
-          }
-        ]
+        }
       }
     },
     "/hivision/story/episode/video/prompt-template/export": {
@@ -8445,12 +7755,7 @@
               }
             }
           }
-        },
-        "security": [
-          {
-            "BearerAuth": []
-          }
-        ]
+        }
       }
     },
     "/hivision/system/episode-export/episode-zip/{episodeId}": {
@@ -8482,11 +7787,6 @@
             "schema": {
               "type": "number"
             }
-          }
-        ],
-        "security": [
-          {
-            "BearerAuth": []
           }
         ]
       }
@@ -8521,11 +7821,6 @@
               "type": "number"
             }
           }
-        ],
-        "security": [
-          {
-            "BearerAuth": []
-          }
         ]
       }
     },
@@ -8558,11 +7853,6 @@
             "schema": {
               "type": "number"
             }
-          }
-        ],
-        "security": [
-          {
-            "BearerAuth": []
           }
         ]
       }
@@ -8618,12 +7908,7 @@
               }
             }
           }
-        },
-        "security": [
-          {
-            "BearerAuth": []
-          }
-        ]
+        }
       }
     },
     "/hivision/story/scene/waterfall-list": {
@@ -8693,12 +7978,7 @@
               }
             }
           }
-        },
-        "security": [
-          {
-            "BearerAuth": []
-          }
-        ]
+        }
       }
     },
     "/hivision/story/library/create": {
@@ -8753,12 +8033,7 @@
               }
             }
           }
-        },
-        "security": [
-          {
-            "BearerAuth": []
-          }
-        ]
+        }
       }
     },
     "/hivision/story/library/rename": {
@@ -8812,12 +8087,7 @@
               }
             }
           }
-        },
-        "security": [
-          {
-            "BearerAuth": []
-          }
-        ]
+        }
       }
     },
     "/hivision/story/library/{ids}": {
@@ -8861,11 +8131,6 @@
             "schema": {
               "type": "string"
             }
-          }
-        ],
-        "security": [
-          {
-            "BearerAuth": []
           }
         ]
       }
@@ -8931,11 +8196,6 @@
               "type": "object"
             }
           }
-        ],
-        "security": [
-          {
-            "BearerAuth": []
-          }
         ]
       }
     },
@@ -9000,11 +8260,6 @@
               "type": "object"
             }
           }
-        ],
-        "security": [
-          {
-            "BearerAuth": []
-          }
         ]
       }
     },
@@ -9060,12 +8315,7 @@
               }
             }
           }
-        },
-        "security": [
-          {
-            "BearerAuth": []
-          }
-        ]
+        }
       }
     },
     "/hivision/story/library-detail/rename": {
@@ -9119,12 +8369,7 @@
               }
             }
           }
-        },
-        "security": [
-          {
-            "BearerAuth": []
-          }
-        ]
+        }
       }
     },
     "/hivision/story/library-detail/{ids}": {
@@ -9168,11 +8413,6 @@
             "schema": {
               "type": "string"
             }
-          }
-        ],
-        "security": [
-          {
-            "BearerAuth": []
           }
         ]
       }
@@ -9232,12 +8472,7 @@
               }
             }
           }
-        },
-        "security": [
-          {
-            "BearerAuth": []
-          }
-        ]
+        }
       }
     },
     "/hivision/story/library/detail-count": {
@@ -9287,11 +8522,6 @@
               "type": "number",
               "example": 1
             }
-          }
-        ],
-        "security": [
-          {
-            "BearerAuth": []
           }
         ]
       }
@@ -9353,12 +8583,7 @@
               }
             }
           }
-        },
-        "security": [
-          {
-            "BearerAuth": []
-          }
-        ]
+        }
       }
     },
     "/hivision/story/team/{ids}": {
@@ -9402,11 +8627,6 @@
             "schema": {
               "type": "string"
             }
-          }
-        ],
-        "security": [
-          {
-            "BearerAuth": []
           }
         ]
       }
@@ -9465,12 +8685,7 @@
               }
             }
           }
-        },
-        "security": [
-          {
-            "BearerAuth": []
-          }
-        ]
+        }
       }
     },
     "/hivision/story/project/list": {
@@ -9532,11 +8747,6 @@
               "type": "object"
             }
           }
-        ],
-        "security": [
-          {
-            "BearerAuth": []
-          }
         ]
       }
     },
@@ -9594,12 +8804,7 @@
               }
             }
           }
-        },
-        "security": [
-          {
-            "BearerAuth": []
-          }
-        ]
+        }
       }
     },
     "/hivision/story/project/rename": {
@@ -9653,12 +8858,7 @@
               }
             }
           }
-        },
-        "security": [
-          {
-            "BearerAuth": []
-          }
-        ]
+        }
       }
     },
     "/hivision/story/project/limit-points": {
@@ -9712,12 +8912,7 @@
               }
             }
           }
-        },
-        "security": [
-          {
-            "BearerAuth": []
-          }
-        ]
+        }
       }
     },
     "/hivision//story/project/save-model-image": {
@@ -9771,12 +8966,7 @@
               }
             }
           }
-        },
-        "security": [
-          {
-            "BearerAuth": []
-          }
-        ]
+        }
       }
     },
     "/hivision/story/project/save-model-video": {
@@ -9830,12 +9020,7 @@
               }
             }
           }
-        },
-        "security": [
-          {
-            "BearerAuth": []
-          }
-        ]
+        }
       }
     },
     "/hivision/story/project": {
@@ -9881,12 +9066,7 @@
               }
             }
           }
-        },
-        "security": [
-          {
-            "BearerAuth": []
-          }
-        ]
+        }
       }
     },
     "/hivision/story/process/create": {
@@ -9941,12 +9121,7 @@
               }
             }
           }
-        },
-        "security": [
-          {
-            "BearerAuth": []
-          }
-        ]
+        }
       }
     },
     "/hivision/story/process/refer-page": {
@@ -10001,11 +9176,6 @@
               "type": "object"
             }
           }
-        ],
-        "security": [
-          {
-            "BearerAuth": []
-          }
         ]
       }
     },
@@ -10052,12 +9222,7 @@
               }
             }
           }
-        },
-        "security": [
-          {
-            "BearerAuth": []
-          }
-        ]
+        }
       }
     },
     "/hivision/wallet/transaction/name-types": {
@@ -10102,11 +9267,6 @@
             "schema": {
               "type": "object"
             }
-          }
-        ],
-        "security": [
-          {
-            "BearerAuth": []
           }
         ]
       }
@@ -10169,11 +9329,6 @@
               "type": "object"
             }
           }
-        ],
-        "security": [
-          {
-            "BearerAuth": []
-          }
         ]
       }
     },
@@ -10218,11 +9373,6 @@
             "schema": {
               "type": "string"
             }
-          }
-        ],
-        "security": [
-          {
-            "BearerAuth": []
           }
         ]
       }
@@ -10270,12 +9420,7 @@
               }
             }
           }
-        },
-        "security": [
-          {
-            "BearerAuth": []
-          }
-        ]
+        }
       }
     },
     "/tool/gen/importTable": {
@@ -10328,12 +9473,7 @@
               }
             }
           }
-        },
-        "security": [
-          {
-            "BearerAuth": []
-          }
-        ]
+        }
       }
     },
     "/tool/gen/preview/{tableId}": {
@@ -10377,11 +9517,6 @@
             "schema": {
               "type": "string"
             }
-          }
-        ],
-        "security": [
-          {
-            "BearerAuth": []
           }
         ]
       }
@@ -10428,11 +9563,6 @@
               "type": "string"
             }
           }
-        ],
-        "security": [
-          {
-            "BearerAuth": []
-          }
         ]
       }
     },
@@ -10477,11 +9607,6 @@
             "schema": {
               "type": "string"
             }
-          }
-        ],
-        "security": [
-          {
-            "BearerAuth": []
           }
         ]
       }
@@ -10528,11 +9653,6 @@
             "schema": {
               "type": "object"
             }
-          }
-        ],
-        "security": [
-          {
-            "BearerAuth": []
           }
         ]
       }
@@ -10588,12 +9708,7 @@
               }
             }
           }
-        },
-        "security": [
-          {
-            "BearerAuth": []
-          }
-        ]
+        }
       }
     },
     "/hivision/system/dept/list/exclude/{deptId}": {
@@ -10637,11 +9752,6 @@
             "schema": {
               "type": "string"
             }
-          }
-        ],
-        "security": [
-          {
-            "BearerAuth": []
           }
         ]
       }
@@ -10705,11 +9815,6 @@
               "type": "object"
             }
           }
-        ],
-        "security": [
-          {
-            "BearerAuth": []
-          }
         ]
       }
     },
@@ -10767,12 +9872,7 @@
               }
             }
           }
-        },
-        "security": [
-          {
-            "BearerAuth": []
-          }
-        ]
+        }
       }
     },
     "/hivision/system/dept/{deptId}": {
@@ -10816,11 +9916,6 @@
             "schema": {
               "type": "string"
             }
-          }
-        ],
-        "security": [
-          {
-            "BearerAuth": []
           }
         ]
       }
@@ -10884,11 +9979,6 @@
               "type": "object"
             }
           }
-        ],
-        "security": [
-          {
-            "BearerAuth": []
-          }
         ]
       }
     },
@@ -10934,11 +10024,6 @@
               "type": "string"
             }
           }
-        ],
-        "security": [
-          {
-            "BearerAuth": []
-          }
         ]
       }
     },
@@ -10983,11 +10068,6 @@
             "schema": {
               "type": "string"
             }
-          }
-        ],
-        "security": [
-          {
-            "BearerAuth": []
           }
         ]
       }
@@ -11047,12 +10127,7 @@
               }
             }
           }
-        },
-        "security": [
-          {
-            "BearerAuth": []
-          }
-        ]
+        }
       }
     },
     "/hivision/system/menu/{menuId}": {
@@ -11096,11 +10171,6 @@
             "schema": {
               "type": "string"
             }
-          }
-        ],
-        "security": [
-          {
-            "BearerAuth": []
           }
         ]
       }
@@ -11146,11 +10216,6 @@
             "schema": {
               "type": "string"
             }
-          }
-        ],
-        "security": [
-          {
-            "BearerAuth": []
           }
         ]
       }
@@ -11213,12 +10278,7 @@
               }
             }
           }
-        },
-        "security": [
-          {
-            "BearerAuth": []
-          }
-        ]
+        }
       }
     },
     "/system/role/dataScope": {
@@ -11276,12 +10336,7 @@
               }
             }
           }
-        },
-        "security": [
-          {
-            "BearerAuth": []
-          }
-        ]
+        }
       }
     },
     "/system/role/changeStatus": {
@@ -11335,12 +10390,7 @@
               }
             }
           }
-        },
-        "security": [
-          {
-            "BearerAuth": []
-          }
-        ]
+        }
       }
     },
     "/system/role/authUser/allocatedList": {
@@ -11397,11 +10447,6 @@
             "schema": {
               "type": "object"
             }
-          }
-        ],
-        "security": [
-          {
-            "BearerAuth": []
           }
         ]
       }
@@ -11461,11 +10506,6 @@
               "type": "object"
             }
           }
-        ],
-        "security": [
-          {
-            "BearerAuth": []
-          }
         ]
       }
     },
@@ -11512,12 +10552,7 @@
               }
             }
           }
-        },
-        "security": [
-          {
-            "BearerAuth": []
-          }
-        ]
+        }
       }
     },
     "/system/role/authUser/cancelAll": {
@@ -11563,12 +10598,7 @@
               }
             }
           }
-        },
-        "security": [
-          {
-            "BearerAuth": []
-          }
-        ]
+        }
       }
     },
     "/system/role/authUser/selectAll": {
@@ -11614,12 +10644,7 @@
               }
             }
           }
-        },
-        "security": [
-          {
-            "BearerAuth": []
-          }
-        ]
+        }
       }
     },
     "/system/role/deptTree/{roleId}": {
@@ -11663,11 +10688,6 @@
             "schema": {
               "type": "string"
             }
-          }
-        ],
-        "security": [
-          {
-            "BearerAuth": []
           }
         ]
       }
@@ -11713,11 +10733,6 @@
             "schema": {
               "type": "string"
             }
-          }
-        ],
-        "security": [
-          {
-            "BearerAuth": []
           }
         ]
       }
@@ -11781,12 +10796,7 @@
               }
             }
           }
-        },
-        "security": [
-          {
-            "BearerAuth": []
-          }
-        ]
+        }
       }
     },
     "/system/user/resetPwd": {
@@ -11832,12 +10842,7 @@
               }
             }
           }
-        },
-        "security": [
-          {
-            "BearerAuth": []
-          }
-        ]
+        }
       }
     },
     "/system/user/changeStatus": {
@@ -11883,12 +10888,7 @@
               }
             }
           }
-        },
-        "security": [
-          {
-            "BearerAuth": []
-          }
-        ]
+        }
       }
     },
     "/system/user/profile": {
@@ -11934,12 +10934,7 @@
               }
             }
           }
-        },
-        "security": [
-          {
-            "BearerAuth": []
-          }
-        ]
+        }
       }
     },
     "/system/user/profile/updatePwd": {
@@ -11985,12 +10980,7 @@
               }
             }
           }
-        },
-        "security": [
-          {
-            "BearerAuth": []
-          }
-        ]
+        }
       }
     },
     "/system/user/profile/avatar": {
@@ -12036,12 +11026,7 @@
               }
             }
           }
-        },
-        "security": [
-          {
-            "BearerAuth": []
-          }
-        ]
+        }
       }
     },
     "/system/user/authRole/{userId}": {
@@ -12085,11 +11070,6 @@
             "schema": {
               "type": "string"
             }
-          }
-        ],
-        "security": [
-          {
-            "BearerAuth": []
           }
         ]
       }
@@ -12137,12 +11117,7 @@
               }
             }
           }
-        },
-        "security": [
-          {
-            "BearerAuth": []
-          }
-        ]
+        }
       }
     },
     "/system/user/list/dept/{deptId}": {
@@ -12186,11 +11161,6 @@
             "schema": {
               "type": "string"
             }
-          }
-        ],
-        "security": [
-          {
-            "BearerAuth": []
           }
         ]
       }
@@ -12238,11 +11208,6 @@
               "type": "object"
             }
           }
-        ],
-        "security": [
-          {
-            "BearerAuth": []
-          }
         ]
       }
     },
@@ -12289,12 +11254,7 @@
               }
             }
           }
-        },
-        "security": [
-          {
-            "BearerAuth": []
-          }
-        ]
+        }
       }
     },
     "/hivision/system/user/member/{id}": {
@@ -12338,11 +11298,6 @@
             "schema": {
               "type": "string"
             }
-          }
-        ],
-        "security": [
-          {
-            "BearerAuth": []
           }
         ]
       }
@@ -12390,11 +11345,6 @@
               "type": "object"
             }
           }
-        ],
-        "security": [
-          {
-            "BearerAuth": []
-          }
         ]
       }
     },
@@ -12441,12 +11391,7 @@
               }
             }
           }
-        },
-        "security": [
-          {
-            "BearerAuth": []
-          }
-        ]
+        }
       }
     },
     "/hivision/system/user-center/update": {
@@ -12492,12 +11437,7 @@
               }
             }
           }
-        },
-        "security": [
-          {
-            "BearerAuth": []
-          }
-        ]
+        }
       }
     },
     "/hivision/system/user-center/wallet-points": {
@@ -12542,11 +11482,6 @@
             "schema": {
               "type": "object"
             }
-          }
-        ],
-        "security": [
-          {
-            "BearerAuth": []
           }
         ]
       }
@@ -12593,11 +11528,6 @@
               "type": "string"
             }
           }
-        ],
-        "security": [
-          {
-            "BearerAuth": []
-          }
         ]
       }
     },
@@ -12642,11 +11572,6 @@
             "schema": {
               "type": "string"
             }
-          }
-        ],
-        "security": [
-          {
-            "BearerAuth": []
           }
         ]
       }
@@ -12693,11 +11618,6 @@
               "type": "string"
             }
           }
-        ],
-        "security": [
-          {
-            "BearerAuth": []
-          }
         ]
       }
     },
@@ -12742,11 +11662,6 @@
             "schema": {
               "type": "string"
             }
-          }
-        ],
-        "security": [
-          {
-            "BearerAuth": []
           }
         ]
       }
@@ -12793,11 +11708,6 @@
               "type": "string"
             }
           }
-        ],
-        "security": [
-          {
-            "BearerAuth": []
-          }
         ]
       }
     },
@@ -12843,11 +11753,6 @@
               "type": "string"
             }
           }
-        ],
-        "security": [
-          {
-            "BearerAuth": []
-          }
         ]
       }
     },
@@ -12892,11 +11797,6 @@
             "schema": {
               "type": "string"
             }
-          }
-        ],
-        "security": [
-          {
-            "BearerAuth": []
           }
         ]
       }
@@ -12954,12 +11854,7 @@
               }
             }
           }
-        },
-        "security": [
-          {
-            "BearerAuth": []
-          }
-        ]
+        }
       }
     },
     "/system/post/{postId}": {
@@ -13003,11 +11898,6 @@
             "schema": {
               "type": "string"
             }
-          }
-        ],
-        "security": [
-          {
-            "BearerAuth": []
           }
         ]
       }
@@ -13054,11 +11944,6 @@
               "type": "string"
             }
           }
-        ],
-        "security": [
-          {
-            "BearerAuth": []
-          }
         ]
       }
     },
@@ -13103,11 +11988,6 @@
             "schema": {
               "type": "string"
             }
-          }
-        ],
-        "security": [
-          {
-            "BearerAuth": []
           }
         ]
       }
@@ -13154,11 +12034,6 @@
               "type": "string"
             }
           }
-        ],
-        "security": [
-          {
-            "BearerAuth": []
-          }
         ]
       }
     },
@@ -13203,11 +12078,6 @@
             "schema": {
               "type": "string"
             }
-          }
-        ],
-        "security": [
-          {
-            "BearerAuth": []
           }
         ]
       }
@@ -13255,12 +12125,7 @@
               }
             }
           }
-        },
-        "security": [
-          {
-            "BearerAuth": []
-          }
-        ]
+        }
       }
     },
     "/demo/demo/{id}": {
@@ -13304,11 +12169,6 @@
             "schema": {
               "type": "string"
             }
-          }
-        ],
-        "security": [
-          {
-            "BearerAuth": []
           }
         ]
       }
@@ -13356,12 +12216,7 @@
               }
             }
           }
-        },
-        "security": [
-          {
-            "BearerAuth": []
-          }
-        ]
+        }
       }
     }
   },
@@ -13505,21 +12360,6 @@
     {
       "name": "workbench/storyboard",
       "description": "workbench/storyboard 模块"
-    }
-  ],
-  "components": {
-    "securitySchemes": {
-      "BearerAuth": {
-        "type": "http",
-        "scheme": "bearer",
-        "bearerFormat": "JWT",
-        "description": "JWT 认证，请在下方输入 Bearer Token (以 'Bearer ' 开头)"
-      }
-    }
-  },
-  "security": [
-    {
-      "BearerAuth": []
     }
   ]
 }

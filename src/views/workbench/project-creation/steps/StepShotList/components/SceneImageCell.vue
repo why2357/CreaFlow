@@ -7,7 +7,7 @@
     @dragenter="handleDragEnter"
     @dragleave="handleDragLeave"
   >
-    <!-- 分镜内容+任务边栏容器 (左右结构) -->
+    <!-- 分镜内容容器 -->
     <div class="scene-content-wrapper">
       <!-- 悬浮操作层 -->
       <div class="hover-overlay" @click.self="handleOverlayClick">
@@ -187,37 +187,6 @@
         <!-- 隐藏的文件上传 -->
         <input ref="fileInputRef" type="file" accept="image/*" style="display: none" @change="handleFileSelected" />
       </div>
-
-      <!-- 任务边栏 (右侧，不悬浮在图片上) -->
-      <div class="task-sidebar">
-        <div
-          v-for="task in shotTasks"
-          :key="task.id"
-          class="task-card"
-          :class="{
-            loading: task.status === 0 || task.status === 1,
-            success: task.status === 2,
-            failed: task.status === 3
-          }"
-          @click="handleTaskClick(task)"
-        >
-          <!-- 加载中状态 -->
-          <div v-if="task.status === 0 || task.status === 1" class="task-state loading">
-            <div class="mini-spinner"></div>
-          </div>
-          <!-- 成功状态 -->
-          <div
-            v-else-if="task.status === 2 && task.resultUrls && task.resultUrls.length > 0"
-            class="task-state success"
-          >
-            <img :src="task.resultUrls[0]" class="task-result-image" />
-          </div>
-          <!-- 失败状态 -->
-          <div v-else-if="task.status === 3" class="task-state failed">
-            <svg-icon icon-class="fy-gen-failed" class="task-failed-icon" />
-          </div>
-        </div>
-      </div>
     </div>
   </div>
 
@@ -308,38 +277,24 @@
   }>();
 
   // ==================== 任务队列集成 ====================
+  const { canAddTaskForShot, addImageGenerationTask } = useTaskQueue();
   const taskQueueStore = useTaskQueueStore();
-  const { getTasksByShotId, canAddTaskForShot, addImageGenerationTask } = useTaskQueue();
-
-  // 获取当前镜头的任务（只显示活跃任务和最近完成的任务）
-  const shotTasks = computed(() => {
-    const allTasks = getTasksByShotId(props.shotId);
-    // 只显示：排队中(0)、执行中(1)、以及最近完成的任务（最多显示4个）
-    const activeTasks = allTasks.filter((t) => t.status === 0 || t.status === 1);
-    const completedTasks = allTasks.filter((t) => t.status === 2 || t.status === 3).slice(0, 4);
-    return [...activeTasks, ...completedTasks];
-  });
 
   // 判断当前镜头是否可以添加新任务
   const canAddTask = computed(() => {
     return canAddTaskForShot(props.shotId);
   });
 
-  // 判断当前镜头是否在任务队列中
-  const isInQueue = computed(() => {
-    return shotTasks.value.length > 0;
+  // 获取当前镜头的活跃任务数量
+  const activeTaskCount = computed(() => {
+    return taskQueueStore.getActiveTaskCountByShotId(props.shotId);
   });
 
   // 获取当前镜头在队列中的第一个任务
   const queueTask = computed(() => {
-    return shotTasks.value.length > 0 ? shotTasks.value[0] : null;
+    const tasks = taskQueueStore.getTasksByShotId(props.shotId);
+    return tasks.length > 0 ? tasks[0] : null;
   });
-
-  // 处理任务卡片点击
-  const handleTaskClick = (task: any) => {
-    // 可以在这里添加任务详情查看逻辑
-    console.log('Task clicked:', task);
-  };
 
   // 使用任务队列的状态覆盖原有的 taskStatus
   const effectiveTaskStatus = computed(() => {
@@ -916,17 +871,16 @@
     }
   }
 
-  // ==================== 内容容器 (左右结构) ====================
+  // ==================== 内容容器 ====================
   .scene-content-wrapper {
     position: relative;
     width: 100%;
-    padding-right: 72px; // 为任务边栏预留空间（70px宽 + 2px间隙）
   }
 
   .hover-overlay {
     position: absolute;
     top: 0;
-    right: 72px; // 留出任务边栏的空间
+    right: 0;
     bottom: 0;
     left: 0;
     z-index: 2;
@@ -1343,105 +1297,5 @@
   .fade-enter-from,
   .fade-leave-to {
     opacity: 0;
-  }
-
-  // ==================== 任务边栏样式 ====================
-  .task-sidebar {
-    position: absolute;
-    top: 0;
-    right: 0;
-    bottom: 0;
-    width: 72px;
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-    overflow-y: auto;
-    padding: 4px 6px 4px 2px;
-    z-index: 5;
-    box-sizing: border-box;
-
-    // 隐藏滚动条
-    &::-webkit-scrollbar {
-      width: 0;
-    }
-  }
-
-  .task-card {
-    width: 100%;
-    aspect-ratio: 1 / 1;
-    background: #fff;
-    border-radius: 6px;
-    border: 1px solid transparent;
-    cursor: pointer;
-    position: relative;
-    overflow: hidden;
-    flex-shrink: 0;
-    transition: all 0.3s ease;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.04);
-
-    &:hover {
-      border-color: #8b5cf6;
-      transform: translateY(-2px);
-      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.08);
-    }
-
-    &.loading {
-      background: #f5f3ff;
-      border: 1px solid #e5e7eb;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-
-    &.success {
-      border-color: #10b981;
-    }
-
-    &.failed {
-      border-color: #f53f3f;
-    }
-  }
-
-  .task-state {
-    width: 100%;
-    height: 100%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-
-    &.loading {
-      background: transparent;
-    }
-
-    &.success {
-      .task-result-image {
-        width: 100%;
-        height: 100%;
-        object-fit: cover;
-      }
-    }
-
-    &.failed {
-      .task-failed-icon {
-        width: 24px;
-        height: 24px;
-        color: #f53f3f;
-      }
-    }
-  }
-
-  .mini-spinner {
-    width: 18px;
-    height: 18px;
-    border-radius: 50%;
-    border: 2px solid #f5f3ff;
-    border-top-color: #8b5cf6;
-    animation: spin 1s infinite linear;
-  }
-
-  @keyframes spin {
-    to {
-      transform: rotate(360deg);
-    }
   }
 </style>

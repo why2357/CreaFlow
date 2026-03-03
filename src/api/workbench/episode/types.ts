@@ -157,6 +157,8 @@ export interface EpisodeInfoResponseDto {
   modeCode?: string;
   /** 文生文任务状态 0-待执行 1-执行中 2-执行成功 3-执行失败 */
   taskStatus?: number;
+  /** 工作流模式：classic-经典工作流 / seedance-Seedance 2.0 */
+  workflowMode?: 'classic' | 'seedance';
 }
 
 /**

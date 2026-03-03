@@ -141,6 +141,8 @@
     modelValue: boolean;
     projectId: number;
     nextEpisodeNumber: number;
+    /** 工作流模式：classic-经典工作流 / seedance-Seedance 2.0 */
+    workflowMode?: 'classic' | 'seedance' | null;
   }
 
   interface Emits {
@@ -217,10 +219,19 @@
       dialogVisible.value = val;
       if (val) {
         // 打开对话框时初始化表单
+        console.log('[AddEpisodeDialog] 对话框打开，workflowMode:', props.workflowMode);
         initForm();
       }
     },
     { immediate: true }
+  );
+
+  // 监听 workflowMode 变化
+  watch(
+    () => props.workflowMode,
+    (val) => {
+      console.log('[AddEpisodeDialog] workflowMode prop 变化:', val);
+    }
   );
 
   // 监听内部 dialogVisible 变化
@@ -315,6 +326,8 @@
   const handleSubmit = async () => {
     if (!formRef.value) return;
 
+    console.log('[AddEpisodeDialog] 准备提交表单，workflowMode:', props.workflowMode);
+
     await formRef.value.validate(async (valid) => {
       if (!valid) return;
 
@@ -343,13 +356,16 @@
 
         if (inputMode.value === 'text') {
           // 剧情文本模式：调用 /hivision/story/episode/create
-          const result = await createEpisodeByText({
+          const requestData = {
             projectId: form.value.projectId,
             episodeName: form.value.episodeName,
             storyText: form.value.storyText.trim(),
             modelCode: form.value.modelCode,
-            promptPreFix: form.value.promptPreFix
-          });
+            promptPreFix: form.value.promptPreFix,
+            workflowMode: props.workflowMode
+          };
+          console.log('[AddEpisodeDialog] 发送创建剧集请求:', JSON.stringify(requestData, null, 2));
+          const result = await createEpisodeByText(requestData);
           console.log('[AddEpisodeDialog] 创建剧集结果:', result);
           console.log('[AddEpisodeDialog] result.data:', result.data);
           newEpisodeId = result.data?.id;
@@ -362,7 +378,8 @@
           const result = await createEpisodeByTemplate({
             projectId: form.value.projectId,
             episodeName: form.value.episodeName,
-            file: uploadedFile.value
+            file: uploadedFile.value,
+            workflowMode: props.workflowMode
           });
           console.log('[AddEpisodeDialog] 上传剧集结果:', result);
           console.log('[AddEpisodeDialog] result.data:', result.data);

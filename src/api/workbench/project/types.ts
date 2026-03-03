@@ -252,6 +252,7 @@ export interface EpisodeInfo {
   taskStatus?: number; // 文生文任务状态 0-待执行 1-执行中 2-执行成功 3-执行失败
   userProcessInfoList?: UserProcessInfo[]; // 剧集成员进度信息
   projectProcessInfo?: ProjectProcessInfo; // 剧集项目进度
+  workflowMode?: 'classic' | 'seedance' | null; // 工作流模式：classic-经典工作流 / seedance-Seedance 2.0
 }
 
 /**
@@ -329,6 +330,8 @@ export interface EpisodeCreateRequest {
   storyText: string;
   /** 提示词前缀 */
   promptPreFix?: string;
+  /** 工作流模式：classic-经典工作流 / seedance-Seedance 2.0 */
+  workflowMode?: 'classic' | 'seedance';
 }
 
 /**
@@ -341,6 +344,8 @@ export interface EpisodeTemplateUploadRequest {
   file: File;
   /** 项目id */
   projectId: number;
+  /** 工作流模式：classic-经典工作流 / seedance-Seedance 2.0 */
+  workflowMode?: 'classic' | 'seedance';
 }
 
 /**

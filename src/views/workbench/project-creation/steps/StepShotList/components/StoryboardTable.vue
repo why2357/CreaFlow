@@ -83,6 +83,41 @@
           </template>
         </el-table-column>
 
+        <!-- 任务列表列 -->
+        <el-table-column label="任务列表" width="80" align="center">
+          <template #default="{ row }">
+            <div class="task-list-column">
+              <div
+                v-for="task in getShotTasks(row.id)"
+                :key="task.id"
+                class="mini-task-card"
+                :class="{
+                  'task-loading': task.status === 0 || task.status === 1,
+                  'task-success': task.status === 2,
+                  'task-failed': task.status === 3
+                }"
+              >
+                <!-- 加载中状态 -->
+                <div v-if="task.status === 0 || task.status === 1" class="mini-task-state loading">
+                  <div class="mini-spinner"></div>
+                </div>
+                <!-- 成功状态 -->
+                <div
+                  v-else-if="task.status === 2 && task.resultUrls && task.resultUrls.length > 0"
+                  class="mini-task-state success"
+                >
+                  <img :src="task.resultUrls[0]" class="mini-task-result" />
+                </div>
+                <!-- 失败状态 -->
+                <div v-else-if="task.status === 3" class="mini-task-state failed">
+                  <svg-icon icon-class="fy-gen-failed" class="mini-task-failed-icon" />
+                </div>
+              </div>
+              <div v-if="getShotTasks(row.id).length === 0" class="no-tasks">-</div>
+            </div>
+          </template>
+        </el-table-column>
+
         <el-table-column prop="sceneHint" label="提示词" min-width="260">
           <template #default="{ row }">
             <!-- Seedance 模式：富文本编辑器（支持提及功能） -->
@@ -335,6 +370,7 @@
   import { useTaskQueue } from '@/composables/useTaskQueue';
   import { useTaskQueueListener, type TaskQueueUpdateDetail } from '@/composables/useSSEListener';
   import { useProjectStore } from '@/store/modules/project';
+  import { useTaskQueueStore } from '@/store/modules/taskQueue';
   import { uploadFile } from '@/utils/uploadFile';
   import { Loading } from '@element-plus/icons-vue';
   import { ElMessage, ElMessageBox } from 'element-plus';
@@ -377,7 +413,17 @@
 
   // ==================== 任务队列集成 ====================
   const projectStore = useProjectStore();
-  const { handleBatchTaskUpdate } = useTaskQueue();
+  const { handleBatchTaskUpdate, getTasksByShotId } = useTaskQueue();
+  const taskQueueStore = useTaskQueueStore();
+
+  // 获取镜头任务列表（用于新任务列表列显示）
+  const getShotTasks = (shotId: string | number) => {
+    const allTasks = getTasksByShotId(shotId);
+    // 只显示：排队中(0)、执行中(1)、以及最近完成的任务（最多显示4个）
+    const activeTasks = allTasks.filter((t) => t.status === 0 || t.status === 1);
+    const completedTasks = allTasks.filter((t) => t.status === 2 || t.status === 3).slice(0, 4);
+    return [...activeTasks, ...completedTasks];
+  };
 
   // 监听SSE任务队列更新
   useTaskQueueListener(
@@ -2090,6 +2136,103 @@
           }
         }
       }
+    }
+  }
+
+  // ==================== 任务列表列样式 ====================
+  .task-list-column {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    align-items: center;
+    justify-content: center;
+    padding: 8px 4px;
+    height: 100%;
+    overflow-y: auto;
+
+    // 隐藏滚动条
+    &::-webkit-scrollbar {
+      width: 0;
+    }
+
+    .no-tasks {
+      color: #c9cdd4;
+      font-size: 14px;
+    }
+
+    .mini-task-card {
+      width: 60px;
+      height: 60px;
+      border-radius: 6px;
+      border: 1px solid #e5e7eb;
+      cursor: pointer;
+      position: relative;
+      overflow: hidden;
+      transition: all 0.3s ease;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.04);
+      flex-shrink: 0;
+
+      &:hover {
+        border-color: #8b5cf6;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.08);
+      }
+
+      &.task-loading {
+        background: #f5f3ff;
+        border: 1px solid #e5e7eb;
+      }
+
+      &.task-success {
+        border-color: #10b981;
+      }
+
+      &.task-failed {
+        border-color: #f53f3f;
+      }
+
+      .mini-task-state {
+        width: 100%;
+        height: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+
+        &.loading {
+          background: transparent;
+        }
+
+        &.success {
+          .mini-task-result {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+          }
+        }
+
+        &.failed {
+          .mini-task-failed-icon {
+            width: 24px;
+            height: 24px;
+            color: #f53f3f;
+          }
+        }
+      }
+
+      .mini-spinner {
+        width: 18px;
+        height: 18px;
+        border-radius: 50%;
+        border: 2px solid #f5f3ff;
+        border-top-color: #8b5cf6;
+        animation: spin 1s infinite linear;
+      }
+    }
+  }
+
+  @keyframes spin {
+    to {
+      transform: rotate(360deg);
     }
   }
 </style>

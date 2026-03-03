@@ -15,7 +15,7 @@ import type {
 } from '@/api/workbench/project/types';
 import { ElMessage } from 'element-plus';
 import { defineStore } from 'pinia';
-import { getEpisodeWorkflowMode } from '@/utils/episodeWorkflow';
+import { getEpisodeWorkflowMode, setEpisodeWorkflowMode } from '@/utils/episodeWorkflow';
 
 interface StepInfo {
   key: number;
@@ -245,6 +245,15 @@ export const useProjectStore = defineStore('project', {
 
         // 更新剧集信息
         this.episodeInfoList = data.episodeInfoList || [];
+
+        // 同步后端返回的工作流模式到 localStorage（支持跨设备同步）
+        console.log('[loadProjectInfo] 后端返回的剧集列表:', this.episodeInfoList);
+        this.episodeInfoList.forEach((episode) => {
+          console.log(`[loadProjectInfo] 剧集 ${episode.episodeId} workflowMode:`, episode.workflowMode);
+          if (episode.episodeId && episode.workflowMode) {
+            setEpisodeWorkflowMode(episode.episodeId, episode.workflowMode);
+          }
+        });
 
         // 更新团队信息
         this.teamUserInfoList = data.teamUserInfoList || [];

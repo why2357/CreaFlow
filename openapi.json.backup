@@ -1,0 +1,5142 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "Forge HiVision API",
+    "description": "创流视频制作工作台 API 文档",
+    "version": "1.0.0"
+  },
+  "servers": [
+    {
+      "url": "http://172.28.44.150:16020",
+      "description": "开发环境"
+    }
+  ],
+  "paths": {
+    "/demo/demo/list": {
+      "get": {
+        "tags": ["demo/demo"],
+        "summary": "import",
+        "operationId": "import",
+        "description": "函数名: import\n请求类型: any\n返回类型: DemoVO",
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "number",
+                      "example": 200
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "object",
+                      "description": "DemoVO"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "params",
+            "in": "query",
+            "description": "查询参数: any",
+            "required": false,
+            "schema": {
+              "type": "object"
+            }
+          }
+        ]
+      }
+    },
+    "/demo/tree/list": {
+      "get": {
+        "tags": ["demo/tree"],
+        "summary": "import",
+        "operationId": "import",
+        "description": "函数名: import\n请求类型: any\n返回类型: TreeVO",
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "number",
+                      "example": 200
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "object",
+                      "description": "TreeVO"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "params",
+            "in": "query",
+            "description": "查询参数: any",
+            "required": false,
+            "schema": {
+              "type": "object"
+            }
+          }
+        ]
+      }
+    },
+    "/hivision/getRouters": {
+      "get": {
+        "tags": ["auth"],
+        "summary": "getRouters",
+        "operationId": "getRouters",
+        "description": "函数名: getRouters\n请求类型: any\n返回类型: any",
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "number",
+                      "example": 200
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "object",
+                      "description": "any"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "params",
+            "in": "query",
+            "description": "查询参数: any",
+            "required": false,
+            "schema": {
+              "type": "object"
+            }
+          }
+        ]
+      }
+    },
+    "/hivision/model/config/list": {
+      "get": {
+        "tags": ["model/config"],
+        "summary": "查询项目模型列表",
+        "operationId": "getModelConfigList",
+        "description": "函数名: getModelConfigList\n请求类型: any\n返回类型: any",
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "number",
+                      "example": 200
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "object",
+                      "description": "any"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "params",
+            "in": "query",
+            "description": "查询参数: any",
+            "required": false,
+            "schema": {
+              "type": "object"
+            }
+          }
+        ]
+      }
+    },
+    "/hivision/model/config/update": {
+      "post": {
+        "tags": ["model/config"],
+        "summary": "查询项目模型列表\r/\r",
+        "operationId": "updateModelConfig",
+        "description": "函数名: updateModelConfig\n请求类型: any\n返回类型: any",
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "number",
+                      "example": 200
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "object",
+                      "description": "any"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "description": "请求体类型: any",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "description": "any"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/hivision/model/main/list": {
+      "get": {
+        "tags": ["model/main"],
+        "summary": "查询项目模型主表列表",
+        "operationId": "getModelMainList",
+        "description": "函数名: getModelMainList\n请求类型: any\n返回类型: any",
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "number",
+                      "example": 200
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "object",
+                      "description": "any"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "params",
+            "in": "query",
+            "description": "查询参数: any",
+            "required": false,
+            "schema": {
+              "type": "object"
+            }
+          }
+        ]
+      }
+    },
+    "/hivision/model/main/update": {
+      "post": {
+        "tags": ["model/main"],
+        "summary": "查询项目模型主表列表\r/\r",
+        "operationId": "updateModelMain",
+        "description": "函数名: updateModelMain\n请求类型: any\n返回类型: any",
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "number",
+                      "example": 200
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "object",
+                      "description": "any"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "description": "请求体类型: any",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "description": "any"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/monitor/cache": {
+      "get": {
+        "tags": ["monitor/cache"],
+        "summary": "getCache",
+        "operationId": "getCache",
+        "description": "函数名: getCache\n请求类型: any\n返回类型: CacheVO",
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "number",
+                      "example": 200
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "object",
+                      "description": "CacheVO"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "params",
+            "in": "query",
+            "description": "查询参数: any",
+            "required": false,
+            "schema": {
+              "type": "object"
+            }
+          }
+        ]
+      }
+    },
+    "/monitor/cache/getNames": {
+      "get": {
+        "tags": ["monitor/cache"],
+        "summary": "listCacheName",
+        "operationId": "listCacheName",
+        "description": "函数名: listCacheName\n请求类型: any\n返回类型: any",
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "number",
+                      "example": 200
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "object",
+                      "description": "any"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "params",
+            "in": "query",
+            "description": "查询参数: any",
+            "required": false,
+            "schema": {
+              "type": "object"
+            }
+          }
+        ]
+      }
+    },
+    "/monitor/cache/getKeys/": {
+      "get": {
+        "tags": ["monitor/cache"],
+        "summary": "listCacheKey",
+        "operationId": "listCacheKey",
+        "description": "函数名: listCacheKey\n请求类型: any\n返回类型: any",
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "number",
+                      "example": 200
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "object",
+                      "description": "any"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "params",
+            "in": "query",
+            "description": "查询参数: any",
+            "required": false,
+            "schema": {
+              "type": "object"
+            }
+          }
+        ]
+      }
+    },
+    "/monitor/cache/getValue/": {
+      "get": {
+        "tags": ["monitor/cache"],
+        "summary": "getCacheValue",
+        "operationId": "getCacheValue",
+        "description": "函数名: getCacheValue\n请求类型: any\n返回类型: any",
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "number",
+                      "example": 200
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "object",
+                      "description": "any"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "params",
+            "in": "query",
+            "description": "查询参数: any",
+            "required": false,
+            "schema": {
+              "type": "object"
+            }
+          }
+        ]
+      }
+    },
+    "/monitor/cache/clearCacheName/": {
+      "delete": {
+        "tags": ["monitor/cache"],
+        "summary": "clearCacheName",
+        "operationId": "clearCacheName",
+        "description": "函数名: clearCacheName\n请求类型: any\n返回类型: any",
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "number",
+                      "example": 200
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "object",
+                      "description": "any"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "description": "请求体类型: any",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "description": "any"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/monitor/cache/clearCacheKey/": {
+      "delete": {
+        "tags": ["monitor/cache"],
+        "summary": "clearCacheKey",
+        "operationId": "clearCacheKey",
+        "description": "函数名: clearCacheKey\n请求类型: any\n返回类型: any",
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "number",
+                      "example": 200
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "object",
+                      "description": "any"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "description": "请求体类型: any",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "description": "any"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/monitor/cache/clearCacheAll": {
+      "delete": {
+        "tags": ["monitor/cache"],
+        "summary": "clearCacheAll",
+        "operationId": "clearCacheAll",
+        "description": "函数名: clearCacheAll\n请求类型: any\n返回类型: any",
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "number",
+                      "example": 200
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "object",
+                      "description": "any"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "description": "请求体类型: any",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "description": "any"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/monitor/logininfor/list": {
+      "get": {
+        "tags": ["monitor/loginInfo"],
+        "summary": "list",
+        "operationId": "list",
+        "description": "函数名: list\n请求类型: any\n返回类型: any",
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "number",
+                      "example": 200
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "object",
+                      "description": "any"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "params",
+            "in": "query",
+            "description": "查询参数: any",
+            "required": false,
+            "schema": {
+              "type": "object"
+            }
+          }
+        ]
+      }
+    },
+    "/monitor/logininfor/": {
+      "delete": {
+        "tags": ["monitor/loginInfo"],
+        "summary": "delLoginInfo",
+        "operationId": "delLoginInfo",
+        "description": "函数名: delLoginInfo\n请求类型: any\n返回类型: any",
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "number",
+                      "example": 200
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "object",
+                      "description": "any"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "description": "请求体类型: any",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "description": "any"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/monitor/logininfor/unlock/": {
+      "get": {
+        "tags": ["monitor/loginInfo"],
+        "summary": "unlockLoginInfo",
+        "operationId": "unlockLoginInfo",
+        "description": "函数名: unlockLoginInfo\n请求类型: any\n返回类型: any",
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "number",
+                      "example": 200
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "object",
+                      "description": "any"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "params",
+            "in": "query",
+            "description": "查询参数: any",
+            "required": false,
+            "schema": {
+              "type": "object"
+            }
+          }
+        ]
+      }
+    },
+    "/monitor/logininfor/clean": {
+      "delete": {
+        "tags": ["monitor/loginInfo"],
+        "summary": "cleanLoginInfo",
+        "operationId": "cleanLoginInfo",
+        "description": "函数名: cleanLoginInfo\n请求类型: any\n返回类型: any",
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "number",
+                      "example": 200
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "object",
+                      "description": "any"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "description": "请求体类型: any",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "description": "any"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/monitor/online/list": {
+      "get": {
+        "tags": ["monitor/online"],
+        "summary": "list",
+        "operationId": "list",
+        "description": "函数名: list\n请求类型: any\n返回类型: any",
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "number",
+                      "example": 200
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "object",
+                      "description": "any"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "params",
+            "in": "query",
+            "description": "查询参数: any",
+            "required": false,
+            "schema": {
+              "type": "object"
+            }
+          }
+        ]
+      }
+    },
+    "/monitor/online/": {
+      "delete": {
+        "tags": ["monitor/online"],
+        "summary": "forceLogout",
+        "operationId": "forceLogout",
+        "description": "函数名: forceLogout\n请求类型: any\n返回类型: any",
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "number",
+                      "example": 200
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "object",
+                      "description": "any"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "description": "请求体类型: any",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "description": "any"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/monitor/operlog/list": {
+      "get": {
+        "tags": ["monitor/operlog"],
+        "summary": "list",
+        "operationId": "list",
+        "description": "函数名: list\n请求类型: any\n返回类型: any",
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "number",
+                      "example": 200
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "object",
+                      "description": "any"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "params",
+            "in": "query",
+            "description": "查询参数: any",
+            "required": false,
+            "schema": {
+              "type": "object"
+            }
+          }
+        ]
+      }
+    },
+    "/monitor/operlog/": {
+      "delete": {
+        "tags": ["monitor/operlog"],
+        "summary": "delOperlog",
+        "operationId": "delOperlog",
+        "description": "函数名: delOperlog\n请求类型: any\n返回类型: any",
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "number",
+                      "example": 200
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "object",
+                      "description": "any"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "description": "请求体类型: any",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "description": "any"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/monitor/operlog/clean": {
+      "delete": {
+        "tags": ["monitor/operlog"],
+        "summary": "cleanOperlog",
+        "operationId": "cleanOperlog",
+        "description": "函数名: cleanOperlog\n请求类型: any\n返回类型: any",
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "number",
+                      "example": 200
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "object",
+                      "description": "any"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "description": "请求体类型: any",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "description": "any"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/hivision/system/client/list": {
+      "get": {
+        "tags": ["system/client"],
+        "summary": "import",
+        "operationId": "import",
+        "description": "函数名: import\n请求类型: any\n返回类型: ClientVO",
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "number",
+                      "example": 200
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "object",
+                      "description": "ClientVO"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "params",
+            "in": "query",
+            "description": "查询参数: any",
+            "required": false,
+            "schema": {
+              "type": "object"
+            }
+          }
+        ]
+      }
+    },
+    "/hivision/system/client/changeStatus": {
+      "put": {
+        "tags": ["system/client"],
+        "summary": "修改客户端管理\r@param data\r/\r",
+        "operationId": "changeStatus",
+        "description": "函数名: changeStatus\n请求类型: any\n返回类型: any",
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "number",
+                      "example": 200
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "object",
+                      "description": "any"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "description": "请求体类型: any",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "description": "any"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/hivision/system/config/list": {
+      "get": {
+        "tags": ["system/config"],
+        "summary": "listConfig",
+        "operationId": "listConfig",
+        "description": "函数名: listConfig\n请求类型: any\n返回类型: any",
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "number",
+                      "example": 200
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "object",
+                      "description": "any"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "params",
+            "in": "query",
+            "description": "查询参数: any",
+            "required": false,
+            "schema": {
+              "type": "object"
+            }
+          }
+        ]
+      }
+    },
+    "/hivision/system/config/": {
+      "get": {
+        "tags": ["system/config"],
+        "summary": "getConfig",
+        "operationId": "getConfig",
+        "description": "函数名: getConfig\n请求类型: any\n返回类型: ConfigVO",
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "number",
+                      "example": 200
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "object",
+                      "description": "ConfigVO"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "params",
+            "in": "query",
+            "description": "查询参数: any",
+            "required": false,
+            "schema": {
+              "type": "object"
+            }
+          }
+        ]
+      },
+      "delete": {
+        "tags": ["system/config"],
+        "summary": "delConfig",
+        "operationId": "delConfig",
+        "description": "函数名: delConfig\n请求类型: any\n返回类型: any",
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "number",
+                      "example": 200
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "object",
+                      "description": "any"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "description": "请求体类型: any",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "description": "any"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/hivision/system/config/configKey/": {
+      "get": {
+        "tags": ["system/config"],
+        "summary": "getConfigKey",
+        "operationId": "getConfigKey",
+        "description": "函数名: getConfigKey\n请求类型: any\n返回类型: string",
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "number",
+                      "example": 200
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "object",
+                      "description": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "params",
+            "in": "query",
+            "description": "查询参数: any",
+            "required": false,
+            "schema": {
+              "type": "object"
+            }
+          }
+        ]
+      }
+    },
+    "/hivision/system/config": {
+      "post": {
+        "tags": ["system/config"],
+        "summary": "addConfig",
+        "operationId": "addConfig",
+        "description": "函数名: addConfig\n请求类型: any\n返回类型: any",
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "number",
+                      "example": 200
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "object",
+                      "description": "any"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "description": "请求体类型: any",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "description": "any"
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": ["system/config"],
+        "summary": "updateConfig",
+        "operationId": "updateConfig",
+        "description": "函数名: updateConfig\n请求类型: any\n返回类型: any",
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "number",
+                      "example": 200
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "object",
+                      "description": "any"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "description": "请求体类型: any",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "description": "any"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/hivision/system/config/updateByKey": {
+      "put": {
+        "tags": ["system/config"],
+        "summary": "updateConfigByKey",
+        "operationId": "updateConfigByKey",
+        "description": "函数名: updateConfigByKey\n请求类型: any\n返回类型: any",
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "number",
+                      "example": 200
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "object",
+                      "description": "any"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "description": "请求体类型: any",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "description": "any"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/hivision/system/config/refreshCache": {
+      "delete": {
+        "tags": ["system/config"],
+        "summary": "refreshCache",
+        "operationId": "refreshCache",
+        "description": "函数名: refreshCache\n请求类型: any\n返回类型: any",
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "number",
+                      "example": 200
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "object",
+                      "description": "any"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "description": "请求体类型: any",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "description": "any"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/hivision/system/dept/list": {
+      "get": {
+        "tags": ["system/dept"],
+        "summary": "import",
+        "operationId": "import",
+        "description": "函数名: import\n请求类型: any\n返回类型: DeptVO",
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "number",
+                      "example": 200
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "object",
+                      "description": "DeptVO"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "params",
+            "in": "query",
+            "description": "查询参数: any",
+            "required": false,
+            "schema": {
+              "type": "object"
+            }
+          }
+        ]
+      }
+    },
+    "/hivision/system/dict/data/type/": {
+      "get": {
+        "tags": ["system/dict/data"],
+        "summary": "getDicts",
+        "operationId": "getDicts",
+        "description": "函数名: getDicts\n请求类型: any\n返回类型: any",
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "number",
+                      "example": 200
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "object",
+                      "description": "any"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "params",
+            "in": "query",
+            "description": "查询参数: any",
+            "required": false,
+            "schema": {
+              "type": "object"
+            }
+          }
+        ]
+      }
+    },
+    "/hivision/system/dict/data/list": {
+      "get": {
+        "tags": ["system/dict/data"],
+        "summary": "listData",
+        "operationId": "listData",
+        "description": "函数名: listData\n请求类型: any\n返回类型: any",
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "number",
+                      "example": 200
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "object",
+                      "description": "any"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "params",
+            "in": "query",
+            "description": "查询参数: any",
+            "required": false,
+            "schema": {
+              "type": "object"
+            }
+          }
+        ]
+      }
+    },
+    "/hivision/system/dict/data/": {
+      "get": {
+        "tags": ["system/dict/data"],
+        "summary": "getData",
+        "operationId": "getData",
+        "description": "函数名: getData\n请求类型: any\n返回类型: DictDataVO",
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "number",
+                      "example": 200
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "object",
+                      "description": "DictDataVO"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "params",
+            "in": "query",
+            "description": "查询参数: any",
+            "required": false,
+            "schema": {
+              "type": "object"
+            }
+          }
+        ]
+      },
+      "delete": {
+        "tags": ["system/dict/data"],
+        "summary": "delData",
+        "operationId": "delData",
+        "description": "函数名: delData\n请求类型: any\n返回类型: any",
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "number",
+                      "example": 200
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "object",
+                      "description": "any"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "description": "请求体类型: any",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "description": "any"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/hivision/system/dict/data": {
+      "post": {
+        "tags": ["system/dict/data"],
+        "summary": "addData",
+        "operationId": "addData",
+        "description": "函数名: addData\n请求类型: any\n返回类型: any",
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "number",
+                      "example": 200
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "object",
+                      "description": "any"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "description": "请求体类型: any",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "description": "any"
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": ["system/dict/data"],
+        "summary": "updateData",
+        "operationId": "updateData",
+        "description": "函数名: updateData\n请求类型: any\n返回类型: any",
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "number",
+                      "example": 200
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "object",
+                      "description": "any"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "description": "请求体类型: any",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "description": "any"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/hivision/system/dict/type/list": {
+      "get": {
+        "tags": ["system/dict/type"],
+        "summary": "listType",
+        "operationId": "listType",
+        "description": "函数名: listType\n请求类型: any\n返回类型: any",
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "number",
+                      "example": 200
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "object",
+                      "description": "any"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "params",
+            "in": "query",
+            "description": "查询参数: any",
+            "required": false,
+            "schema": {
+              "type": "object"
+            }
+          }
+        ]
+      }
+    },
+    "/hivision/system/dict/type/": {
+      "get": {
+        "tags": ["system/dict/type"],
+        "summary": "getType",
+        "operationId": "getType",
+        "description": "函数名: getType\n请求类型: any\n返回类型: DictTypeVO",
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "number",
+                      "example": 200
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "object",
+                      "description": "DictTypeVO"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "params",
+            "in": "query",
+            "description": "查询参数: any",
+            "required": false,
+            "schema": {
+              "type": "object"
+            }
+          }
+        ]
+      },
+      "delete": {
+        "tags": ["system/dict/type"],
+        "summary": "delType",
+        "operationId": "delType",
+        "description": "函数名: delType\n请求类型: any\n返回类型: any",
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "number",
+                      "example": 200
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "object",
+                      "description": "any"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "description": "请求体类型: any",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "description": "any"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/hivision/system/dict/type": {
+      "post": {
+        "tags": ["system/dict/type"],
+        "summary": "addType",
+        "operationId": "addType",
+        "description": "函数名: addType\n请求类型: any\n返回类型: any",
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "number",
+                      "example": 200
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "object",
+                      "description": "any"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "description": "请求体类型: any",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "description": "any"
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": ["system/dict/type"],
+        "summary": "updateType",
+        "operationId": "updateType",
+        "description": "函数名: updateType\n请求类型: any\n返回类型: any",
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "number",
+                      "example": 200
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "object",
+                      "description": "any"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "description": "请求体类型: any",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "description": "any"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/hivision/system/dict/type/refreshCache": {
+      "delete": {
+        "tags": ["system/dict/type"],
+        "summary": "refreshCache",
+        "operationId": "refreshCache",
+        "description": "函数名: refreshCache\n请求类型: any\n返回类型: any",
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "number",
+                      "example": 200
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "object",
+                      "description": "any"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "description": "请求体类型: any",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "description": "any"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/hivision/system/dict/type/optionselect": {
+      "get": {
+        "tags": ["system/dict/type"],
+        "summary": "optionselect",
+        "operationId": "optionselect",
+        "description": "函数名: optionselect\n请求类型: any\n返回类型: any",
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "number",
+                      "example": 200
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "object",
+                      "description": "any"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "params",
+            "in": "query",
+            "description": "查询参数: any",
+            "required": false,
+            "schema": {
+              "type": "object"
+            }
+          }
+        ]
+      }
+    },
+    "/hivision/system/menu/list": {
+      "get": {
+        "tags": ["system/menu"],
+        "summary": "import",
+        "operationId": "import",
+        "description": "函数名: import\n请求类型: any\n返回类型: MenuVO",
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "number",
+                      "example": 200
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "object",
+                      "description": "MenuVO"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "params",
+            "in": "query",
+            "description": "查询参数: any",
+            "required": false,
+            "schema": {
+              "type": "object"
+            }
+          }
+        ]
+      }
+    },
+    "/system/notice/list": {
+      "get": {
+        "tags": ["system/notice"],
+        "summary": "listNotice",
+        "operationId": "listNotice",
+        "description": "函数名: listNotice\n请求类型: any\n返回类型: any",
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "number",
+                      "example": 200
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "object",
+                      "description": "any"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "params",
+            "in": "query",
+            "description": "查询参数: any",
+            "required": false,
+            "schema": {
+              "type": "object"
+            }
+          }
+        ]
+      }
+    },
+    "/system/notice/": {
+      "get": {
+        "tags": ["system/notice"],
+        "summary": "getNotice",
+        "operationId": "getNotice",
+        "description": "函数名: getNotice\n请求类型: any\n返回类型: NoticeVO",
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "number",
+                      "example": 200
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "object",
+                      "description": "NoticeVO"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "params",
+            "in": "query",
+            "description": "查询参数: any",
+            "required": false,
+            "schema": {
+              "type": "object"
+            }
+          }
+        ]
+      },
+      "delete": {
+        "tags": ["system/notice"],
+        "summary": "delNotice",
+        "operationId": "delNotice",
+        "description": "函数名: delNotice\n请求类型: any\n返回类型: any",
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "number",
+                      "example": 200
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "object",
+                      "description": "any"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "description": "请求体类型: any",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "description": "any"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/system/notice": {
+      "post": {
+        "tags": ["system/notice"],
+        "summary": "addNotice",
+        "operationId": "addNotice",
+        "description": "函数名: addNotice\n请求类型: any\n返回类型: any",
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "number",
+                      "example": 200
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "object",
+                      "description": "any"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "description": "请求体类型: any",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "description": "any"
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": ["system/notice"],
+        "summary": "updateNotice",
+        "operationId": "updateNotice",
+        "description": "函数名: updateNotice\n请求类型: any\n返回类型: any",
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "number",
+                      "example": 200
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "object",
+                      "description": "any"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "description": "请求体类型: any",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "description": "any"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/resource/oss/list": {
+      "get": {
+        "tags": ["system/oss"],
+        "summary": "listOss",
+        "operationId": "listOss",
+        "description": "函数名: listOss\n请求类型: any\n返回类型: any",
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "number",
+                      "example": 200
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "object",
+                      "description": "any"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "params",
+            "in": "query",
+            "description": "查询参数: any",
+            "required": false,
+            "schema": {
+              "type": "object"
+            }
+          }
+        ]
+      }
+    },
+    "/resource/oss/listByIds/": {
+      "get": {
+        "tags": ["system/oss"],
+        "summary": "listByIds",
+        "operationId": "listByIds",
+        "description": "函数名: listByIds\n请求类型: any\n返回类型: any",
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "number",
+                      "example": 200
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "object",
+                      "description": "any"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "params",
+            "in": "query",
+            "description": "查询参数: any",
+            "required": false,
+            "schema": {
+              "type": "object"
+            }
+          }
+        ]
+      }
+    },
+    "/resource/oss/": {
+      "delete": {
+        "tags": ["system/oss"],
+        "summary": "delOss",
+        "operationId": "delOss",
+        "description": "函数名: delOss\n请求类型: any\n返回类型: any",
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "number",
+                      "example": 200
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "object",
+                      "description": "any"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "description": "请求体类型: any",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "description": "any"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/resource/oss/config/list": {
+      "get": {
+        "tags": ["system/ossConfig"],
+        "summary": "listOssConfig",
+        "operationId": "listOssConfig",
+        "description": "函数名: listOssConfig\n请求类型: any\n返回类型: any",
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "number",
+                      "example": 200
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "object",
+                      "description": "any"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "params",
+            "in": "query",
+            "description": "查询参数: any",
+            "required": false,
+            "schema": {
+              "type": "object"
+            }
+          }
+        ]
+      }
+    },
+    "/resource/oss/config/": {
+      "get": {
+        "tags": ["system/ossConfig"],
+        "summary": "getOssConfig",
+        "operationId": "getOssConfig",
+        "description": "函数名: getOssConfig\n请求类型: any\n返回类型: OssConfigVO",
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "number",
+                      "example": 200
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "object",
+                      "description": "OssConfigVO"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "params",
+            "in": "query",
+            "description": "查询参数: any",
+            "required": false,
+            "schema": {
+              "type": "object"
+            }
+          }
+        ]
+      },
+      "delete": {
+        "tags": ["system/ossConfig"],
+        "summary": "delOssConfig",
+        "operationId": "delOssConfig",
+        "description": "函数名: delOssConfig\n请求类型: any\n返回类型: any",
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "number",
+                      "example": 200
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "object",
+                      "description": "any"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "description": "请求体类型: any",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "description": "any"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/resource/oss/config": {
+      "post": {
+        "tags": ["system/ossConfig"],
+        "summary": "addOssConfig",
+        "operationId": "addOssConfig",
+        "description": "函数名: addOssConfig\n请求类型: any\n返回类型: any",
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "number",
+                      "example": 200
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "object",
+                      "description": "any"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "description": "请求体类型: any",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "description": "any"
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": ["system/ossConfig"],
+        "summary": "updateOssConfig",
+        "operationId": "updateOssConfig",
+        "description": "函数名: updateOssConfig\n请求类型: any\n返回类型: any",
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "number",
+                      "example": 200
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "object",
+                      "description": "any"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "description": "请求体类型: any",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "description": "any"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/resource/oss/config/changeStatus": {
+      "put": {
+        "tags": ["system/ossConfig"],
+        "summary": "changeOssConfigStatus",
+        "operationId": "changeOssConfigStatus",
+        "description": "函数名: changeOssConfigStatus\n请求类型: any\n返回类型: any",
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "number",
+                      "example": 200
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "object",
+                      "description": "any"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "description": "请求体类型: any",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "description": "any"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/system/post/list": {
+      "get": {
+        "tags": ["system/post"],
+        "summary": "listPost",
+        "operationId": "listPost",
+        "description": "函数名: listPost\n请求类型: any\n返回类型: any",
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "number",
+                      "example": 200
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "object",
+                      "description": "any"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "params",
+            "in": "query",
+            "description": "查询参数: any",
+            "required": false,
+            "schema": {
+              "type": "object"
+            }
+          }
+        ]
+      }
+    },
+    "/system/post/": {
+      "get": {
+        "tags": ["system/post"],
+        "summary": "getPost",
+        "operationId": "getPost",
+        "description": "函数名: getPost\n请求类型: any\n返回类型: PostVO",
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "number",
+                      "example": 200
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "object",
+                      "description": "PostVO"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "params",
+            "in": "query",
+            "description": "查询参数: any",
+            "required": false,
+            "schema": {
+              "type": "object"
+            }
+          }
+        ]
+      },
+      "delete": {
+        "tags": ["system/post"],
+        "summary": "delPost",
+        "operationId": "delPost",
+        "description": "函数名: delPost\n请求类型: any\n返回类型: any",
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "number",
+                      "example": 200
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "object",
+                      "description": "any"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "description": "请求体类型: any",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "description": "any"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/system/post": {
+      "post": {
+        "tags": ["system/post"],
+        "summary": "addPost",
+        "operationId": "addPost",
+        "description": "函数名: addPost\n请求类型: any\n返回类型: any",
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "number",
+                      "example": 200
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "object",
+                      "description": "any"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "description": "请求体类型: any",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "description": "any"
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": ["system/post"],
+        "summary": "updatePost",
+        "operationId": "updatePost",
+        "description": "函数名: updatePost\n请求类型: any\n返回类型: any",
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "number",
+                      "example": 200
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "object",
+                      "description": "any"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "description": "请求体类型: any",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "description": "any"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/system/role/list": {
+      "get": {
+        "tags": ["system/role"],
+        "summary": "import",
+        "operationId": "import",
+        "description": "函数名: import\n请求类型: any\n返回类型: RoleVO",
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "number",
+                      "example": 200
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "object",
+                      "description": "RoleVO"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "params",
+            "in": "query",
+            "description": "查询参数: any",
+            "required": false,
+            "schema": {
+              "type": "object"
+            }
+          }
+        ]
+      }
+    },
+    "/system/tenant/list": {
+      "get": {
+        "tags": ["system/tenant"],
+        "summary": "listTenant",
+        "operationId": "listTenant",
+        "description": "函数名: listTenant\n请求类型: any\n返回类型: any",
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "number",
+                      "example": 200
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "object",
+                      "description": "any"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "params",
+            "in": "query",
+            "description": "查询参数: any",
+            "required": false,
+            "schema": {
+              "type": "object"
+            }
+          }
+        ]
+      }
+    },
+    "/system/tenant/": {
+      "get": {
+        "tags": ["system/tenant"],
+        "summary": "getTenant",
+        "operationId": "getTenant",
+        "description": "函数名: getTenant\n请求类型: any\n返回类型: TenantVO",
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "number",
+                      "example": 200
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "object",
+                      "description": "TenantVO"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "params",
+            "in": "query",
+            "description": "查询参数: any",
+            "required": false,
+            "schema": {
+              "type": "object"
+            }
+          }
+        ]
+      },
+      "delete": {
+        "tags": ["system/tenant"],
+        "summary": "delTenant",
+        "operationId": "delTenant",
+        "description": "函数名: delTenant\n请求类型: any\n返回类型: any",
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "number",
+                      "example": 200
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "object",
+                      "description": "any"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "description": "请求体类型: any",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "description": "any"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/system/tenant": {
+      "post": {
+        "tags": ["system/tenant"],
+        "summary": "addTenant",
+        "operationId": "addTenant",
+        "description": "函数名: addTenant\n请求类型: any\n返回类型: any",
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "number",
+                      "example": 200
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "object",
+                      "description": "any"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "description": "请求体类型: any",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "description": "any"
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": ["system/tenant"],
+        "summary": "updateTenant",
+        "operationId": "updateTenant",
+        "description": "函数名: updateTenant\n请求类型: any\n返回类型: any",
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "number",
+                      "example": 200
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "object",
+                      "description": "any"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "description": "请求体类型: any",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "description": "any"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/system/tenant/changeStatus": {
+      "put": {
+        "tags": ["system/tenant"],
+        "summary": "changeTenantStatus",
+        "operationId": "changeTenantStatus",
+        "description": "函数名: changeTenantStatus\n请求类型: any\n返回类型: any",
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "number",
+                      "example": 200
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "object",
+                      "description": "any"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "description": "请求体类型: any",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "description": "any"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/system/tenant/dynamic/": {
+      "get": {
+        "tags": ["system/tenant"],
+        "summary": "dynamicTenant",
+        "operationId": "dynamicTenant",
+        "description": "函数名: dynamicTenant\n请求类型: any\n返回类型: any",
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "number",
+                      "example": 200
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "object",
+                      "description": "any"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "params",
+            "in": "query",
+            "description": "查询参数: any",
+            "required": false,
+            "schema": {
+              "type": "object"
+            }
+          }
+        ]
+      }
+    },
+    "/system/tenant/dynamic/clear": {
+      "get": {
+        "tags": ["system/tenant"],
+        "summary": "dynamicClear",
+        "operationId": "dynamicClear",
+        "description": "函数名: dynamicClear\n请求类型: any\n返回类型: any",
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "number",
+                      "example": 200
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "object",
+                      "description": "any"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "params",
+            "in": "query",
+            "description": "查询参数: any",
+            "required": false,
+            "schema": {
+              "type": "object"
+            }
+          }
+        ]
+      }
+    },
+    "/system/tenant/syncTenantPackage": {
+      "get": {
+        "tags": ["system/tenant"],
+        "summary": "syncTenantPackage",
+        "operationId": "syncTenantPackage",
+        "description": "函数名: syncTenantPackage\n请求类型: any\n返回类型: any",
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "number",
+                      "example": 200
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "object",
+                      "description": "any"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "params",
+            "in": "query",
+            "description": "查询参数: any",
+            "required": false,
+            "schema": {
+              "type": "object"
+            }
+          }
+        ]
+      }
+    },
+    "/hivision/system/tenant/add-tenant": {
+      "post": {
+        "tags": ["system/tenant-admin"],
+        "summary": "租户管理API接口\r/\r",
+        "operationId": "addTenant",
+        "description": "函数名: addTenant\n请求类型: any\n返回类型: any",
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "number",
+                      "example": 200
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "object",
+                      "description": "any"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "description": "请求体类型: any",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "description": "any"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/hivision/system/tenant/update-status": {
+      "post": {
+        "tags": ["system/tenant-admin"],
+        "summary": "新增租户\r/\r",
+        "operationId": "updateTenantStatus",
+        "description": "函数名: updateTenantStatus\n请求类型: any\n返回类型: any",
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "number",
+                      "example": 200
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "object",
+                      "description": "any"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "description": "请求体类型: any",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "description": "any"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/hivision/system/tenant/add-pm": {
+      "post": {
+        "tags": ["system/tenant-admin"],
+        "summary": "新增租户\r/\r",
+        "operationId": "addPM",
+        "description": "函数名: addPM\n请求类型: any\n返回类型: any",
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "number",
+                      "example": 200
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "object",
+                      "description": "any"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "description": "请求体类型: any",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "description": "any"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/hivision/system/tenant/delete-pm": {
+      "post": {
+        "tags": ["system/tenant-admin"],
+        "summary": "更新租户状态（冻结/解冻）\r/\r",
+        "operationId": "deletePM",
+        "description": "函数名: deletePM\n请求类型: any\n返回类型: any",
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "number",
+                      "example": 200
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "object",
+                      "description": "any"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "description": "请求体类型: any",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "description": "any"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/hivision/system/tenant/list": {
+      "get": {
+        "tags": ["system/tenant-admin"],
+        "summary": "添加管理员\r/\r",
+        "operationId": "getTenantList",
+        "description": "函数名: getTenantList\n请求类型: any\n返回类型: any",
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "number",
+                      "example": 200
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "object",
+                      "description": "any"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "params",
+            "in": "query",
+            "description": "查询参数: any",
+            "required": false,
+            "schema": {
+              "type": "object"
+            }
+          }
+        ]
+      }
+    },
+    "/hivision/wallet-recharge/allocate": {
+      "post": {
+        "tags": ["system/tenant-admin"],
+        "summary": "删除管理员（降级为普通客户）\r/\r",
+        "operationId": "allocatePoints",
+        "description": "函数名: allocatePoints\n请求类型: any\n返回类型: any",
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "number",
+                      "example": 200
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "object",
+                      "description": "any"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "description": "请求体类型: any",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "description": "any"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/hivision/wallet-recharge/list": {
+      "get": {
+        "tags": ["system/tenant-admin"],
+        "summary": "查询租户列表\r/\r",
+        "operationId": "getRechargeList",
+        "description": "函数名: getRechargeList\n请求类型: any\n返回类型: any",
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "number",
+                      "example": 200
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "object",
+                      "description": "any"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "params",
+            "in": "query",
+            "description": "查询参数: any",
+            "required": false,
+            "schema": {
+              "type": "object"
+            }
+          }
+        ]
+      }
+    },
+    "/system/tenant/package/list": {
+      "get": {
+        "tags": ["system/tenantPackage"],
+        "summary": "listTenantPackage",
+        "operationId": "listTenantPackage",
+        "description": "函数名: listTenantPackage\n请求类型: any\n返回类型: any",
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "number",
+                      "example": 200
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "object",
+                      "description": "any"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "params",
+            "in": "query",
+            "description": "查询参数: any",
+            "required": false,
+            "schema": {
+              "type": "object"
+            }
+          }
+        ]
+      }
+    },
+    "/system/tenant/package/selectList": {
+      "get": {
+        "tags": ["system/tenantPackage"],
+        "summary": "selectTenantPackage",
+        "operationId": "selectTenantPackage",
+        "description": "函数名: selectTenantPackage\n请求类型: any\n返回类型: any",
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "number",
+                      "example": 200
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "object",
+                      "description": "any"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "params",
+            "in": "query",
+            "description": "查询参数: any",
+            "required": false,
+            "schema": {
+              "type": "object"
+            }
+          }
+        ]
+      }
+    },
+    "/system/tenant/package/": {
+      "get": {
+        "tags": ["system/tenantPackage"],
+        "summary": "getTenantPackage",
+        "operationId": "getTenantPackage",
+        "description": "函数名: getTenantPackage\n请求类型: any\n返回类型: TenantPkgVO",
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "number",
+                      "example": 200
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "object",
+                      "description": "TenantPkgVO"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "params",
+            "in": "query",
+            "description": "查询参数: any",
+            "required": false,
+            "schema": {
+              "type": "object"
+            }
+          }
+        ]
+      },
+      "delete": {
+        "tags": ["system/tenantPackage"],
+        "summary": "delTenantPackage",
+        "operationId": "delTenantPackage",
+        "description": "函数名: delTenantPackage\n请求类型: any\n返回类型: any",
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "number",
+                      "example": 200
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "object",
+                      "description": "any"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "description": "请求体类型: any",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "description": "any"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/system/tenant/package": {
+      "post": {
+        "tags": ["system/tenantPackage"],
+        "summary": "addTenantPackage",
+        "operationId": "addTenantPackage",
+        "description": "函数名: addTenantPackage\n请求类型: any\n返回类型: any",
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "number",
+                      "example": 200
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "object",
+                      "description": "any"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "description": "请求体类型: any",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "description": "any"
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": ["system/tenantPackage"],
+        "summary": "updateTenantPackage",
+        "operationId": "updateTenantPackage",
+        "description": "函数名: updateTenantPackage\n请求类型: any\n返回类型: any",
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "number",
+                      "example": 200
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "object",
+                      "description": "any"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "description": "请求体类型: any",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "description": "any"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/system/tenant/package/changeStatus": {
+      "put": {
+        "tags": ["system/tenantPackage"],
+        "summary": "changePackageStatus",
+        "operationId": "changePackageStatus",
+        "description": "函数名: changePackageStatus\n请求类型: any\n返回类型: any",
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "number",
+                      "example": 200
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "object",
+                      "description": "any"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "description": "请求体类型: any",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "description": "any"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/system/user/list": {
+      "get": {
+        "tags": ["system/user"],
+        "summary": "import",
+        "operationId": "import",
+        "description": "函数名: import\n请求类型: any\n返回类型: UserInfoVO",
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "number",
+                      "example": 200
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "object",
+                      "description": "UserInfoVO"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "params",
+            "in": "query",
+            "description": "查询参数: any",
+            "required": false,
+            "schema": {
+              "type": "object"
+            }
+          }
+        ]
+      }
+    },
+    "/hivision/system/user-center/user-profile": {
+      "get": {
+        "tags": ["system/userCenter"],
+        "summary": "import",
+        "operationId": "import",
+        "description": "函数名: import\n请求类型: any\n返回类型: UserProfileVO",
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "number",
+                      "example": 200
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "object",
+                      "description": "UserProfileVO"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "params",
+            "in": "query",
+            "description": "查询参数: any",
+            "required": false,
+            "schema": {
+              "type": "object"
+            }
+          }
+        ]
+      }
+    },
+    "/tool/gen/list": {
+      "get": {
+        "tags": ["tool/gen"],
+        "summary": "import",
+        "operationId": "import",
+        "description": "函数名: import\n请求类型: any\n返回类型: GenTableVO",
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "number",
+                      "example": 200
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "object",
+                      "description": "GenTableVO"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "params",
+            "in": "query",
+            "description": "查询参数: any",
+            "required": false,
+            "schema": {
+              "type": "object"
+            }
+          }
+        ]
+      }
+    },
+    "/hivision/system/oss/generate-presigned-url": {
+      "post": {
+        "tags": ["tool/upload"],
+        "summary": "import",
+        "operationId": "import",
+        "description": "函数名: import\n请求类型: UploadByUrlReq\n返回类型: PreSignUrlRes",
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "number",
+                      "example": 200
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "object",
+                      "description": "PreSignUrlRes"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "description": "请求体类型: UploadByUrlReq",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "description": "UploadByUrlReq"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/hivision/wallet/transaction/page-list": {
+      "get": {
+        "tags": ["transaction"],
+        "summary": "import",
+        "operationId": "import",
+        "description": "函数名: import\n请求类型: any\n返回类型: any",
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "number",
+                      "example": 200
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "object",
+                      "description": "any"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "params",
+            "in": "query",
+            "description": "查询参数: any",
+            "required": false,
+            "schema": {
+              "type": "object"
+            }
+          }
+        ]
+      }
+    },
+    "/hivision/story/episode/list": {
+      "get": {
+        "tags": ["workbench/episode"],
+        "summary": "import",
+        "operationId": "import",
+        "description": "函数名: import\n请求类型: formData\n返回类型: HivisionProjectEpisodeVo",
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "number",
+                      "example": 200
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "object",
+                      "description": "HivisionProjectEpisodeVo"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "params",
+            "in": "query",
+            "description": "查询参数: formData",
+            "required": false,
+            "schema": {
+              "type": "object"
+            }
+          }
+        ]
+      }
+    },
+    "/hivision/story/history-detail/asset-list": {
+      "get": {
+        "tags": ["workbench/history"],
+        "summary": "import",
+        "operationId": "import",
+        "description": "函数名: import\n请求类型: any\n返回类型: any",
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "number",
+                      "example": 200
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "object",
+                      "description": "any"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "params",
+            "in": "query",
+            "description": "查询参数: any",
+            "required": false,
+            "schema": {
+              "type": "object"
+            }
+          }
+        ]
+      }
+    },
+    "/hivision/story/library/list": {
+      "get": {
+        "tags": ["workbench/library"],
+        "summary": "import",
+        "operationId": "import",
+        "description": "函数名: import\n请求类型: any\n返回类型: any",
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "number",
+                      "example": 200
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "object",
+                      "description": "any"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "params",
+            "in": "query",
+            "description": "查询参数: any",
+            "required": false,
+            "schema": {
+              "type": "object"
+            }
+          }
+        ]
+      }
+    },
+    "/hivision/story/team/init-user-role": {
+      "get": {
+        "tags": ["workbench/member"],
+        "summary": "import",
+        "operationId": "import",
+        "description": "函数名: import\n请求类型: any\n返回类型: void",
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "number",
+                      "example": 200
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "object",
+                      "description": "void"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "params",
+            "in": "query",
+            "description": "查询参数: any",
+            "required": false,
+            "schema": {
+              "type": "object"
+            }
+          }
+        ]
+      }
+    },
+    "/hivision/story/project/page-list": {
+      "get": {
+        "tags": ["workbench/project"],
+        "summary": "import",
+        "operationId": "import",
+        "description": "函数名: import\n请求类型: any\n返回类型: ProjectInfoResponse",
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "number",
+                      "example": 200
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "object",
+                      "description": "ProjectInfoResponse"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "params",
+            "in": "query",
+            "description": "查询参数: any",
+            "required": false,
+            "schema": {
+              "type": "object"
+            }
+          }
+        ]
+      }
+    },
+    "/hivision/story/project-data/list": {
+      "post": {
+        "tags": ["workbench/projectData"],
+        "summary": "import",
+        "operationId": "import",
+        "description": "函数名: import\n请求类型: any\n返回类型: ProjectDataProgressVO",
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "number",
+                      "example": 200
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "object",
+                      "description": "ProjectDataProgressVO"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "description": "请求体类型: any",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "description": "any"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/hivision/story/scene/query-episode-role": {
+      "get": {
+        "tags": ["workbench/storyboard"],
+        "summary": "查询剧集角色列表",
+        "operationId": "queryEpisodeRole",
+        "description": "函数名: queryEpisodeRole\n请求类型: any\n返回类型: any",
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "number",
+                      "example": 200
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "object",
+                      "description": "any"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "params",
+            "in": "query",
+            "description": "查询参数: any",
+            "required": false,
+            "schema": {
+              "type": "object"
+            }
+          }
+        ]
+      }
+    },
+    "/hivision/story/scene/edit-episode-role": {
+      "put": {
+        "tags": ["workbench/storyboard"],
+        "summary": "查询剧集角色列表\r/\r",
+        "operationId": "editEpisodeRole",
+        "description": "函数名: editEpisodeRole\n请求类型: any\n返回类型: any",
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "number",
+                      "example": 200
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "object",
+                      "description": "any"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "description": "请求体类型: any",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "description": "any"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/hivision/story/scene/query-scene-role": {
+      "get": {
+        "tags": ["workbench/storyboard"],
+        "summary": "查询剧集角色列表\r/\r",
+        "operationId": "querySceneRole",
+        "description": "函数名: querySceneRole\n请求类型: any\n返回类型: any",
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "number",
+                      "example": 200
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "object",
+                      "description": "any"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "params",
+            "in": "query",
+            "description": "查询参数: any",
+            "required": false,
+            "schema": {
+              "type": "object"
+            }
+          }
+        ]
+      }
+    },
+    "/hivision/story/scene/edit-scene-role": {
+      "put": {
+        "tags": ["workbench/storyboard"],
+        "summary": "编辑剧集角色\r/\r",
+        "operationId": "editSceneRole",
+        "description": "函数名: editSceneRole\n请求类型: any\n返回类型: any",
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "number",
+                      "example": 200
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "object",
+                      "description": "any"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "description": "请求体类型: any",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "description": "any"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/hivision/story/episode/story-board": {
+      "post": {
+        "tags": ["workbench/storyboard"],
+        "summary": "查询场景角色（单个角色的服装列表）\r/\r",
+        "operationId": "queryStoryBoard",
+        "description": "函数名: queryStoryBoard\n请求类型: any\n返回类型: any",
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "number",
+                      "example": 200
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "object",
+                      "description": "any"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "description": "请求体类型: any",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "description": "any"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/hivision/story/comment": {
+      "post": {
+        "tags": ["workbench/storyboard"],
+        "summary": "编辑场景角色（单个角色服装编辑）\r/\r",
+        "operationId": "addSceneComment",
+        "description": "函数名: addSceneComment\n请求类型: any\n返回类型: any",
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "number",
+                      "example": 200
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "object",
+                      "description": "any"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "description": "请求体类型: any",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "description": "any"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/hivision/story/comment/list": {
+      "post": {
+        "tags": ["workbench/storyboard"],
+        "summary": "查询故事板\r/\r",
+        "operationId": "getSceneCommentList",
+        "description": "函数名: getSceneCommentList\n请求类型: any\n返回类型: any",
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "number",
+                      "example": 200
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "object",
+                      "description": "any"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "description": "请求体类型: any",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "description": "any"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/hivision/story/comment/${ids.join(": {
+      "delete": {
+        "tags": ["workbench/storyboard"],
+        "summary": "镜头评论\r/\r",
+        "operationId": "deleteSceneComment",
+        "description": "函数名: deleteSceneComment\n请求类型: any\n返回类型: any",
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "number",
+                      "example": 200
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "object",
+                      "description": "any"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "description": "请求体类型: any",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "description": "any"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/hivision/story/scene/review": {
+      "post": {
+        "tags": ["workbench/storyboard"],
+        "summary": "查询镜头评论列表\r/\r",
+        "operationId": "reviewScene",
+        "description": "函数名: reviewScene\n请求类型: any\n返回类型: any",
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "number",
+                      "example": 200
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "object",
+                      "description": "any"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "description": "请求体类型: any",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "description": "any"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/hivision/story/scene/add": {
+      "post": {
+        "tags": ["workbench/storyboard"],
+        "summary": "编辑场景角色（单个角色服装编辑）\r/\r",
+        "operationId": "addScene",
+        "description": "函数名: addScene\n请求类型: any\n返回类型: any",
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "number",
+                      "example": 200
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "object",
+                      "description": "any"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "description": "请求体类型: any",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "description": "any"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/hivision/story/scene/${ids.join(": {
+      "delete": {
+        "tags": ["workbench/storyboard"],
+        "summary": "镜头评论\r/\r",
+        "operationId": "deleteScene",
+        "description": "函数名: deleteScene\n请求类型: any\n返回类型: any",
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "number",
+                      "example": 200
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "object",
+                      "description": "any"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "description": "请求体类型: any",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "description": "any"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/hivision/story/scene/edit-img": {
+      "post": {
+        "tags": ["workbench/storyboard"],
+        "summary": "分镜插入\r/\r",
+        "operationId": "editSceneImage",
+        "description": "函数名: editSceneImage\n请求类型: any\n返回类型: any",
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "number",
+                      "example": 200
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "object",
+                      "description": "any"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "description": "请求体类型: any",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "description": "any"
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "tags": [
+    {
+      "name": "demo/demo",
+      "description": "demo/demo 模块"
+    },
+    {
+      "name": "demo/tree",
+      "description": "demo/tree 模块"
+    },
+    {
+      "name": "auth",
+      "description": "auth 模块"
+    },
+    {
+      "name": "model/config",
+      "description": "model/config 模块"
+    },
+    {
+      "name": "model/main",
+      "description": "model/main 模块"
+    },
+    {
+      "name": "monitor/cache",
+      "description": "monitor/cache 模块"
+    },
+    {
+      "name": "monitor/loginInfo",
+      "description": "monitor/loginInfo 模块"
+    },
+    {
+      "name": "monitor/online",
+      "description": "monitor/online 模块"
+    },
+    {
+      "name": "monitor/operlog",
+      "description": "monitor/operlog 模块"
+    },
+    {
+      "name": "system/client",
+      "description": "system/client 模块"
+    },
+    {
+      "name": "system/config",
+      "description": "system/config 模块"
+    },
+    {
+      "name": "system/dept",
+      "description": "system/dept 模块"
+    },
+    {
+      "name": "system/dict/data",
+      "description": "system/dict/data 模块"
+    },
+    {
+      "name": "system/dict/type",
+      "description": "system/dict/type 模块"
+    },
+    {
+      "name": "system/menu",
+      "description": "system/menu 模块"
+    },
+    {
+      "name": "system/notice",
+      "description": "system/notice 模块"
+    },
+    {
+      "name": "system/oss",
+      "description": "system/oss 模块"
+    },
+    {
+      "name": "system/ossConfig",
+      "description": "system/ossConfig 模块"
+    },
+    {
+      "name": "system/post",
+      "description": "system/post 模块"
+    },
+    {
+      "name": "system/role",
+      "description": "system/role 模块"
+    },
+    {
+      "name": "system/tenant",
+      "description": "system/tenant 模块"
+    },
+    {
+      "name": "system/tenant-admin",
+      "description": "system/tenant-admin 模块"
+    },
+    {
+      "name": "system/tenantPackage",
+      "description": "system/tenantPackage 模块"
+    },
+    {
+      "name": "system/user",
+      "description": "system/user 模块"
+    },
+    {
+      "name": "system/userCenter",
+      "description": "system/userCenter 模块"
+    },
+    {
+      "name": "tool/gen",
+      "description": "tool/gen 模块"
+    },
+    {
+      "name": "tool/upload",
+      "description": "tool/upload 模块"
+    },
+    {
+      "name": "transaction",
+      "description": "transaction 模块"
+    },
+    {
+      "name": "workbench/episode",
+      "description": "workbench/episode 模块"
+    },
+    {
+      "name": "workbench/history",
+      "description": "workbench/history 模块"
+    },
+    {
+      "name": "workbench/library",
+      "description": "workbench/library 模块"
+    },
+    {
+      "name": "workbench/member",
+      "description": "workbench/member 模块"
+    },
+    {
+      "name": "workbench/project",
+      "description": "workbench/project 模块"
+    },
+    {
+      "name": "workbench/projectData",
+      "description": "workbench/projectData 模块"
+    },
+    {
+      "name": "workbench/storyboard",
+      "description": "workbench/storyboard 模块"
+    }
+  ]
+}

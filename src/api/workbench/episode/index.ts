@@ -30,7 +30,8 @@ export const createEpisodeByText = (data: EpisodeCreateRequest): AxiosPromise<Hi
       episodeName: data.episodeName,
       storyText: data.storyText,
       modelCode: data.modelCode,
-      promptPreFix: data.promptPreFix
+      promptPreFix: data.promptPreFix,
+      workflowMode: data.workflowMode
     }
   });
 };
@@ -44,6 +45,9 @@ export const createEpisodeByTemplate = (data: EpisodeTemplateUploadRequest): Axi
   formData.append('projectId', String(data.projectId));
   formData.append('episodeName', data.episodeName);
   formData.append('file', data.file);
+  if (data.workflowMode) {
+    formData.append('workflowMode', data.workflowMode);
+  }
 
   return request({
     url: '/hivision/story/episode/template/upload',

@@ -126,9 +126,11 @@
 
     <!-- 新增剧集对话框 -->
     <AddEpisodeDialog
+      v-if="pendingWorkflowMode"
       v-model="addEpisodeDialogVisible"
       :project-id="Number(projectStore.currentProjectId) || 0"
       :next-episode-number="(projectStore.episodeInfoList?.length || 0) + 1"
+      :workflow-mode="pendingWorkflowMode"
       @success="handleAddEpisodeSuccess"
     />
 
@@ -139,13 +141,12 @@
 
 <script setup lang="ts" name="StepScript">
   import { deleteEpisodes, renameEpisode } from '@/api/workbench/episode';
-  import { setEpisodeWorkflowMode } from '@/utils/episodeWorkflow';
   import type { Episode } from '@/api/workbench/project/types';
   import { useProjectStore } from '@/store/modules/project';
   import { Loading } from '@element-plus/icons-vue';
   import { ElMessage, ElMessageBox } from 'element-plus';
   import { debounce } from 'lodash-es';
-  import { computed, onActivated, onBeforeUnmount, onMounted, ref, watch } from 'vue';
+  import { computed, nextTick, onActivated, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 
   // 导入共享组件
   import AddEpisodeDialog from '../../components/AddEpisodeDialog.vue';
@@ -350,35 +351,20 @@
     console.log('选择的工作流:', mode);
     // 临时保存即将创建的剧集的工作流模式
     pendingWorkflowMode.value = mode;
-    // 选择完成后，显示新增剧集对话框
-    addEpisodeDialogVisible.value = true;
+    console.log('[StepScript] pendingWorkflowMode 已设置为:', pendingWorkflowMode.value);
+    // 等待 Vue 更新后再打开对话框，确保 props 正确传递
+    nextTick(() => {
+      addEpisodeDialogVisible.value = true;
+    });
   };
 
   // 新增剧集成功回调
   const handleAddEpisodeSuccess = async (newEpisodeId: number) => {
     console.log('[StepScript handleAddEpisodeSuccess] 收到新剧集ID:', newEpisodeId);
-    console.log('[StepScript handleAddEpisodeSuccess] 待保存的工作流模式:', pendingWorkflowMode.value);
+    console.log('[StepScript handleAddEpisodeSuccess] 工作流模式:', pendingWorkflowMode.value);
 
-    // 如果有待保存的工作流模式，保存到新创建的剧集
-    if (pendingWorkflowMode.value && newEpisodeId > 0) {
-      setEpisodeWorkflowMode(newEpisodeId, pendingWorkflowMode.value);
-      console.log(
-        `[StepScript handleAddEpisodeSuccess] 剧集 ${newEpisodeId} 工作流模式设置为: ${pendingWorkflowMode.value}`
-      );
-      console.log(
-        '[StepScript handleAddEpisodeSuccess] 当前 localStorage:',
-        localStorage.getItem('episode_workflow_mode')
-      );
-      // 清空临时保存的工作流模式
-      pendingWorkflowMode.value = null;
-    } else {
-      console.log(
-        '[StepScript handleAddEpisodeSuccess] 跳过保存工作流模式 - newEpisodeId:',
-        newEpisodeId,
-        'pendingWorkflowMode:',
-        pendingWorkflowMode.value
-      );
-    }
+    // 清空临时保存的工作流模式
+    pendingWorkflowMode.value = null;
 
     // 重新加载项目信息以获取最新的剧集列表
     await projectStore.loadProjectInfo(projectStore.currentProjectId as number);

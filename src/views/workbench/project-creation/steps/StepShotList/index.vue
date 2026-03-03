@@ -94,6 +94,7 @@
       v-model="addEpisodeDialogVisible"
       :project-id="Number(projectStore.currentProjectId) || 0"
       :next-episode-number="projectStore.episodes.length + 1"
+      :workflow-mode="pendingWorkflowMode"
       @success="handleAddEpisodeSuccess"
     />
 
@@ -134,7 +135,7 @@
   import { useImageUpdateListener, useScriptUpdateListener } from '@/composables/useSSEListener';
   import { useProjectStore } from '@/store/modules/project';
   import { useUserStore } from '@/store/modules/user';
-  import { getEpisodeWorkflowMode, setEpisodeWorkflowMode } from '@/utils/episodeWorkflow';
+  import { setEpisodeWorkflowMode } from '@/utils/episodeWorkflow';
   import { convertModelsToOptions, getDefaultModel, getModelName, ratioToSize } from '@/utils/projectUtils';
   import { ElMessage, ElMessageBox } from 'element-plus';
   import { computed, onActivated, onMounted, ref, watch } from 'vue';
@@ -180,10 +181,18 @@
     return projectStore.pictureRatio ? ratioToSize(projectStore.pictureRatio) : '16:9';
   });
 
-  // 当前剧集的工作流模式
+  // 当前剧集的工作流模式（从数据库读取）
   const currentEpisodeWorkflowMode = computed(() => {
     if (!selectedEpisodeId.value) return null;
-    return getEpisodeWorkflowMode(selectedEpisodeId.value);
+    // 从 projectStore.episodeInfoList 中查找当前剧集的 workflowMode
+    const episode = projectStore.episodeInfoList.find((ep) => ep.episodeId === selectedEpisodeId.value);
+    const mode = episode?.workflowMode || null;
+    console.log('[StepShotList] 当前剧集工作流模式:', {
+      selectedEpisodeId: selectedEpisodeId.value,
+      episode,
+      workflowMode: mode
+    });
+    return mode;
   });
 
   // 加载状态
