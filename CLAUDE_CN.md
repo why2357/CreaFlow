@@ -4,7 +4,8 @@
 
 ## 项目概述
 
-这是**创流 (Forge HiVision)** - 一个基于 Vue 3 + TypeScript + Element Plus + Vite 构建的视频制作工作台。这是一个多租户 SaaS 平台，通过结构化的工作流程（包括脚本、分镜、图像生成和视频合成）来创建 AI 生成的视频内容。
+这是**创流 (Forge HiVision)** - 一个基于 Vue 3 + TypeScript + Element Plus + Vite 构建的视频制作工作台。这是一个多租户
+SaaS 平台，通过结构化的工作流程（包括脚本、分镜、图像生成和视频合成）来创建 AI 生成的视频内容。
 
 ## 开发命令
 
@@ -64,17 +65,20 @@ src/
 ### 核心架构模式
 
 **API 层模式**: 每个 API 领域包含两个文件：
+
 - `index.ts` - 使用 `@/utils/request` 中的 axios 实例的 API 请求函数
 - `types.ts` - 请求和响应的 TypeScript 类型/接口定义
 
 **Store 模式**: `src/store/modules/` 中的 Pinia stores 按功能组织（app、user、permission、project、dict 等）。
 
 **路由结构**:
+
 - **常量路由** - 公共页面（登录、首页、404 等）
 - **动态路由** - 根据后端返回的用户权限动态加载
 - 路由支持 meta 属性用于权限控制、缓存和导航控制
 
 **项目创建工作流程**: 核心功能是 `src/views/workbench/project-creation/` 中的 5 步工作流程：
+
 1. StepCharacter - 上传角色参考图
 2. StepScene - 上传场景参考图
 3. StepScript - 从提示词生成脚本
@@ -85,6 +89,7 @@ src/
 ### 实时通信
 
 **SSE (Server-Sent Events)**: 用于 AI 内容生成过程中的实时更新
+
 - 管理器: `src/utils/sse.ts` - SSE 连接管理，支持自动重连
 - 标签页协调: `src/utils/sseTabCoordinator.ts` - 跨浏览器标签页的 SSE 协调
 - 组合式函数: `src/composables/useSSEListener.ts` - Vue 3 SSE 事件监听钩子
@@ -94,6 +99,7 @@ src/
   - `messageType=3`: 视频生成更新
 
 **自定义事件**: SSE 消息作为 window 事件派发：
+
 - `sse-script-update`
 - `sse-image-update`
 - `sse-video-update`
@@ -111,6 +117,7 @@ src/
 ### 请求/响应处理
 
 **Axios 配置** (`src/utils/request.ts`):
+
 - 基础 URL 来自 `VITE_APP_BASE_API` 环境变量
 - JWT token 通过 `Authorization: Bearer ${token}` 传递
 - 支持请求加密（AES + RSA 混合加密）
@@ -118,15 +125,15 @@ src/
 - 防止重复请求（500ms 间隔）
 
 **响应处理**:
+
 - 成功: `code === 200`
 - 自定义错误码在 `src/utils/errorCode.ts` 中定义
 - 下载时的加载状态
 
 ### 权限系统
 
-**路由权限**: 根据后端权限过滤动态路由
-**指令权限**: `v-hasPermi` 指令用于元素级别的权限控制
-**项目权限**: 用于基于项目访问控制的额外权限系统
+**路由权限**: 根据后端权限过滤动态路由 **指令权限**: `v-hasPermi` 指令用于元素级别的权限控制 **项目权限**: 用于基于项目
+访问控制的额外权限系统
 
 ### 国际化支持
 

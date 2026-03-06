@@ -22,9 +22,9 @@ export interface SceneBasicEditRequest {
   basicId: number;
   /** 台词 */
   dialogues?: string;
-  /** 镜头描述 */
+  /** 特写镜头描述 */
   sceneDesc?: string;
-  /** 镜头提示 */
+  /** 场景提示 */
   sceneHint?: string;
 }
 
@@ -139,6 +139,34 @@ export interface EpisodeSceneItemInfo {
   commentCount: number;
   /** 最新一条评论信息 */
   commentInfo?: any;
+  /** Seedance 2.0 生成的视频地址 */
+  seedanceVideoUrl?: string;
+}
+
+/**
+ * Seedance 2.0 参考图位置信息
+ */
+export interface SeedanceImagePosition {
+  /** OSS 图片 ID */
+  ossId: number;
+  /** 在提示词内容序列中的位置索引（0-based） */
+  position: number;
+}
+
+/**
+ * Seedance 2.0 生成视频请求
+ */
+export interface SeedanceGenerateRequest {
+  /** 场景基础信息ID */
+  basicId: number;
+  /** 剧集ID */
+  episodeId: number;
+  /** 模型码 */
+  modelCode: string;
+  /** 纯文本提示词（去掉 HTML 标签后的内容） */
+  prompt: string;
+  /** 参考图 ossId 列表，按在提示词中出现的顺序排列 */
+  imageOssIds: SeedanceImagePosition[];
 }
 
 /**
@@ -157,6 +185,8 @@ export interface EpisodeInfoResponseDto {
   modeCode?: string;
   /** 文生文任务状态 0-待执行 1-执行中 2-执行成功 3-执行失败 */
   taskStatus?: number;
+  /** 工作流模式：classic-经典工作流 / seedance-Seedance 2.0 */
+  workflowMode?: 'classic' | 'seedance';
 }
 
 /**

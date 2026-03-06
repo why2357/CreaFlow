@@ -1,0 +1,477 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>API 调试工具 - 创流 Forge HiVision</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        .card {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+            padding: 24px;
+            margin-bottom: 20px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 24px;
+        }
+
+        .header h1 {
+            color: #333;
+            font-size: 24px;
+            margin-bottom: 8px;
+        }
+
+        .header p {
+            color: #666;
+            font-size: 14px;
+        }
+
+        .form-group {
+            margin-bottom: 16px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 6px;
+            color: #333;
+            font-weight: 500;
+            font-size: 14px;
+        }
+
+        .form-group input,
+        .form-group textarea,
+        .form-group select {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 14px;
+            transition: border-color 0.2s;
+        }
+
+        .form-group input:focus,
+        .form-group textarea:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .form-group textarea {
+            min-height: 100px;
+            font-family: 'Monaco', 'Menlo', monospace;
+            font-size: 12px;
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-primary:active {
+            transform: translateY(0);
+        }
+
+        .btn-secondary {
+            background: #f5f5f5;
+            color: #333;
+        }
+
+        .btn-secondary:hover {
+            background: #e5e5e5;
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 12px;
+            margin-top: 20px;
+        }
+
+        .response-section {
+            margin-top: 20px;
+        }
+
+        .response-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
+        .response-header h3 {
+            color: #333;
+            font-size: 16px;
+        }
+
+        .status-badge {
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+
+        .status-pending {
+            background: #fef3c7;
+            color: #92400e;
+        }
+
+        .status-success {
+            background: #d1fae5;
+            color: #065f46;
+        }
+
+        .status-error {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        .response-content {
+            background: #1e1e1e;
+            border-radius: 6px;
+            padding: 16px;
+            max-height: 400px;
+            overflow: auto;
+        }
+
+        .response-content pre {
+            color: #d4d4d4;
+            font-family: 'Monaco', 'Menlo', monospace;
+            font-size: 12px;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .loading {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 2px solid #fff;
+            border-radius: 50%;
+            border-top-color: transparent;
+            animation: spin 0.8s linear infinite;
+            margin-right: 8px;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .tabs {
+            display: flex;
+            border-bottom: 1px solid #ddd;
+            margin-bottom: 16px;
+        }
+
+        .tab {
+            padding: 10px 20px;
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+            color: #666;
+            font-size: 14px;
+        }
+
+        .tab:hover {
+            color: #667eea;
+        }
+
+        .tab.active {
+            color: #667eea;
+            border-bottom-color: #667eea;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .code-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 12px;
+            background: #2d2d2d;
+            border-radius: 6px 6px 0 0;
+        }
+
+        .code-header span {
+            color: #999;
+            font-size: 12px;
+        }
+
+        .code-content {
+            background: #1e1e1e;
+            border-radius: 0 0 6px 6px;
+            padding: 16px;
+            max-height: 300px;
+            overflow: auto;
+        }
+
+        .code-content pre {
+            color: #d4d4d4;
+            font-family: 'Monaco', 'Menlo', monospace;
+            font-size: 12px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="card">
+            <div class="header">
+                <h1>🚀 API 调试工具</h1>
+                <p>Forge HiVision - 创流视频制作工作台</p>
+            </div>
+
+            <form id="apiForm">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="method">请求方法</label>
+                        <select id="method">
+                            <option value="GET">GET</option>
+                            <option value="POST" selected>POST</option>
+                            <option value="PUT">PUT</option>
+                            <option value="DELETE">DELETE</option>
+                            <option value="PATCH">PATCH</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="url">请求 URL</label>
+                        <input type="text" id="url" value="http://172.28.104.54:16020/hivision/story/episode/template/upload"
+                            placeholder="http://172.28.104.54:16020/api/endpoint">
+                    </div>
+                </div>
+
+                <div class="tabs">
+                    <div class="tab active" data-tab="headers">请求头</div>
+                    <div class="tab" data-tab="body">请求体</div>
+                    <div class="tab" data-tab="params">URL 参数</div>
+                </div>
+
+                <div class="tab-content active" id="tab-headers">
+                    <div class="form-group">
+                        <label for="headers">Headers (JSON 格式)</label>
+                        <textarea id="headers">{
+  "User-Agent": "Apifox/1.0.0 (https://apifox.com)",
+  "Content-Type": "application/json",
+  "clientid": "e5cd7e4891bf95d1d19206ce24a7b32e",
+  "Content-Language": "zh_CN",
+  "Authorization": "Bearer eyJhbGciOiJIUzUxMiJ9.eyJsb2dpbl91c2VyX2tleSI6ImI2M2Y2MDA3LTFkNTItNGEwNy04OGJkLTc3NzkzZmQ4NzY4YSJ9.OCAC5ddEjExoVh_HRWI8r68eZkguXLHiHkvoqaK66kQg-UMompK2ZjOvfVQ16DTBdoqE314vTQr0joaaJ6PuqA",
+  "Accept": "*/*"
+}</textarea>
+                    </div>
+                </div>
+
+                <div class="tab-content" id="tab-body">
+                    <div class="form-group">
+                        <label for="body">Request Body (JSON 格式)</label>
+                        <textarea id="body" placeholder='{"key": "value"}'></textarea>
+                    </div>
+                </div>
+
+                <div class="tab-content" id="tab-params">
+                    <div class="form-group">
+                        <label for="params">URL Parameters (每行一个，格式: key=value)</label>
+                        <textarea id="params" placeholder="key1=value1&#10;key2=value2"></textarea>
+                    </div>
+                </div>
+
+                <div class="btn-group">
+                    <button type="submit" class="btn btn-primary" id="sendBtn">
+                        发送请求
+                    </button>
+                    <button type="button" class="btn btn-secondary" id="clearBtn">
+                        清空响应
+                    </button>
+                </div>
+            </form>
+
+            <div class="response-section hidden" id="responseSection">
+                <div class="response-header">
+                    <h3>响应结果</h3>
+                    <span class="status-badge" id="statusBadge">Pending</span>
+                </div>
+                <div class="response-content">
+                    <pre id="responseContent">等待请求...</pre>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Tab 切换
+        document.querySelectorAll('.tab').forEach(tab => {
+            tab.addEventListener('click', () => {
+                document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+                tab.classList.add('active');
+                document.getElementById(`tab-${tab.dataset.tab}`).classList.add('active');
+            });
+        });
+
+        // 表单提交
+        document.getElementById('apiForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const sendBtn = document.getElementById('sendBtn');
+            const responseSection = document.getElementById('responseSection');
+            const statusBadge = document.getElementById('statusBadge');
+            const responseContent = document.getElementById('responseContent');
+
+            // 显示加载状态
+            sendBtn.innerHTML = '<span class="loading"></span>发送中...';
+            sendBtn.disabled = true;
+            responseSection.classList.remove('hidden');
+            statusBadge.className = 'status-badge status-pending';
+            statusBadge.textContent = 'Pending';
+            responseContent.textContent = '请求中...';
+
+            try {
+                const method = document.getElementById('method').value;
+                let url = document.getElementById('url').value;
+                const headersText = document.getElementById('headers').value;
+                const bodyText = document.getElementById('body').value;
+                const paramsText = document.getElementById('params').value;
+
+                // 解析 Headers
+                let headers = {};
+                try {
+                    headers = headersText ? JSON.parse(headersText) : {};
+                } catch (err) {
+                    throw new Error('Headers JSON 格式错误: ' + err.message);
+                }
+
+                // 构建 URL 参数
+                if (paramsText.trim()) {
+                    const params = new URLSearchParams();
+                    paramsText.split('\n').forEach(line => {
+                        const [key, value] = line.split('=');
+                        if (key && value) {
+                            params.append(key.trim(), value.trim());
+                        }
+                    });
+                    url += (url.includes('?') ? '&' : '?') + params.toString();
+                }
+
+                // 构建请求选项
+                const options = {
+                    method: method,
+                    headers: headers,
+                    redirect: 'follow'
+                };
+
+                // 添加请求体 (GET/HEAD 请求不能有 body)
+                if (bodyText.trim() && !['GET', 'HEAD'].includes(method)) {
+                    try {
+                        options.body = bodyText;
+                    } catch (err) {
+                        throw new Error('Body JSON 格式错误: ' + err.message);
+                    }
+                }
+
+                // 记录请求信息
+                const requestInfo = {
+                    method: method,
+                    url: url,
+                    headers: headers,
+                    body: bodyText || null
+                };
+
+                // 发送请求
+                const startTime = Date.now();
+                const response = await fetch(url, options);
+                const endTime = Date.now();
+                const duration = endTime - startTime;
+
+                // 获取响应内容
+                const contentType = response.headers.get('content-type') || '';
+                let responseData;
+
+                if (contentType.includes('application/json')) {
+                    responseData = await response.json();
+                } else {
+                    responseData = await response.text();
+                }
+
+                // 显示响应结果
+                statusBadge.className = `status-badge ${response.ok ? 'status-success' : 'status-error'}`;
+                statusBadge.textContent = `${response.status} ${response.statusText} (${duration}ms)`;
+
+                const result = {
+                    success: response.ok,
+                    status: response.status,
+                    statusText: response.statusText,
+                    duration: `${duration}ms`,
+                    request: requestInfo,
+                    response: responseData
+                };
+
+                responseContent.textContent = JSON.stringify(result, null, 2);
+
+            } catch (error) {
+                statusBadge.className = 'status-badge status-error';
+                statusBadge.textContent = 'Error';
+                responseContent.textContent = `请求失败: ${error.message}\n\n${error.stack || ''}`;
+            } finally {
+                sendBtn.innerHTML = '发送请求';
+                sendBtn.disabled = false;
+            }
+        });
+
+        // 清空响应
+        document.getElementById('clearBtn').addEventListener('click', () => {
+            document.getElementById('responseSection').classList.add('hidden');
+            document.getElementById('responseContent').textContent = '等待请求...';
+        });
+    </script>
+</body>
+
+</html>

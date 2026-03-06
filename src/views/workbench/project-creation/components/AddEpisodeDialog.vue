@@ -141,11 +141,13 @@
     modelValue: boolean;
     projectId: number;
     nextEpisodeNumber: number;
+    /** 工作流模式：classic-经典工作流 / seedance-Seedance 2.0 */
+    workflowMode?: 'classic' | 'seedance' | null;
   }
 
   interface Emits {
     (e: 'update:modelValue', value: boolean): void;
-    (e: 'success'): void;
+    (e: 'success', episodeId: number): void;
   }
 
   const props = defineProps<Props>();
@@ -217,10 +219,19 @@
       dialogVisible.value = val;
       if (val) {
         // 打开对话框时初始化表单
+        console.log('[AddEpisodeDialog] 对话框打开，workflowMode:', props.workflowMode);
         initForm();
       }
     },
     { immediate: true }
+  );
+
+  // 监听 workflowMode 变化
+  watch(
+    () => props.workflowMode,
+    (val) => {
+      console.log('[AddEpisodeDialog] workflowMode prop 变化:', val);
+    }
   );
 
   // 监听内部 dialogVisible 变化
@@ -315,6 +326,8 @@
   const handleSubmit = async () => {
     if (!formRef.value) return;
 
+    console.log('[AddEpisodeDialog] 准备提交表单，workflowMode:', props.workflowMode);
+
     await formRef.value.validate(async (valid) => {
       if (!valid) return;
 
@@ -339,32 +352,68 @@
       try {
         loading.value = true;
 
+        let newEpisodeId: number | undefined;
+
         if (inputMode.value === 'text') {
           // 剧情文本模式：调用 /hivision/story/episode/create
-          await createEpisodeByText({
+          const requestData = {
             projectId: form.value.projectId,
             episodeName: form.value.episodeName,
             storyText: form.value.storyText.trim(),
             modelCode: form.value.modelCode,
-            promptPreFix: form.value.promptPreFix
-          });
+            promptPreFix: form.value.promptPreFix,
+            workflowMode: props.workflowMode ?? undefined
+          };
+          console.log('[AddEpisodeDialog] 发送创建剧集请求:', JSON.stringify(requestData, null, 2));
+          const result = await createEpisodeByText(requestData);
+          console.log('[AddEpisodeDialog] 创建剧集结果:', result);
+          console.log('[AddEpisodeDialog] result.data:', result.data);
+          newEpisodeId = result.data?.id;
         } else {
           // 上传拆分剧集模式：调用 /hivision/story/episode/template/upload
           if (!uploadedFile.value) {
             ElMessage.error('请上传剧集文件');
             return;
           }
-          await createEpisodeByTemplate({
+          const result = await createEpisodeByTemplate({
             projectId: form.value.projectId,
             episodeName: form.value.episodeName,
-            file: uploadedFile.value
+            file: uploadedFile.value,
+            workflowMode: props.workflowMode ?? undefined
           });
+          console.log('[AddEpisodeDialog] 上传剧集结果:', result);
+          console.log('[AddEpisodeDialog] result.data:', result.data);
+          newEpisodeId = result.data?.id;
+        }
+
+        console.log('[AddEpisodeDialog] 解析出的新剧集ID:', newEpisodeId);
+
+        // 如果后端没有返回剧集ID，需要重新加载项目信息获取最新剧集
+        if (!newEpisodeId) {
+          console.warn('[AddEpisodeDialog] 后端未返回剧集ID，重新加载项目信息获取最新剧集');
+          try {
+            // 重新加载项目信息
+            await projectStore.loadProjectInfo(props.projectId);
+            // 获取最新创建的剧集（剧集列表的最后一个）
+            const latestEpisode = projectStore.episodeInfoList[projectStore.episodeInfoList.length - 1];
+            if (latestEpisode?.episodeId) {
+              newEpisodeId = latestEpisode.episodeId;
+              console.log('[AddEpisodeDialog] 从剧集列表获取到最新剧集ID:', newEpisodeId);
+            }
+          } catch (error) {
+            console.error('[AddEpisodeDialog] 重新加载项目信息失败:', error);
+          }
         }
 
         // 关闭对话框
         dialogVisible.value = false;
-        // 触发成功事件，通知父组件刷新列表
-        emit('success');
+        // 触发成功事件，传递新创建的剧集ID
+        if (newEpisodeId) {
+          emit('success', newEpisodeId);
+        } else {
+          console.warn('[AddEpisodeDialog] 无法获取新剧集ID，使用降级处理');
+          emit('success', 0); // 降级处理，通知父组件刷新列表
+        }
       } catch (error: any) {
         console.error('创建剧集失败:', error);
         // ElMessage.error(error?.msg || '创建剧集失败');

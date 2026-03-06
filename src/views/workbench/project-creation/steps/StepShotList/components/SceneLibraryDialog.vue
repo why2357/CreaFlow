@@ -3,7 +3,10 @@
     v-model="dialogVisible"
     title="场景库"
     width="988px"
+    :z-index="10000"
     :close-on-click-modal="false"
+    :destroy-on-close="false"
+    :append-to-body="true"
     class="scene-library-dialog"
     @close="handleClose"
   >
@@ -259,7 +262,7 @@
 
   // 选择场景
   const handleSelectScene = (scene: LibrarySubInfo) => {
-    selectedSceneId.value = scene.materialVo.id || undefined;
+    selectedSceneId.value = scene.materialVo?.id || undefined;
     selectedScene.value = scene;
   };
 
@@ -537,6 +540,7 @@
           .scene-item {
             position: relative;
             flex-shrink: 0;
+            width: 240px;
             cursor: pointer;
             border-radius: 8px;
             overflow: hidden;

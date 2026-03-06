@@ -74,12 +74,15 @@
           :episodes="projectStore.episodeInfoList"
           :model-points="getCurrentModelPoints"
           :episode-task-status="episodeTaskStatus"
+          :workflow-mode="currentEpisodeWorkflowMode"
           @image-upload="handleImageUpload"
           @image-regenerate="handleImageRegenerate"
           @toggle-favorite="handleToggleFavorite"
           @update-shot="handleUpdateShot"
           @refresh="() => loadShots(true)"
           @delete-success="handleDeleteSuccess"
+          @save-seedance-prompt="handleSaveSeedancePrompt"
+          @save-seedance-images="handleSaveSeedanceImages"
         />
       </div>
       <!-- 右下批量生成按钮 -->
@@ -93,8 +96,12 @@
       v-model="addEpisodeDialogVisible"
       :project-id="Number(projectStore.currentProjectId) || 0"
       :next-episode-number="projectStore.episodes.length + 1"
+      :workflow-mode="pendingWorkflowMode"
       @success="handleAddEpisodeSuccess"
     />
+
+    <!-- 工作流选择对话框 -->
+    <SelectWorkflowDialog v-model="workflowDialogVisible" @confirm="handleWorkflowSelect" />
 
     <!-- 角色编辑对话框 -->
     <CharacterEditDialog
@@ -127,9 +134,11 @@
   import type { EpisodeInfoResponseDto, EpisodeSceneItemInfo } from '@/api/workbench/episode/types';
   import { saveImageModel } from '@/api/workbench/project';
   import type { Episode, Shot, ShotForm } from '@/api/workbench/project/types';
+  import type { ReferenceImage } from '@/types/mention';
   import { useImageUpdateListener, useScriptUpdateListener } from '@/composables/useSSEListener';
   import { useProjectStore } from '@/store/modules/project';
   import { useUserStore } from '@/store/modules/user';
+  import { setEpisodeWorkflowMode } from '@/utils/episodeWorkflow';
   import { convertModelsToOptions, getDefaultModel, getModelName, ratioToSize } from '@/utils/projectUtils';
   import { ElMessage, ElMessageBox } from 'element-plus';
   import { computed, onActivated, onMounted, ref, watch } from 'vue';
@@ -138,6 +147,7 @@
   // 导入组件
   import generatingAnimation from '@/assets/lottie/video-generating.json';
   import AddEpisodeDialog from '../../components/AddEpisodeDialog.vue';
+  import SelectWorkflowDialog from '../../components/SelectWorkflowDialog.vue';
   import ExportDropdown from '../../components/ExportDropdown.vue';
   import EpisodeListPanel from '../StepScript/components/EpisodeListPanel.vue';
   import CharacterEditDialog from './components/CharacterEditDialog.vue';
@@ -156,7 +166,100 @@
   // 当前模型码（用于图片生成，使用文生图模型）
   const currentModelCode = ref<string>('');
 
-  // 动态模型选项
+  // ==================== Seedance 数据持久化 ====================
+
+  // localStorage key 生成函数
+  const getSeedanceStorageKey = (basicId: number, type: 'prompt' | 'images') => {
+    return `seedance_${projectStore.currentProjectId}_${basicId}_${type}`;
+  };
+
+  // 从 localStorage 保存 Seedance 提示词
+  const saveSeedancePrompt = (basicId: number, prompt: string) => {
+    if (!projectStore.currentProjectId) return;
+    try {
+      const key = getSeedanceStorageKey(basicId, 'prompt');
+      localStorage.setItem(key, prompt);
+    } catch (error) {
+      console.error('[Seedance] 保存提示词失败:', error);
+    }
+  };
+
+  // 从 localStorage 加载 Seedance 提示词
+  const loadSeedancePrompt = (basicId: number): string => {
+    if (!projectStore.currentProjectId) return '';
+    try {
+      const key = getSeedanceStorageKey(basicId, 'prompt');
+      return localStorage.getItem(key) || '';
+    } catch (error) {
+      console.error('[Seedance] 加载提示词失败:', error);
+      return '';
+    }
+  };
+
+  // 从 localStorage 保存 Seedance 参考图片
+  const saveSeedanceImages = (basicId: number, images: ReferenceImage[]) => {
+    if (!projectStore.currentProjectId) return;
+    try {
+      const key = getSeedanceStorageKey(basicId, 'images');
+      // 只保存已成功上传到 OSS 的图片（有持久化 URL），过滤掉 blob URL
+      const simplifiedImages = images
+        .filter(img => img.uploadStatus === 'success' && img.serverId && img.src && !img.src.startsWith('blob:'))
+        .map(img => ({
+          id: img.id,
+          src: img.src,
+          thumbnail: img.thumbnail || img.src,
+          label: img.label,
+          serverId: img.serverId,
+          uploadStatus: img.uploadStatus
+        }));
+      localStorage.setItem(key, JSON.stringify(simplifiedImages));
+    } catch (error) {
+      console.error('[Seedance] 保存参考图失败:', error);
+    }
+  };
+
+  // 从 localStorage 加载 Seedance 参考图片
+  const loadSeedanceImages = (basicId: number): ReferenceImage[] => {
+    if (!projectStore.currentProjectId) return [];
+    try {
+      const key = getSeedanceStorageKey(basicId, 'images');
+      const data = localStorage.getItem(key);
+      if (data) {
+        const parsed = JSON.parse(data);
+        console.log('[Seedance] 加载参考图:', { basicId, count: parsed.length });
+        // 恢复完整的 ReferenceImage 结构，过滤掉无效的 blob URL
+        const restored = parsed
+          .filter((img: any) => img.src && !img.src.startsWith('blob:'))
+          .map((img: any, index: number) => ({
+            ...img,
+            label: img.label || `图片${index + 1}`,
+            thumbnail: img.thumbnail || img.src,
+            uploadStatus: img.uploadStatus || 'success',
+            uploadProgress: 100
+          }));
+        return restored;
+      }
+      return [];
+    } catch (error) {
+      console.error('[Seedance] 加载参考图失败:', error);
+      return [];
+    }
+  };
+
+  // 清理指定镜头的 Seedance 数据
+  const clearSeedanceData = (basicId: number) => {
+    if (!projectStore.currentProjectId) return;
+    try {
+      const promptKey = getSeedanceStorageKey(basicId, 'prompt');
+      const imagesKey = getSeedanceStorageKey(basicId, 'images');
+      localStorage.removeItem(promptKey);
+      localStorage.removeItem(imagesKey);
+    } catch (error) {
+      console.error('[Seedance] 清理数据失败:', error);
+    }
+  };
+
+  // ==================== 动态模型选项 ====================
   const modelOptions = computed(() => {
     return convertModelsToOptions(projectStore.t2iModelInfoList);
   });
@@ -174,6 +277,20 @@
     return projectStore.pictureRatio ? ratioToSize(projectStore.pictureRatio) : '16:9';
   });
 
+  // 当前剧集的工作流模式（从数据库读取）
+  const currentEpisodeWorkflowMode = computed(() => {
+    if (!selectedEpisodeId.value) return null;
+    // 从 projectStore.episodeInfoList 中查找当前剧集的 workflowMode
+    const episode = projectStore.episodeInfoList.find((ep) => ep.episodeId === selectedEpisodeId.value);
+    const mode = episode?.workflowMode || null;
+    console.log('[StepShotList] 当前剧集工作流模式:', {
+      selectedEpisodeId: selectedEpisodeId.value,
+      episode,
+      workflowMode: mode
+    });
+    return mode;
+  });
+
   // 加载状态
   const loading = ref(false);
 
@@ -185,6 +302,12 @@
 
   // 新增剧集对话框
   const addEpisodeDialogVisible = ref(false);
+
+  // 工作流选择对话框
+  const workflowDialogVisible = ref(false);
+
+  // 临时保存即将创建的剧集的工作流模式
+  const pendingWorkflowMode = ref<'classic' | 'seedance' | null>(null);
 
   // 角色编辑对话框
   const characterEditDialogVisible = ref(false);
@@ -392,64 +515,76 @@
 
   // 将后端数据转换为 Shot 类型
   const convertToShots = (sceneList: EpisodeSceneItemInfo[]): Shot[] => {
-    return sceneList.map((scene, index) => ({
-      id: index + 1,
-      episodeId: selectedEpisodeId.value!,
-      shotNumber: index + 1,
-      // 场景基础信息ID（用于编辑接口）
-      basicId: scene.basicId,
-      // 画面图片（优先使用预览图，没有则使用原图）
-      sceneImage: scene.materialInfoVoList?.[0]?.previewOssUrl || scene.materialInfoVoList?.[0]?.originOssUrl || '',
-      // 所有生成的图片列表
-      materialInfoVoList: scene.materialInfoVoList || [],
-      // 画面描述（用于编辑时使用，保存完整描述）
-      sceneDescription: `${scene.sceneDesc || ''}${scene.sceneDesc && scene.sceneHint ? '\n' : ''}${
-        scene.sceneHint || ''
-      }`,
-      // 特写镜头描述（显示用）
-      sceneDesc: scene.sceneDesc || '',
-      // 场景描述（显示用）
-      sceneHint: scene.sceneHint || '',
-      // 场景图片（环境素材）- 保留向后兼容
-      sceneLocationImage: scene.envMaterialInfoVo?.previewOssUrl || scene.envMaterialInfoVo?.originOssUrl || '',
-      // 环境素材信息对象（新增，用于场景选择功能）
-      envMaterialInfoVo: scene.envMaterialInfoVo
-        ? {
-            id: scene.envMaterialInfoVo.id,
-            originOssId: scene.envMaterialInfoVo.originOssId,
-            originOssUrl: scene.envMaterialInfoVo.originOssUrl,
-            previewOssId: scene.envMaterialInfoVo.previewOssId,
-            previewOssUrl: scene.envMaterialInfoVo.previewOssUrl,
-            projectId: scene.envMaterialInfoVo.projectId,
-            status: scene.envMaterialInfoVo.status,
-            userId: scene.envMaterialInfoVo.userId
-          }
-        : undefined,
-      // 台词
-      dialogue: scene.dialogues || '',
-      // 人物列表（直接使用服装信息列表）
-      characters: scene.characterClothingInfoList || [],
-      // 场景名称（使用场景提示作为场景名称）
-      sceneLocation: scene.sceneHint || '',
-      // 历史明细ID（用于判断是否本地上传）
-      historyDetailId: scene.historyDetailId,
-      // 收藏状态（默认未收藏）
-      isCollect: scene.isCollect,
-      // 图片加载状态（1-执行中）
-      imageLoading: scene.taskStatus === 1,
-      // 文生图任务状态 0-待执行 1-执行中 2-执行成功 3-执行失败
-      taskStatus: scene.taskStatus,
-      // 评论数
-      commentCount: Number(scene.commentCount) || 0,
-      // 最新一条评论信息（从后端返回的数据中获取）
-      // 确保 commentInfo 是有效对象或 undefined
-      commentInfo:
-        scene.commentInfo && typeof scene.commentInfo === 'object' && scene.commentInfo.id
-          ? scene.commentInfo
+    return sceneList.map((scene, index) => {
+      // 从 localStorage 恢复 Seedance 数据
+      const savedPrompt = scene.basicId ? loadSeedancePrompt(scene.basicId) : '';
+      const savedImages = scene.basicId ? loadSeedanceImages(scene.basicId) : [];
+
+      return {
+        id: index + 1,
+        episodeId: selectedEpisodeId.value!,
+        shotNumber: index + 1,
+        // 场景基础信息ID（用于编辑接口）
+        basicId: scene.basicId,
+        // 画面图片（优先使用预览图，没有则使用原图）
+        sceneImage: scene.materialInfoVoList?.[0]?.previewOssUrl || scene.materialInfoVoList?.[0]?.originOssUrl || '',
+        // 所有生成的图片列表
+        materialInfoVoList: scene.materialInfoVoList || [],
+        // 画面描述（用于编辑时使用，保存完整描述）
+        sceneDescription: `${scene.sceneDesc || ''}${scene.sceneDesc && scene.sceneHint ? '\n' : ''}${
+          scene.sceneHint || ''
+        }`,
+        // 特写镜头描述（显示用）
+        sceneDesc: scene.sceneDesc || '',
+        // 场景描述（显示用）
+        sceneHint: scene.sceneHint || '',
+        // 场景图片（环境素材）- 保留向后兼容
+        sceneLocationImage: scene.envMaterialInfoVo?.previewOssUrl || scene.envMaterialInfoVo?.originOssUrl || '',
+        // 环境素材信息对象（新增，用于场景选择功能）
+        envMaterialInfoVo: scene.envMaterialInfoVo
+          ? {
+              id: scene.envMaterialInfoVo.id,
+              originOssId: scene.envMaterialInfoVo.originOssId,
+              originOssUrl: scene.envMaterialInfoVo.originOssUrl,
+              previewOssId: scene.envMaterialInfoVo.previewOssId,
+              previewOssUrl: scene.envMaterialInfoVo.previewOssUrl,
+              projectId: scene.envMaterialInfoVo.projectId,
+              status: scene.envMaterialInfoVo.status,
+              userId: scene.envMaterialInfoVo.userId
+            }
           : undefined,
-      // 图片状态 0-白色 1-橙色 2-绿色 3-红色
-      imgStatus: scene.sceneStatus
-    }));
+        // 台词
+        dialogue: scene.dialogues || '',
+        // 人物列表（直接使用服装信息列表）
+        characters: scene.characterClothingInfoList || [],
+        // 场景名称（使用场景提示作为场景名称）
+        sceneLocation: scene.sceneHint || '',
+        // 历史明细ID（用于判断是否本地上传）
+        historyDetailId: scene.historyDetailId,
+        // 收藏状态（默认未收藏）
+        isCollect: scene.isCollect,
+        // 图片加载状态（1-执行中）
+        imageLoading: scene.taskStatus === 1,
+        // 文生图任务状态 0-待执行 1-执行中 2-执行成功 3-执行失败
+        taskStatus: scene.taskStatus,
+        // 评论数
+        commentCount: Number(scene.commentCount) || 0,
+        // 最新一条评论信息（从后端返回的数据中获取）
+        // 确保 commentInfo 是有效对象或 undefined
+        commentInfo:
+          scene.commentInfo && typeof scene.commentInfo === 'object' && scene.commentInfo.id
+            ? scene.commentInfo
+            : undefined,
+        // 图片状态 0-白色 1-橙色 2-绿色 3-红色
+        imgStatus: scene.sceneStatus,
+        // Seedance 2.0 提示词（从 localStorage 恢复）
+        seedancePrompt: savedPrompt,
+        // Seedance 2.0 参考图片列表（从 localStorage 恢复）
+        seedancePromptImages: savedImages,
+        // Seedance 2.0 生成完成后的视频地址（从后端返回）
+        seedanceVideoUrl: scene.seedanceVideoUrl || ''
+      };
+    });
   };
 
   // 加载分镜列表（支持无感刷新）
@@ -515,6 +650,10 @@
               shot.characters = newShot.characters;
               shot.sceneLocationImage = newShot.sceneLocationImage;
               shot.envMaterialInfoVo = newShot.envMaterialInfoVo;
+              // 注意：seedancePrompt 和 seedancePromptImages 是前端临时存储的字段
+              // 不在后端返回的数据中，因此保留本地值
+              // seedanceVideoUrl 来自后端，需要更新
+              shot.seedanceVideoUrl = newShot.seedanceVideoUrl;
             }
           });
 
@@ -587,13 +726,41 @@
     loadShots();
   };
 
-  // 显示新增剧集对话框
+  // 显示新增剧集对话框 - 先显示工作流选择
   const handleShowAddEpisodeDialog = () => {
+    workflowDialogVisible.value = true;
+  };
+
+  // 工作流选择确认回调
+  const handleWorkflowSelect = (mode: 'classic' | 'seedance') => {
+    console.log('选择的工作流:', mode);
+    // 临时保存即将创建的剧集的工作流模式
+    pendingWorkflowMode.value = mode;
+    // 选择完成后，显示新增剧集对话框
     addEpisodeDialogVisible.value = true;
   };
 
   // 新增剧集成功回调
-  const handleAddEpisodeSuccess = async () => {
+  const handleAddEpisodeSuccess = async (newEpisodeId: number) => {
+    console.log('[handleAddEpisodeSuccess] 收到新剧集ID:', newEpisodeId);
+    console.log('[handleAddEpisodeSuccess] 待保存的工作流模式:', pendingWorkflowMode.value);
+
+    // 如果有待保存的工作流模式，保存到新创建的剧集
+    if (pendingWorkflowMode.value && newEpisodeId > 0) {
+      setEpisodeWorkflowMode(newEpisodeId, pendingWorkflowMode.value);
+      console.log(`[handleAddEpisodeSuccess] 剧集 ${newEpisodeId} 工作流模式设置为: ${pendingWorkflowMode.value}`);
+      console.log('[handleAddEpisodeSuccess] 当前 localStorage:', localStorage.getItem('episode_workflow_mode'));
+      // 清空临时保存的工作流模式
+      pendingWorkflowMode.value = null;
+    } else {
+      console.log(
+        '[handleAddEpisodeSuccess] 跳过保存工作流模式 - newEpisodeId:',
+        newEpisodeId,
+        'pendingWorkflowMode:',
+        pendingWorkflowMode.value
+      );
+    }
+
     // 重新加载项目信息以获取最新的剧集列表
     await projectStore.loadProjectInfo(Number(projectStore.currentProjectId));
 
@@ -823,6 +990,20 @@
         shot.id = idx + 1;
       });
     }
+    // 清理 localStorage 中的 Seedance 数据
+    clearSeedanceData(basicId);
+  };
+
+  // ==================== Seedance 数据持久化事件处理 ====================
+
+  // 保存 Seedance 提示词到 localStorage
+  const handleSaveSeedancePrompt = (basicId: number, prompt: string) => {
+    saveSeedancePrompt(basicId, prompt);
+  };
+
+  // 保存 Seedance 参考图片到 localStorage
+  const handleSaveSeedanceImages = (basicId: number, images: ReferenceImage[]) => {
+    saveSeedanceImages(basicId, images);
   };
 
   // 批量生成图片

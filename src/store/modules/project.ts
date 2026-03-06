@@ -15,6 +15,7 @@ import type {
 } from '@/api/workbench/project/types';
 import { ElMessage } from 'element-plus';
 import { defineStore } from 'pinia';
+import { getEpisodeWorkflowMode, setEpisodeWorkflowMode } from '@/utils/episodeWorkflow';
 
 interface StepInfo {
   key: number;
@@ -30,6 +31,9 @@ interface ProjectState {
   projectName: string;
   pictureRatio: number | null;
   allEpisodePercent: string;
+
+  // 工作流模式：classic-经典工作流 / seedance-Seedance 2.0
+  workflowMode: 'classic' | 'seedance' | null;
 
   // 剧集列表
   episodes: Episode[];
@@ -79,6 +83,7 @@ export const useProjectStore = defineStore('project', {
     projectName: '',
     pictureRatio: null,
     allEpisodePercent: '0%',
+    workflowMode: null, // 默认为 null，未选择工作流模式
     episodes: [],
     episodeInfoList: [],
     currentEpisode: null,
@@ -112,9 +117,19 @@ export const useProjectStore = defineStore('project', {
   getters: {
     /**
      * 获取主步骤列表（排除子视图）
+     * 如果当前剧集是 Seedance 2.0 模式，则隐藏"视频"步骤
      */
     mainSteps: (state) => {
-      return state.steps.filter((step) => !step.isSubView);
+      // 检查当前剧集是否为 Seedance 2.0 模式
+      const isSeedance = state.currentEpisodeId ? getEpisodeWorkflowMode(state.currentEpisodeId) === 'seedance' : false;
+
+      return state.steps.filter((step) => {
+        // 排除子视图
+        if (step.isSubView) return false;
+        // 如果是 Seedance 2.0 模式，隐藏视频步骤（key: 7）
+        if (isSeedance && step.key === 7) return false;
+        return true;
+      });
     },
 
     /**
@@ -231,6 +246,15 @@ export const useProjectStore = defineStore('project', {
         // 更新剧集信息
         this.episodeInfoList = data.episodeInfoList || [];
 
+        // 同步后端返回的工作流模式到 localStorage（支持跨设备同步）
+        console.log('[loadProjectInfo] 后端返回的剧集列表:', this.episodeInfoList);
+        this.episodeInfoList.forEach((episode) => {
+          console.log(`[loadProjectInfo] 剧集 ${episode.episodeId} workflowMode:`, episode.workflowMode);
+          if (episode.episodeId && episode.workflowMode) {
+            setEpisodeWorkflowMode(episode.episodeId, episode.workflowMode);
+          }
+        });
+
         // 更新团队信息
         this.teamUserInfoList = data.teamUserInfoList || [];
 
@@ -260,7 +284,8 @@ export const useProjectStore = defineStore('project', {
             currentStep: 1,
             progress: parseFloat(ep.episodePercent || '0') || 0,
             scriptContent: ep.storyText,
-            taskStatus: ep.taskStatus // 添加任务状态字段
+            taskStatus: ep.taskStatus,
+            workflowMode: ep.workflowMode
           }));
 
         // 如果剧集列表为空，清除当前剧集ID
@@ -295,6 +320,15 @@ export const useProjectStore = defineStore('project', {
       this.progress = null;
       this.stats = null;
       this.projectPermissions = [];
+      this.workflowMode = null;
+    },
+
+    /**
+     * 设置工作流模式
+     * @param mode 工作流模式：classic 或 seedance
+     */
+    setWorkflowMode(mode: 'classic' | 'seedance') {
+      this.workflowMode = mode;
     },
 
     // ==================== 剧集管理 ====================
@@ -306,7 +340,16 @@ export const useProjectStore = defineStore('project', {
     async switchEpisodeFromInfo(episodeInfo: EpisodeInfo) {
       try {
         // 保存当前步骤（在切换剧集时保留）
-        const previousStep = this.currentStep;
+        let previousStep = this.currentStep;
+
+        // 检查目标剧集是否为 Seedance 2.0 模式
+        const isSeedance = episodeInfo.episodeId ? getEpisodeWorkflowMode(episodeInfo.episodeId) === 'seedance' : false;
+
+        // 如果当前在视频步骤(7)，且切换到 Seedance 2.0 模式剧集，则跳转到分镜头步骤(4)
+        if (previousStep === 7 && isSeedance) {
+          previousStep = 4;
+          this.currentStep = 4;
+        }
 
         // 转换为旧格式
         this.currentEpisode = {
@@ -425,6 +468,91 @@ export const useProjectStore = defineStore('project', {
 
       // 直接跳转到对应步骤（4/5/6）
       return await this.goToStep(viewMode);
+    },
+
+    // ==================== 角色和场景数据管理 ====================
+
+    /**
+     * 加载角色数据
+     * @param episodeId 剧集ID（可选）
+     */
+    async loadCharacters(episodeId?: number | string) {
+      if (!this.currentProjectId) return;
+
+      try {
+        const { getCharacterDetail } = await import('@/api/workbench/library');
+        const response = await getCharacterDetail({
+          projectId: Number(this.currentProjectId),
+          episodeId: episodeId ? Number(episodeId) : undefined
+        });
+
+        const data = response.data;
+        if (data?.libraryItemInfoList) {
+          // 转换为扁平的角色列表
+          const characters: Character[] = [];
+          data.libraryItemInfoList.forEach((item: any) => {
+            if (item.librarySubInfoList && item.librarySubInfoList.length > 0) {
+              item.librarySubInfoList.forEach((sub: any) => {
+                characters.push({
+                  id: sub.libraryDetailId || item.libraryId,
+                  projectId: this.currentProjectId!,
+                  name: sub.detailName || item.name,
+                  alias: sub.detailName !== item.name ? item.name : undefined,
+                  images: sub.ossUrl ? [sub.ossUrl] : [],
+                  episodes: sub.episodeList?.map((ep: any) => ep.episodeName) || []
+                });
+              });
+            }
+          });
+          this.characters = characters;
+        }
+      } catch (error) {
+        console.error('[loadCharacters] 加载角色数据失败:', error);
+        this.characters = [];
+      }
+    },
+
+    /**
+     * 加载场景数据
+     * @param episodeId 剧集ID（可选）
+     */
+    async loadScenes(episodeId?: number | string) {
+      if (!this.currentProjectId) return;
+
+      try {
+        const { getSceneDetail } = await import('@/api/workbench/library');
+        const response = await getSceneDetail({
+          projectId: Number(this.currentProjectId),
+          episodeId: episodeId ? Number(episodeId) : undefined
+        });
+
+        const data = response.data;
+        if (data?.libraryItemInfoList) {
+          // 转换为扁平的场景列表
+          const scenes: Scene[] = [];
+          data.libraryItemInfoList.forEach((item: any) => {
+            const images: string[] = [];
+            if (item.librarySubInfoList && item.librarySubInfoList.length > 0) {
+              item.librarySubInfoList.forEach((sub: any) => {
+                if (sub.ossUrl) {
+                  images.push(sub.ossUrl);
+                }
+              });
+            }
+            scenes.push({
+              id: item.libraryId,
+              projectId: this.currentProjectId!,
+              category: item.name || '',
+              images: images,
+              episodes: item.episodeList?.map((ep: any) => ep.episodeName) || []
+            });
+          });
+          this.scenes = scenes;
+        }
+      } catch (error) {
+        console.error('[loadScenes] 加载场景数据失败:', error);
+        this.scenes = [];
+      }
     },
 
     // ==================== SSE 数据更新 ====================

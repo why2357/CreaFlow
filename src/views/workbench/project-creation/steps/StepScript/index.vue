@@ -126,11 +126,16 @@
 
     <!-- 新增剧集对话框 -->
     <AddEpisodeDialog
+      v-if="pendingWorkflowMode"
       v-model="addEpisodeDialogVisible"
       :project-id="Number(projectStore.currentProjectId) || 0"
       :next-episode-number="(projectStore.episodeInfoList?.length || 0) + 1"
+      :workflow-mode="pendingWorkflowMode"
       @success="handleAddEpisodeSuccess"
     />
+
+    <!-- 工作流选择对话框 -->
+    <SelectWorkflowDialog v-model="workflowDialogVisible" @confirm="handleWorkflowSelect" />
   </div>
 </template>
 
@@ -141,10 +146,11 @@
   import { Loading } from '@element-plus/icons-vue';
   import { ElMessage, ElMessageBox } from 'element-plus';
   import { debounce } from 'lodash-es';
-  import { computed, onActivated, onBeforeUnmount, onMounted, ref, watch } from 'vue';
+  import { computed, nextTick, onActivated, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 
   // 导入共享组件
   import AddEpisodeDialog from '../../components/AddEpisodeDialog.vue';
+  import SelectWorkflowDialog from '../../components/SelectWorkflowDialog.vue';
   import EpisodeListPanel from './components/EpisodeListPanel.vue';
 
   // 导入右侧面板组件
@@ -165,6 +171,12 @@
 
   // 新增剧集对话框
   const addEpisodeDialogVisible = ref(false);
+
+  // 工作流选择对话框
+  const workflowDialogVisible = ref(false);
+
+  // 临时保存即将创建的剧集的工作流模式
+  const pendingWorkflowMode = ref<'classic' | 'seedance' | null>(null);
 
   // 标记是否已经完成首次加载（用于区分 onMounted 和 onActivated）
   const isFirstLoad = ref(true);
@@ -329,13 +341,31 @@
     await projectStore.switchEpisode(episodeId);
   };
 
-  // 显示新增剧集对话框
+  // 显示新增剧集对话框 - 先显示工作流选择
   const handleAddEpisode = () => {
-    addEpisodeDialogVisible.value = true;
+    workflowDialogVisible.value = true;
+  };
+
+  // 工作流选择确认回调
+  const handleWorkflowSelect = (mode: 'classic' | 'seedance') => {
+    console.log('选择的工作流:', mode);
+    // 临时保存即将创建的剧集的工作流模式
+    pendingWorkflowMode.value = mode;
+    console.log('[StepScript] pendingWorkflowMode 已设置为:', pendingWorkflowMode.value);
+    // 等待 Vue 更新后再打开对话框，确保 props 正确传递
+    nextTick(() => {
+      addEpisodeDialogVisible.value = true;
+    });
   };
 
   // 新增剧集成功回调
-  const handleAddEpisodeSuccess = async () => {
+  const handleAddEpisodeSuccess = async (newEpisodeId: number) => {
+    console.log('[StepScript handleAddEpisodeSuccess] 收到新剧集ID:', newEpisodeId);
+    console.log('[StepScript handleAddEpisodeSuccess] 工作流模式:', pendingWorkflowMode.value);
+
+    // 清空临时保存的工作流模式
+    pendingWorkflowMode.value = null;
+
     // 重新加载项目信息以获取最新的剧集列表
     await projectStore.loadProjectInfo(projectStore.currentProjectId as number);
     ElMessage.success('剧集创建成功');

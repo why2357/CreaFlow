@@ -7,125 +7,174 @@
     @dragenter="handleDragEnter"
     @dragleave="handleDragLeave"
   >
-    <!-- 悬浮操作层 -->
-    <div class="hover-overlay" @click.self="handleOverlayClick">
-      <!-- 顶部操作按钮 -->
-      <div class="top-actions">
-        <el-tooltip content="本地上传" placement="top">
-          <div
-            class="action-btn"
-            :class="{ disabled: isOperationDisabled }"
-            @click="!isOperationDisabled && handleUpload()"
-          >
-            <svg-icon icon-class="fy-tihuan" />
-          </div>
-        </el-tooltip>
-
-        <el-tooltip content="查看历史" placement="top">
-          <div
-            class="action-btn"
-            :class="{ disabled: isOperationDisabled || isHistoryDisabled }"
-            @click="!isOperationDisabled && !isHistoryDisabled && handleShowHistory()"
-          >
-            <svg-icon icon-class="fy-lishi" />
-          </div>
-        </el-tooltip>
-
-        <el-tooltip :content="hasMultipleImages ? '多张图片时不支持下载' : '下载图片'" placement="top">
-          <div
-            class="action-btn"
-            :class="{ disabled: isOperationDisabled || !canDownload || isDownloadDisabled }"
-            @click="!isOperationDisabled && canDownload && !isDownloadDisabled && handleDownload()"
-          >
-            <svg-icon icon-class="fy-download" />
-          </div>
-        </el-tooltip>
-
-        <el-tooltip :content="hasMultipleImages ? '多张图片时不支持裁剪' : '裁剪图片'" placement="top">
-          <div
-            class="action-btn"
-            :class="{ disabled: isOperationDisabled || !canCrop || isCropDisabled }"
-            @click="!isOperationDisabled && canCrop && !isCropDisabled && handleCrop()"
-          >
-            <svg-icon icon-class="fy-clip" />
-          </div>
-        </el-tooltip>
-
-        <el-tooltip
-          :content="hasMultipleImages ? '多张图片时不支持收藏' : isCollect ? '取消收藏' : '收藏'"
-          placement="top"
-        >
-          <div
-            class="action-btn"
-            :class="{ active: isCollect, disabled: isOperationDisabled || !canFavorite || isFavoriteDisabled }"
-            @click="!isOperationDisabled && canFavorite && !isFavoriteDisabled && handleToggleFavorite()"
-          >
-            <svg-icon v-if="isCollect" icon-class="fy-starfilled" style="width: 12px; height: 12px; color: #ff7d00" />
-            <svg-icon v-else icon-class="fy-star" style="width: 16px; height: 16px" />
-          </div>
-        </el-tooltip>
-      </div>
-
-      <!-- 底部操作按钮 -->
-      <div class="bottom-actions">
-        <el-button
-          class="edit-btn"
-          :disabled="hasMultipleImages || isOperationDisabled || isEditDisabled"
-          @click="handleEdit"
-        >
-          <el-icon><Edit /></el-icon>
-          编辑
-        </el-button>
-        <div class="gen-btn-wrapper">
-          <el-button
-            class="gen-btn"
-            :disabled="isOperationDisabled"
-            @click="!isOperationDisabled && handleRegenerate()"
-          >
-            <svg-icon icon-class="fy-shandian" class="el-icon" />
-            {{ modelPoints }} 生成
-          </el-button>
-        </div>
-      </div>
-    </div>
+    <!-- 分镜画面 + 侧边任务栏 整体容器 -->
     <div
-      class="scene-image-cell"
-      :data-aspect-ratio="aspectRatio"
+      class="visual-wrapper"
       @mouseenter="isHovered = true"
       @mouseleave="isHovered = false"
     >
-      <!-- 排队中状态 (taskStatus === 0 或 loading) -->
-      <div v-if="taskStatus === 0" class="queue-overlay">
-        <svg-icon icon-class="fy-gen-waiting" class="queue-icon" />
-        <p class="queue-text">排队中...</p>
-      </div>
+    <!-- 分镜内容容器 -->
+    <div class="scene-content-wrapper">
+      <!-- 悬浮操作层：仅在 hover 且非生成中/排队中状态时显示 -->
+      <div v-show="isHovered && !isOperationDisabled" class="hover-overlay" @click.self="handleOverlayClick">
+        <!-- 顶部操作按钮 -->
+        <div class="top-actions">
+          <el-tooltip content="本地上传" placement="top">
+            <div
+              class="action-btn"
+              :class="{ disabled: isOperationDisabled }"
+              @click="!isOperationDisabled && handleUpload()"
+            >
+              <svg-icon icon-class="fy-tihuan" />
+            </div>
+          </el-tooltip>
 
-      <!-- 执行中状态 (taskStatus === 1) -->
-      <div v-else-if="taskStatus === 1" class="loading-overlay">
-        <div class="loading-animation-wrapper">
-          <Vue3Lottie :animation-data="generatingAnimation" :height="80" :width="80" class="loading-icon" />
+          <el-tooltip content="查看历史" placement="top">
+            <div
+              class="action-btn"
+              :class="{ disabled: isOperationDisabled || isHistoryDisabled }"
+              @click="!isOperationDisabled && !isHistoryDisabled && handleShowHistory()"
+            >
+              <svg-icon icon-class="fy-lishi" />
+            </div>
+          </el-tooltip>
+
+          <el-tooltip :content="hasMultipleImages ? '多张图片时不支持下载' : '下载图片'" placement="top">
+            <div
+              class="action-btn"
+              :class="{ disabled: isOperationDisabled || !canDownload || isDownloadDisabled }"
+              @click="!isOperationDisabled && canDownload && !isDownloadDisabled && handleDownload()"
+            >
+              <svg-icon icon-class="fy-download" />
+            </div>
+          </el-tooltip>
+
+          <el-tooltip :content="hasMultipleImages ? '多张图片时不支持裁剪' : '裁剪图片'" placement="top">
+            <div
+              class="action-btn"
+              :class="{ disabled: isOperationDisabled || !canCrop || isCropDisabled }"
+              @click="!isOperationDisabled && canCrop && !isCropDisabled && handleCrop()"
+            >
+              <svg-icon icon-class="fy-clip" />
+            </div>
+          </el-tooltip>
+
+          <el-tooltip
+            :content="hasMultipleImages ? '多张图片时不支持收藏' : isCollect ? '取消收藏' : '收藏'"
+            placement="top"
+          >
+            <div
+              class="action-btn"
+              :class="{ active: isCollect, disabled: isOperationDisabled || !canFavorite || isFavoriteDisabled }"
+              @click="!isOperationDisabled && canFavorite && !isFavoriteDisabled && handleToggleFavorite()"
+            >
+              <svg-icon v-if="isCollect" icon-class="fy-starfilled" style="width: 12px; height: 12px; color: #ff7d00" />
+              <svg-icon v-else icon-class="fy-star" style="width: 16px; height: 16px" />
+            </div>
+          </el-tooltip>
         </div>
-        <p class="loading-text">生成中，请稍等...</p>
-      </div>
 
-      <!-- 执行失败状态 (taskStatus === 3 且没有历史图片) -->
-      <div
-        v-else-if="taskStatus === 3 && (!materialInfoVoList || materialInfoVoList.length === 0)"
-        class="failure-container"
-      >
-        <div class="failure-icon">
-          <svg-icon class="error-icon" icon-class="fy-gen-failed" />
+        <!-- 底部操作按钮 -->
+        <div class="bottom-actions">
+          <el-button
+            class="edit-btn"
+            :disabled="hasMultipleImages || isOperationDisabled || isEditDisabled"
+            @click="handleEdit"
+          >
+            <el-icon><Edit /></el-icon>
+            编辑
+          </el-button>
+          <div class="gen-btn-wrapper">
+            <el-button
+              class="gen-btn"
+              :class="{ 'is-disabled': generateButtonDisabled }"
+              :disabled="generateButtonDisabled"
+              @click="!generateButtonDisabled && handleRegenerate()"
+            >
+              <svg-icon icon-class="fy-shandian" class="el-icon" />
+              {{ generateButtonText }}
+            </el-button>
+          </div>
         </div>
-        <p class="failure-text">生成失败</p>
       </div>
 
-      <!-- 执行失败但有历史图片：显示图片+失败提示层 (taskStatus === 3 且有图片) -->
+      <!-- 分镜图片单元格 -->
       <div
-        v-else-if="taskStatus === 3 && materialInfoVoList && materialInfoVoList.length > 0"
-        class="failure-with-image"
+        class="scene-image-cell"
+        :data-aspect-ratio="aspectRatio"
       >
-        <!-- 背景图片 -->
-        <div class="image-grid-container" :class="{ 'single-image': materialInfoVoList.length === 1 }">
+        <!-- 排队中状态 (taskStatus === 0 或 loading) -->
+        <div v-if="effectiveTaskStatus === 0" class="queue-overlay">
+          <svg-icon icon-class="fy-gen-waiting" class="queue-icon" />
+          <p class="queue-text">排队中...</p>
+        </div>
+
+        <!-- 执行中状态 (taskStatus === 1) -->
+        <div v-else-if="effectiveTaskStatus === 1" class="loading-overlay">
+          <div class="loading-animation-wrapper">
+            <Vue3Lottie :animation-data="generatingAnimation" :height="80" :width="80" class="loading-icon" />
+          </div>
+          <p class="loading-text">生成中，请稍等...</p>
+        </div>
+
+        <!-- 执行失败状态 (taskStatus === 3 且没有历史图片) -->
+        <div
+          v-else-if="effectiveTaskStatus === 3 && (!materialInfoVoList || materialInfoVoList.length === 0)"
+          class="failure-container"
+        >
+          <div class="failure-icon">
+            <svg-icon class="error-icon" icon-class="fy-gen-failed" />
+          </div>
+          <p class="failure-text">生成失败</p>
+        </div>
+
+        <!-- 执行失败但有历史图片：显示图片+失败提示层 (taskStatus === 3 且有图片) -->
+        <div
+          v-else-if="effectiveTaskStatus === 3 && materialInfoVoList && materialInfoVoList.length > 0"
+          class="failure-with-image"
+        >
+          <!-- 背景图片 -->
+          <div class="image-grid-container" :class="{ 'single-image': materialInfoVoList.length === 1 }">
+            <div v-for="(item, index) in materialInfoVoList.slice(0, 4)" :key="index" class="grid-item">
+              <el-image
+                :src="item.previewOssUrl || item.originOssUrl"
+                :fit="fit"
+                class="grid-image"
+                :preview-src-list="materialInfoVoList.map((i) => i.originOssUrl || i.previewOssUrl || '')"
+                :initial-index="index"
+                :preview-teleported="true"
+                hide-on-click-modal
+              />
+            </div>
+          </div>
+          <!-- 失败提示遮罩 -->
+          <div class="failure-overlay">
+            <div class="failure-badge">
+              <span class="badge-text">生成失败</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Seedance 模式：有视频数据时显示视频播放器 -->
+        <div
+          v-else-if="workflowMode === 'seedance' && seedanceVideoUrl"
+          class="seedance-video-container"
+        >
+          <video
+            :src="seedanceVideoUrl"
+            class="seedance-video"
+            controls
+            playsinline
+            loop
+          />
+        </div>
+
+        <!-- 有图片数据：显示图片 (materialInfoVoList有数据，不管taskStatus是什么值) -->
+        <div
+          v-else-if="materialInfoVoList && materialInfoVoList.length > 0"
+          class="image-grid-container"
+          :class="{ 'single-image': materialInfoVoList.length === 1 }"
+        >
           <div v-for="(item, index) in materialInfoVoList.slice(0, 4)" :key="index" class="grid-item">
             <el-image
               :src="item.previewOssUrl || item.originOssUrl"
@@ -137,67 +186,85 @@
               hide-on-click-modal
             />
           </div>
-        </div>
-        <!-- 失败提示遮罩 -->
-        <div class="failure-overlay">
-          <div class="failure-badge">
-            <span class="badge-text">生成失败</span>
+          <!-- 收藏标记 -->
+          <div v-if="isCollect" class="favorite-badge">
+            <svg-icon icon-class="fy-starfilled" />
           </div>
         </div>
-      </div>
 
-      <!-- 有图片数据：显示图片 (materialInfoVoList有数据，不管taskStatus是什么值) -->
-      <div
-        v-else-if="materialInfoVoList && materialInfoVoList.length > 0"
-        class="image-grid-container"
-        :class="{ 'single-image': materialInfoVoList.length === 1 }"
-      >
-        <div v-for="(item, index) in materialInfoVoList.slice(0, 4)" :key="index" class="grid-item">
-          <el-image
-            :src="item.previewOssUrl || item.originOssUrl"
-            :fit="fit"
-            class="grid-image"
-            :preview-src-list="materialInfoVoList.map((i) => i.originOssUrl || i.previewOssUrl || '')"
-            :initial-index="index"
-            :preview-teleported="true"
-            hide-on-click-modal
+        <!-- 其他状态/空状态：没有图片数据 -->
+        <div v-else class="placeholder-container">
+          <img
+            style="width: 120px; height: 120px"
+            src="https://fc-1327887685.cos.ap-guangzhou.myqcloud.com/dev_forge_hivision/image/2025122417/280aecd608a94a8d.png"
+            alt="暂无图片"
+            class="placeholder-image"
           />
         </div>
-        <!-- 收藏标记 -->
-        <div v-if="isCollect" class="favorite-badge">
-          <svg-icon icon-class="fy-starfilled" />
-        </div>
-      </div>
 
-      <!-- 其他状态/空状态：没有图片数据 -->
-      <div v-else class="placeholder-container">
-        <img
-          style="width: 120px; height: 120px"
-          src="https://fc-1327887685.cos.ap-guangzhou.myqcloud.com/dev_forge_hivision/image/2025122417/280aecd608a94a8d.png"
-          alt="暂无图片"
-          class="placeholder-image"
-        />
+        <!-- 隐藏的文件上传 -->
+        <input ref="fileInputRef" type="file" accept="image/*" style="display: none" @change="handleFileSelected" />
       </div>
-
-      <!-- 隐藏的文件上传 -->
-      <input ref="fileInputRef" type="file" accept="image/*" style="display: none" @change="handleFileSelected" />
     </div>
 
-    <!-- 历史记录弹窗 - 使用 teleport 传送到 body -->
-    <teleport to="body">
-      <SceneImageHistoryDialog v-model="historyDialogVisible" :basic-id="basicId" @refresh="handleHistoryRefresh" />
-    </teleport>
+    <!-- 侧边任务栏：始终占位，避免有任务时布局跳动 -->
+    <div class="task-sidebar">
+      <TransitionGroup name="task-card" tag="div" class="task-sidebar-inner">
+        <div
+          v-for="task in shotTasks"
+          :key="task.id"
+          class="task-card"
+          :class="{
+            'task-card--loading': task.status === 0 || task.status === 1,
+            'task-card--success': task.status === 2,
+            'task-card--failed': task.status === 3
+          }"
+          @click="task.status === 2 && emit('showHistory')"
+        >
+          <!-- 加载中 -->
+          <div v-if="task.status === 0 || task.status === 1" class="task-card-loading">
+            <div class="mini-spinner"></div>
+          </div>
+          <!-- 成功：显示缩略图 -->
+          <template v-else-if="task.status === 2">
+            <div v-if="task.resultUrls && task.resultUrls.length > 0" class="task-card-result">
+              <img :src="task.resultUrls[0]" class="task-card-thumb" />
+              <!-- 多图网格指示 -->
+              <div v-if="task.resultUrls.length > 1" class="task-card-multi-grid">
+                <div v-for="(url, i) in task.resultUrls.slice(0, 4)" :key="i" class="mini-grid-item">
+                  <img :src="url" />
+                </div>
+              </div>
+            </div>
+            <div v-else class="task-card-loading">
+              <div class="mini-spinner"></div>
+            </div>
+          </template>
+          <!-- 失败 -->
+          <div v-else-if="task.status === 3" class="task-card-failed-state">
+            <svg-icon icon-class="fy-gen-failed" class="task-failed-icon" />
+          </div>
+        </div>
+      </TransitionGroup>
+    </div>
 
-    <!-- 图片编辑弹窗 - 使用 teleport 传送到 body -->
-    <teleport to="body">
-      <SceneImageEditDialog
-        v-model="editDialogVisible"
-        :basic-id="basicId"
-        :main-image-url="currentImageUrl"
-        @success="handleEditSuccess"
-      />
-    </teleport>
+    </div><!-- end visual-wrapper -->
   </div>
+
+  <!-- 历史记录弹窗 - 使用 teleport 传送到 body -->
+  <teleport to="body">
+    <SceneImageHistoryDialog v-model="historyDialogVisible" :basic-id="basicId" @refresh="handleHistoryRefresh" />
+  </teleport>
+
+  <!-- 图片编辑弹窗 - 使用 teleport 传送到 body -->
+  <teleport to="body">
+    <SceneImageEditDialog
+      v-model="editDialogVisible"
+      :basic-id="basicId"
+      :main-image-url="currentImageUrl"
+      @success="handleEditSuccess"
+    />
+  </teleport>
 </template>
 
 <script setup lang="ts">
@@ -209,6 +276,9 @@
   import { ElMessage } from 'element-plus';
   import { computed, ref } from 'vue';
   import { Vue3Lottie } from 'vue3-lottie';
+  import { useTaskQueue } from '@/composables/useTaskQueue';
+  import type { TaskQueueItem } from '@/api/workbench/project/types';
+  import type { ReferenceImage } from '@/types/mention';
   import SceneImageEditDialog from './SceneImageEditDialog.vue';
   import SceneImageHistoryDialog from './SceneImageHistoryDialog.vue';
 
@@ -231,22 +301,42 @@
     materialInfoVoList?: MaterialInfoVo[]; // 所有生成的图片列表
     aspectRatio?: string; // '1:1' | '16:9' | '9:16' | '4:3' | '3:4'
     shotId: string | number;
+    shotNumber?: string | number; // 镜号
     basicId?: number; // 场景基础信息ID
     historyDetailId?: number; // 历史明细ID（用于判断是否本地上传）
     isCollect?: boolean;
     loading?: boolean;
     taskStatus?: number; // 0-待执行 1-执行中 2-执行成功 3-执行失败
     modelPoints?: number; // 当前模型的点数
+    sceneDescription?: string; // 画面描述
+    sceneHint?: string; // 场景描述
+    dialogue?: string; // 台词
+    // Seedance 2.0 专属
+    workflowMode?: string; // 工作流模式
+    seedancePrompt?: string; // Seedance 提示词 HTML
+    seedancePromptImages?: ReferenceImage[]; // Seedance 参考图片列表
+    seedanceVideoUrl?: string; // Seedance 生成完成后的视频地址
+    // 侧边任务栏
+    shotTasks?: TaskQueueItem[]; // 当前镜头的任务列表
   }
 
   const props = withDefaults(defineProps<Props>(), {
     imageUrl: '',
     materialInfoVoList: () => [],
     aspectRatio: '16:9',
+    shotNumber: '',
     isCollect: false,
     loading: false,
     taskStatus: 0,
-    modelPoints: 0
+    modelPoints: 0,
+    sceneDescription: '',
+    sceneHint: '',
+    dialogue: '',
+    workflowMode: '',
+    seedancePrompt: '',
+    seedancePromptImages: () => [],
+    seedanceVideoUrl: '',
+    shotTasks: () => []
   });
 
   const emit = defineEmits<{
@@ -259,6 +349,39 @@
     (e: 'regenerate'): void;
     (e: 'refresh'): void;
   }>();
+
+  // ==================== 任务队列集成 ====================
+  const { canAddTaskForShot, addImageGenerationTask, addSeedanceVideoTask } = useTaskQueue();
+
+  // 判断当前镜头是否可以添加新任务（使用 basicId 作为全局唯一标识）
+  const canAddTask = computed(() => {
+    return canAddTaskForShot(props.basicId ?? props.shotId);
+  });
+
+  // 获取当前镜头的活跃任务数量（基于 prop 的 shotTasks）
+  const activeTaskCount = computed(() => {
+    return props.shotTasks.filter((t) => t.status === 0 || t.status === 1).length;
+  });
+
+  // 获取当前镜头在队列中的第一个任务（基于 prop 的 shotTasks）
+  const queueTask = computed(() => {
+    return props.shotTasks.length > 0 ? props.shotTasks[0] : null;
+  });
+
+  // 使用任务队列的状态覆盖原有的 taskStatus
+  // 但如果当前有图片（materialInfoVoList 有数据），则不使用队列状态覆盖主展示框
+  // 待生成动画只显示在侧边任务栏中
+  const effectiveTaskStatus = computed(() => {
+    // 如果有图片数据，不使用队列状态覆盖，保持原有图片显示
+    if (props.materialInfoVoList && props.materialInfoVoList.length > 0) {
+      return props.taskStatus;
+    }
+    // 没有图片时，使用队列任务状态（排队/生成中状态覆盖空状态）
+    if (queueTask.value) {
+      return queueTask.value.status;
+    }
+    return props.taskStatus;
+  });
 
   // 状态
   const isHovered = ref(false);
@@ -280,7 +403,7 @@
 
   // taskStatus === 0 或 1 时，所有操作都禁用
   const isOperationDisabled = computed(() => {
-    return props.taskStatus === 0 || props.taskStatus === 1;
+    return effectiveTaskStatus.value === 0 || effectiveTaskStatus.value === 1;
   });
 
   // 判断是否没有历史图片
@@ -293,7 +416,7 @@
   // 或者生成失败时(taskStatus === 3)，即使没有图片也可以查看历史
   const isHistoryDisabled = computed(() => {
     // 如果是生成失败状态，允许查看历史
-    if (props.taskStatus === 3) {
+    if (effectiveTaskStatus.value === 3) {
       return false;
     }
     return hasNoImages.value;
@@ -699,9 +822,62 @@
   };
 
   // 重新生成
-  const handleRegenerate = () => {
-    emit('regenerate');
+  const handleRegenerate = async () => {
+    // 如果没有 basicId，回退到原有逻辑
+    if (!props.basicId) {
+      emit('regenerate');
+      return;
+    }
+
+    // Seedance 2.0 模式：生成视频
+    if (props.workflowMode === 'seedance') {
+      const shotData = {
+        basicId: props.basicId,
+        id: props.basicId,
+        shotNumber: props.shotNumber,
+        seedancePrompt: props.seedancePrompt,
+        seedancePromptImages: props.seedancePromptImages
+      };
+
+      const task = await addSeedanceVideoTask(shotData);
+      if (!task) {
+        emit('regenerate');
+      }
+      return;
+    }
+
+    // 经典模式：生成图片
+    const shotData = {
+      basicId: props.basicId,
+      id: props.basicId,
+      shotNumber: props.shotNumber,
+      sceneDescription: props.sceneDescription || props.sceneHint || '',
+      dialogue: props.dialogue
+    };
+
+    const task = addImageGenerationTask(shotData);
+    if (!task) {
+      emit('regenerate');
+    }
   };
+
+  // 生成按钮文本
+  const generateButtonText = computed(() => {
+    const activeCount = activeTaskCount.value;
+    if (!canAddTask.value) {
+      return `队列满 (${activeCount}/3)`;
+    }
+    if (activeCount > 0) {
+      return `${props.modelPoints} 生成 (${activeCount}/3)`;
+    }
+    return `${props.modelPoints} 生成`;
+  });
+
+  // 生成按钮是否禁用 - 只检查队列是否满，不使用isOperationDisabled
+  const generateButtonDisabled = computed(() => {
+    // 只检查是否达到并发上限（3个）
+    return !canAddTask.value;
+  });
 
   // 编辑图片
   const handleEdit = () => {
@@ -787,6 +963,181 @@
     }
   }
 
+  // ==================== visual-wrapper：主画面 + 侧边栏 ====================
+  .visual-wrapper {
+    position: relative;
+    display: flex;
+    width: 100%;
+    height: 100%;
+    gap: 6px;
+  }
+
+  // ==================== 内容容器 ====================
+  .scene-content-wrapper {
+    position: relative;
+    flex: 0 0 auto;
+    height: 100%;
+    overflow: hidden;
+  }
+
+  // ==================== 侧边任务栏 ====================
+  .task-sidebar {
+    width: 52px;
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+    overflow-x: hidden;
+    gap: 0;
+
+    // 隐藏滚动条
+    &::-webkit-scrollbar {
+      width: 0;
+    }
+  }
+
+  .task-sidebar-inner {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    width: 100%;
+  }
+
+  // 任务卡片
+  .task-card {
+    width: 52px;
+    height: 52px;
+    flex-shrink: 0;
+    border-radius: 8px;
+    border: 2px solid transparent;
+    overflow: hidden;
+    cursor: pointer;
+    position: relative;
+    background: #fff;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+    transition: all 0.25s ease;
+
+    &:hover {
+      border-color: #8b5cf6;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 10px rgba(139, 92, 246, 0.2);
+    }
+
+    &--loading {
+      border-color: #e5e7eb;
+      background: #fafafa;
+    }
+
+    &--success {
+      border-color: #e5e7eb;
+    }
+
+    &--failed {
+      border-color: #fee2e2;
+      background: #fff5f5;
+    }
+  }
+
+  // 任务卡片 - loading 状态
+  .task-card-loading {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .mini-spinner {
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    border: 2px solid #ede9fe;
+    border-top-color: #8b5cf6;
+    animation: spin 0.9s infinite linear;
+  }
+
+  @keyframes spin {
+    to {
+      transform: rotate(360deg);
+    }
+  }
+
+  // 任务卡片 - 成功态（单张缩略图）
+  .task-card-result {
+    width: 100%;
+    height: 100%;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .task-card-thumb {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+
+  // 多张图片时的 2x2 小网格覆盖层
+  .task-card-multi-grid {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: 1fr 1fr;
+    gap: 1px;
+
+    .mini-grid-item {
+      overflow: hidden;
+
+      img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        display: block;
+      }
+    }
+  }
+
+  // 任务卡片 - 失败态
+  .task-card-failed-state {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    .task-failed-icon {
+      width: 24px;
+      height: 24px;
+      opacity: 0.7;
+    }
+  }
+
+  // TransitionGroup 动画
+  .task-card-enter-active {
+    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .task-card-leave-active {
+    transition: all 0.25s ease-in;
+    position: absolute;
+  }
+
+  .task-card-enter-from {
+    opacity: 0;
+    transform: scale(0.5) translateY(-10px);
+  }
+
+  .task-card-leave-to {
+    opacity: 0;
+    transform: scale(0.5);
+    margin-bottom: -58px; // 卡片高度 + gap，收缩时不留空白
+  }
+
+  .task-card-move {
+    transition: transform 0.3s ease;
+  }
+
   .hover-overlay {
     position: absolute;
     top: 0;
@@ -799,8 +1150,9 @@
     justify-content: space-between;
     padding: 12px;
     background: linear-gradient(0deg, rgba(0, 0, 0, 0.4) 0%, rgba(0, 0, 0, 0.4) 100%);
-    pointer-events: auto; // 允许点击触发历史记录弹窗
+    pointer-events: auto;
     cursor: pointer;
+    transition: opacity 0.2s ease;
 
     .top-actions {
       display: flex;
@@ -1207,5 +1559,23 @@
   .fade-enter-from,
   .fade-leave-to {
     opacity: 0;
+  }
+
+  // Seedance 2.0 视频容器
+  .seedance-video-container {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #000;
+
+    .seedance-video {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      display: block;
+    }
   }
 </style>

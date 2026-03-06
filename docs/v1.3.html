@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>选择创作模式 - 高保真原型</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            animation: {
+              'fade-in': 'fadeIn 0.4s ease-out forwards',
+              'slide-up': 'slideUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards'
+            },
+            keyframes: {
+              fadeIn: {
+                '0%': { opacity: '0' },
+                '100%': { opacity: '1' }
+              },
+              slideUp: {
+                '0%': { opacity: '0', transform: 'translateY(20px) scale(0.95)' },
+                '100%': { opacity: '1', transform: 'translateY(0) scale(1)' }
+              }
+            }
+          }
+        }
+      };
+    </script>
+    <style>
+      /* 古典纹样背景：使用 SVG Data URI 模拟欧洲家族徽章/繁复花纹的底纹 */
+      .pattern-classic {
+        background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M30 0C13.431 0 0 13.431 0 30c0 16.569 13.431 30 30 30 16.569 0 30-13.431 30-30C60 13.431 46.569 0 30 0zm0 57C15.088 57 3 44.912 3 30S15.088 3 30 3s27 12.088 27 27-12.088 27-27 27zm0-51c-13.255 0-24 10.745-24 24s10.745 24 24 24 24-10.745 24-24-10.745-24-24-24zm0 45c-11.598 0-21-9.402-21-21s9.402-21 21-21 21 9.402 21 21-9.402 21-21 21zm0-39c-9.941 0-18 8.059-18 18s8.059 18 18 18 18-8.059 18-18-8.059-18-18-18zm0 33c-8.284 0-15-6.716-15-15s6.716-15 15-15 15 6.716 15 15-6.716 15-15 15z' fill='%23ea580c' fill-opacity='0.08' fill-rule='evenodd'/%3E%3C/svg%3E");
+      }
+
+      .pattern-nextgen {
+        background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M30 0l10 20 20 10-20 10-10 20-10-20-20-10 20-10L30 0zm0 13.5L24.5 24.5 13.5 30l11 5.5L30 46.5l5.5-11 11-5.5-11-5.5L30 13.5z' fill='%233b82f6' fill-opacity='0.06' fill-rule='evenodd'/%3E%3C/svg%3E");
+      }
+
+      /* 隐藏滚动条但保留滚动功能（针对极小屏幕） */
+      .no-scrollbar::-webkit-scrollbar {
+        display: none;
+      }
+
+      .no-scrollbar {
+        -ms-overflow-style: none;
+        scrollbar-width: none;
+      }
+    </style>
+  </head>
+
+  <body
+    class="bg-gray-100 h-screen w-screen overflow-hidden font-sans antialiased text-gray-800 flex items-center justify-center"
+  >
+    <div class="absolute inset-0 z-0 flex flex-col p-8 gap-4 opacity-30 pointer-events-none">
+      <div class="h-12 w-48 bg-gray-300 rounded-lg"></div>
+      <div class="h-64 w-full bg-gray-300 rounded-2xl"></div>
+      <div class="h-64 w-full bg-gray-300 rounded-2xl"></div>
+    </div>
+    asfasfafasf asfasfafasf asfasfafasf asfasfafasf asfasfafasf asfasfafasf asfasfafasf asfasfafasf asfasfafasf
+    asfasfafasf asfasfafasf asfasfafasf asfasfafasf asfasfafasf asfasfafasf asfasfafasf asfasfafasf asfasfafasf
+    asfasfafasf asfasfafasf asfasfafasf asfasfafasf asfasfafasf asfasfafasf asfasfafasf asfasfafasf asfasfafasf
+    asfasfafasf asfasfafasf
+
+    <div
+      id="modal-overlay"
+      class="absolute inset-0 bg-black/30 backdrop-blur-sm z-10 flex items-center justify-center p-4 animate-fade-in"
+    >
+      <div
+        class="relative bg-white/80 backdrop-blur-2xl border border-white/60 shadow-2xl rounded-[2rem] w-full max-w-4xl p-8 md:p-10 animate-slide-up overflow-hidden"
+      >
+        <button
+          onclick="closeModal()"
+          class="absolute top-6 right-6 text-gray-400 hover:text-gray-700 bg-white/50 hover:bg-white rounded-full p-2 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-gray-300"
+        >
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+
+        <div class="text-center mb-10">
+          <h2 class="text-2xl md:text-3xl font-bold tracking-tight text-gray-900 mb-3">选择创作模式</h2>
+          <p class="text-gray-500 text-sm md:text-base">请根据您的创作需求，选择适合的工作流</p>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 relative">
+          <div
+            id="card-classic"
+            onclick="selectMode('classic')"
+            class="group relative cursor-pointer rounded-2xl border-2 border-transparent transition-all duration-300 ease-out overflow-hidden bg-gradient-to-br from-orange-50/60 to-orange-100/30 hover:-translate-y-1 hover:shadow-[0_12px_40px_-15px_rgba(234,88,12,0.3)]"
+          >
+            <div
+              class="absolute inset-0 pattern-classic mix-blend-multiply opacity-50 group-hover:opacity-80 transition-opacity duration-300"
+            ></div>
+
+            <div class="absolute inset-0 border border-white/80 rounded-2xl pointer-events-none"></div>
+
+            <div class="relative p-6 md:p-8 flex flex-col h-full z-10">
+              <div class="flex justify-between items-start mb-6">
+                <div
+                  class="w-12 h-12 rounded-xl bg-orange-100/80 shadow-sm border border-orange-200/50 flex items-center justify-center text-orange-600"
+                >
+                  <i data-lucide="film" class="w-6 h-6"></i>
+                </div>
+                <div
+                  id="indicator-classic"
+                  class="w-6 h-6 rounded-full border-2 border-orange-300 bg-white/50 flex items-center justify-center transition-all duration-300"
+                >
+                  <div
+                    class="w-2.5 h-2.5 rounded-full bg-orange-500 opacity-0 scale-50 transition-all duration-300 indicator-dot"
+                  ></div>
+                </div>
+              </div>
+
+              <h3 class="text-xl font-bold text-gray-900 mb-2">经典工作流</h3>
+              <p class="text-gray-600 text-sm leading-relaxed">分步精准控制，打磨每一帧绝美分镜。</p>
+
+              <div class="mt-auto pt-6">
+                <span
+                  class="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium bg-orange-100/60 text-orange-700 border border-orange-200/50"
+                >
+                  适合专业微调
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <div
+            id="card-seedance"
+            onclick="selectMode('seedance')"
+            class="group relative cursor-pointer rounded-2xl border-2 border-transparent transition-all duration-300 ease-out overflow-hidden bg-gradient-to-br from-blue-50/60 to-blue-100/30 hover:-translate-y-1 hover:shadow-[0_12px_40px_-15px_rgba(59,130,246,0.3)]"
+          >
+            <div
+              class="absolute inset-0 pattern-nextgen mix-blend-multiply opacity-50 group-hover:opacity-80 transition-opacity duration-300"
+            ></div>
+
+            <div class="absolute inset-0 border border-white/80 rounded-2xl pointer-events-none"></div>
+
+            <div class="relative p-6 md:p-8 flex flex-col h-full z-10">
+              <div class="flex justify-between items-start mb-6">
+                <div
+                  class="w-12 h-12 rounded-xl bg-blue-100/80 shadow-sm border border-blue-200/50 flex items-center justify-center text-blue-600"
+                >
+                  <i data-lucide="sparkles" class="w-6 h-6"></i>
+                </div>
+                <div
+                  id="indicator-seedance"
+                  class="w-6 h-6 rounded-full border-2 border-blue-300 bg-white/50 flex items-center justify-center transition-all duration-300"
+                >
+                  <div
+                    class="w-2.5 h-2.5 rounded-full bg-blue-500 opacity-0 scale-50 transition-all duration-300 indicator-dot"
+                  ></div>
+                </div>
+              </div>
+
+              <h3 class="text-xl font-bold text-gray-900 mb-2">Seedance 2.0</h3>
+              <p class="text-gray-600 text-sm leading-relaxed">端到端一键生成，享受极致流畅的创作魔法。</p>
+
+              <div class="mt-auto pt-6 flex items-center gap-2">
+                <span
+                  class="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium bg-blue-100/60 text-blue-700 border border-blue-200/50"
+                >
+                  全新 AI 模型
+                </span>
+                <span class="flex h-2 w-2 relative">
+                  <span
+                    class="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"
+                  ></span>
+                  <span class="relative inline-flex rounded-full h-2 w-2 bg-blue-500"></span>
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="mt-10 flex items-center justify-end gap-4">
+          <button
+            onclick="closeModal()"
+            class="px-5 py-2.5 text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors"
+          >
+            取消
+          </button>
+          <button
+            id="btn-submit"
+            disabled
+            class="px-6 py-2.5 rounded-xl text-sm font-semibold text-white bg-gray-900 hover:bg-black transition-all shadow-md disabled:opacity-50 disabled:cursor-not-allowed transform active:scale-95"
+          >
+            继续创建
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      // 初始化 Lucide 图标库
+      lucide.createIcons();
+
+      let currentMode = null;
+
+      // 处理模式选择的核心交互
+      function selectMode(mode) {
+        currentMode = mode;
+
+        const cardClassic = document.getElementById('card-classic');
+        const cardSeedance = document.getElementById('card-seedance');
+        const indClassic = document.getElementById('indicator-classic');
+        const indSeedance = document.getElementById('indicator-seedance');
+        const btnSubmit = document.getElementById('btn-submit');
+
+        // --- 重置所有状态 ---
+        // 移除发光边框，降低未选中卡片的透明度
+        cardClassic.classList.remove('ring-2', 'ring-orange-400', 'ring-offset-2', 'ring-offset-white/50');
+        cardClassic.classList.add('opacity-60', 'scale-[0.98]');
+        indClassic.classList.remove('border-orange-500');
+        indClassic.querySelector('.indicator-dot').classList.remove('opacity-100', 'scale-100');
+
+        cardSeedance.classList.remove('ring-2', 'ring-blue-400', 'ring-offset-2', 'ring-offset-white/50');
+        cardSeedance.classList.add('opacity-60', 'scale-[0.98]');
+        indSeedance.classList.remove('border-blue-500');
+        indSeedance.querySelector('.indicator-dot').classList.remove('opacity-100', 'scale-100');
+
+        // --- 激活当前选中状态 ---
+        if (mode === 'classic') {
+          cardClassic.classList.remove('opacity-60', 'scale-[0.98]');
+          // 添加品牌色焦点环 (Ring Focus)
+          cardClassic.classList.add('ring-2', 'ring-orange-400', 'ring-offset-2', 'ring-offset-white/50');
+          indClassic.classList.add('border-orange-500');
+          indClassic.querySelector('.indicator-dot').classList.add('opacity-100', 'scale-100');
+        } else if (mode === 'seedance') {
+          cardSeedance.classList.remove('opacity-60', 'scale-[0.98]');
+          // 添加品牌色焦点环 (Ring Focus)
+          cardSeedance.classList.add('ring-2', 'ring-blue-400', 'ring-offset-2', 'ring-offset-white/50');
+          indSeedance.classList.add('border-blue-500');
+          indSeedance.querySelector('.indicator-dot').classList.add('opacity-100', 'scale-100');
+        }
+
+        // 激活底部提交按钮
+        btnSubmit.disabled = false;
+      }
+
+      // 模拟关闭弹窗的动画
+      function closeModal() {
+        const overlay = document.getElementById('modal-overlay');
+        overlay.style.transition = 'opacity 0.3s ease';
+        overlay.style.opacity = '0';
+        setTimeout(() => {
+          overlay.style.display = 'none';
+          // 实际项目中此处可能涉及路由跳转或 DOM 卸载
+        }, 300);
+      }
+    </script>
+  </body>
+</html>

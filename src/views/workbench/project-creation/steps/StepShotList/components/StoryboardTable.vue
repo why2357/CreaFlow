@@ -13,7 +13,16 @@
 
     <!-- 分镜表格 -->
     <div v-else class="table-wrapper">
-      <el-table ref="tableRef" :data="localShots" border stripe height="100%" class="storyboard-table" row-key="id">
+      <el-table
+        ref="tableRef"
+        :key="`table-${props.workflowMode || 'default'}`"
+        :data="localShots"
+        border
+        stripe
+        height="100%"
+        class="storyboard-table"
+        row-key="id"
+      >
         <el-table-column prop="shotNumber" label="镜号" width="120" align="center" fixed="left">
           <template #default="{ row, $index }">
             <div class="shot-number-cell" :data-row-index="$index">
@@ -46,19 +55,28 @@
           </template>
         </el-table-column>
 
-        <el-table-column label="画面" :width="getImageColumnWidth()" align="center" fixed="left">
+        <el-table-column label="分镜" :width="getImageColumnWidth()" align="center" fixed="left">
           <template #default="{ row }">
             <SceneImageCell
               :image-url="row.sceneImage"
               :material-info-vo-list="row.materialInfoVoList"
               :aspect-ratio="aspectRatio"
-              :shot-id="row.id"
+              :shot-id="row.basicId ?? row.id"
+              :shot-number="row.shotNumber"
               :basic-id="row.basicId"
               :history-detail-id="row.historyDetailId"
               :isCollect="row.isCollect"
               :loading="row.imageLoading"
               :task-status="row.taskStatus"
               :model-points="modelPoints"
+              :scene-description="row.sceneDescription"
+              :scene-hint="row.sceneHint"
+              :dialogue="row.dialogue"
+              :workflow-mode="props.workflowMode ?? undefined"
+              :seedance-prompt="row.seedancePrompt"
+              :seedance-prompt-images="row.seedancePromptImages"
+              :seedance-video-url="row.seedanceVideoUrl"
+              :shot-tasks="getShotTasks(row.basicId ?? row.id)"
               @upload="(file:any) => handleImageUpload(row, file)"
               @show-history="handleShowHistory(row)"
               @download="handleImageDownload(row)"
@@ -70,54 +88,68 @@
           </template>
         </el-table-column>
 
-        <el-table-column prop="sceneHint" label="画面描述" min-width="260">
+        <el-table-column prop="sceneHint" label="提示词" min-width="260" max-width="360">
           <template #default="{ row }">
-            <div v-if="!isEditing(row, 'sceneDesc')" class="editable-cell" @click="startEdit(row, 'sceneDesc')">
-              <div
-                class="scene-description"
-                :class="{ 'empty-placeholder': !row.sceneDesc }"
-                v-html="highlightCharacterNames(row.sceneDesc, row.characters) || '点击输入特写镜头描述'"
-              ></div>
-            </div>
-            <div v-else class="editing-cell">
-              <el-input
-                ref="editingInputRef"
-                v-model="editingValue"
-                type="textarea"
-                :rows="3"
-                maxlength="300"
-                resize="none"
-                placeholder="请输入特写镜头描述"
-                @blur="handleBlur()"
-                @keydown="(evt: Event) => handleKeydown(evt as KeyboardEvent)"
-                autofocus
+            <!-- Seedance 模式：富文本编辑器（支持提及功能） -->
+            <div v-if="props.workflowMode === 'seedance'" class="seedance-prompt-wrapper">
+              <SeedancePromptEditor
+                v-model="row.seedancePrompt"
+                :images="row.seedancePromptImages"
+                @update:images="(images: ReferenceImage[]) => handleUpdateImages(row, images)"
+                @update:model-value="(prompt: string) => handleSeedancePromptChange(row, prompt)"
+                :show-reference-bar="false"
+                placeholder="请输入提示词，可拖入参考图片或点击参考图插入"
               />
             </div>
-            <div v-if="!isEditing(row, 'sceneHint')" class="editable-cell" @click="startEdit(row, 'sceneHint')">
-              <div
-                class="scene-description"
-                :class="{ 'empty-placeholder': !row.sceneHint }"
-                v-html="highlightCharacterNames(row.sceneHint, row.characters) || '点击输入场景提示'"
-              ></div>
-            </div>
-            <div v-else class="editing-cell">
-              <el-input
-                ref="editingInputRef"
-                v-model="editingValue"
-                type="textarea"
-                :rows="3"
-                maxlength="300"
-                resize="none"
-                placeholder="请输入场景提示"
-                @blur="handleBlur()"
-                @keydown="(evt: Event) => handleKeydown(evt as KeyboardEvent)"
-                autofocus
-              />
-            </div>
+            <!-- 经典模式：显示两个输入框 -->
+            <template v-else>
+              <div v-if="!isEditing(row, 'sceneDesc')" class="editable-cell" @click="startEdit(row, 'sceneDesc')">
+                <div
+                  class="scene-description"
+                  :class="{ 'empty-placeholder': !row.sceneDesc }"
+                  v-html="highlightCharacterNames(row.sceneDesc, row.characters) || '点击输入特写镜头描述'"
+                ></div>
+              </div>
+              <div v-else class="editing-cell">
+                <el-input
+                  ref="editingInputRef"
+                  v-model="editingValue"
+                  type="textarea"
+                  :rows="3"
+                  maxlength="300"
+                  resize="none"
+                  placeholder="请输入特写镜头描述"
+                  @blur="handleBlur()"
+                  @keydown="(evt: Event) => handleKeydown(evt as KeyboardEvent)"
+                  autofocus
+                />
+              </div>
+              <div v-if="!isEditing(row, 'sceneHint')" class="editable-cell" @click="startEdit(row, 'sceneHint')">
+                <div
+                  class="scene-description"
+                  :class="{ 'empty-placeholder': !row.sceneHint }"
+                  v-html="highlightCharacterNames(row.sceneHint, row.characters) || '点击输入场景提示'"
+                ></div>
+              </div>
+              <div v-else class="editing-cell">
+                <el-input
+                  ref="editingInputRef"
+                  v-model="editingValue"
+                  type="textarea"
+                  :rows="3"
+                  maxlength="300"
+                  resize="none"
+                  placeholder="请输入场景提示"
+                  @blur="handleBlur()"
+                  @keydown="(evt: Event) => handleKeydown(evt as KeyboardEvent)"
+                  autofocus
+                />
+              </div>
+            </template>
           </template>
         </el-table-column>
 
-        <el-table-column prop="dialogue" label="台词" min-width="160">
+        <el-table-column v-if="props.workflowMode !== 'seedance'" prop="dialogue" label="台词" min-width="160">
           <template #default="{ row }">
             <div v-if="!isEditing(row, 'dialogue')" class="editable-cell" @click="startEdit(row, 'dialogue')">
               <div
@@ -143,7 +175,7 @@
           </template>
         </el-table-column>
 
-        <el-table-column prop="characters" label="人物" width="60">
+        <el-table-column v-if="props.workflowMode !== 'seedance'" prop="characters" label="人物" width="60">
           <template #default="{ row }">
             <div class="characters">
               <el-image
@@ -160,7 +192,13 @@
           </template>
         </el-table-column>
 
-        <el-table-column prop="sceneLocation" label="场景" :width="getImageColumnWidth()" fixed="right">
+        <el-table-column
+          v-if="props.workflowMode !== 'seedance'"
+          prop="sceneLocation"
+          label="场景"
+          :width="getImageColumnWidth()"
+          fixed="right"
+        >
           <template #default="{ row }">
             <div
               class="scene-location-cell"
@@ -300,6 +338,9 @@
   import type { EpisodeInfo, LibrarySubInfo, Shot } from '@/api/workbench/project/types';
   import { addScene, deleteScene } from '@/api/workbench/storyboard';
   import { useAutoScroll } from '@/composables/useAutoScroll';
+  import { useTaskQueue } from '@/composables/useTaskQueue';
+  import { useTaskQueueListener, type TaskQueueUpdateDetail } from '@/composables/useSSEListener';
+  import { useProjectStore } from '@/store/modules/project';
   import { uploadFile } from '@/utils/uploadFile';
   import { Loading } from '@element-plus/icons-vue';
   import { ElMessage, ElMessageBox } from 'element-plus';
@@ -313,6 +354,8 @@
   import SceneLibraryDialog from './SceneLibraryDialog.vue';
   import ShotNumberActions from './ShotNumberActions.vue';
   import SingleCharacterEditDialog from './SingleCharacterEditDialog.vue';
+  import { SeedancePromptEditor } from '@/components/TiptapEditor';
+  import type { ReferenceImage } from '@/types/mention';
 
   interface Props {
     shots: Shot[];
@@ -322,6 +365,7 @@
     episodes: EpisodeInfo[];
     modelPoints?: number; // 当前模型的点数
     episodeTaskStatus?: number; // 剧集任务状态
+    workflowMode?: 'classic' | 'seedance' | null; // 工作流模式
   }
 
   const props = withDefaults(defineProps<Props>(), {
@@ -335,7 +379,37 @@
     (e: 'updateShot', shot: Shot): void;
     (e: 'refresh'): void;
     (e: 'deleteSuccess', basicId: number): void;
+    (e: 'saveSeedancePrompt', basicId: number, prompt: string): void;
+    (e: 'saveSeedanceImages', basicId: number, images: ReferenceImage[]): void;
   }>();
+
+  // ==================== 任务队列集成 ====================
+  const projectStore = useProjectStore();
+  const { handleBatchTaskUpdate, getTasksByShotId } = useTaskQueue();
+
+  // 获取镜头任务列表（用于侧边任务栏显示）
+  // 首次生成时活跃任务不进入侧边栏（由主画面 loading 状态承载），从第二次起才加入侧边栏
+  const getShotTasks = (shotId: string | number) => {
+    const allTasks = getTasksByShotId(shotId);
+    const activeTasks = allTasks.filter((t) => (t.status === 0 || t.status === 1) && !t.isFirstGeneration);
+    // 已完成/失败任务按剩余名额补充，合计不超过3个
+    const remaining = Math.max(0, 3 - activeTasks.length);
+    const completedTasks = allTasks.filter((t) => t.status === 2 || t.status === 3).slice(0, remaining);
+    return [...activeTasks, ...completedTasks];
+  };
+
+  // 监听SSE任务队列更新
+  useTaskQueueListener(
+    (detail: TaskQueueUpdateDetail) => {
+      handleBatchTaskUpdate(detail);
+      // 刷新分镜数据
+      emit('refresh');
+    },
+    {
+      projectId: projectStore.currentProjectId,
+      episodeId: projectStore.currentEpisodeId
+    }
+  );
 
   // 表格引用和本地数据
   const tableRef = ref();
@@ -373,6 +447,8 @@
   // 场景上传相关
   const sceneUploadInput = ref<HTMLInputElement>();
   const currentUploadShot = ref<Shot | null>(null);
+
+  // Seedance 上传功能已迁移到 SeedancePromptEditor 组件中
 
   // 单个角色编辑相关
   const singleCharacterDialogVisible = ref(false);
@@ -725,6 +801,24 @@
     }
   };
 
+  // Seedance 2.0 上传功能已迁移到 SeedancePromptEditor 组件中
+
+  // 处理分镜图片更新
+  const handleUpdateImages = (shot: Shot, images: ReferenceImage[]) => {
+    shot.seedancePromptImages = images;
+    // 保存到 localStorage（通过父组件）
+    if (shot.basicId) {
+      emit('saveSeedanceImages', shot.basicId, images);
+    }
+  };
+
+  // 监听 seedancePrompt 的变化并保存
+  const handleSeedancePromptChange = (shot: Shot, prompt: string) => {
+    if (shot.basicId) {
+      emit('saveSeedancePrompt', shot.basicId, prompt);
+    }
+  };
+
   // 保存当前编辑
   const saveCurrentEdit = async () => {
     if (!editingCell.value) return;
@@ -918,6 +1012,8 @@
     const fixedWidth = 260;
     // 横版比例固定高度为 190px (表格行高)
     const imageHeight = 190;
+    // 侧边任务栏预留宽度：52px(卡片) + 6px(gap) + 8px(左右padding余量)
+    const sidebarReserved = 66;
 
     // 根据宽高比计算宽度
     const ratioMap: Record<string, { ratio: number; fixedWidth?: number }> = {
@@ -930,14 +1026,14 @@
 
     const config = ratioMap[props.aspectRatio] || { ratio: 16 / 9 };
 
-    // 如果设置了固定宽度，使用固定宽度
+    // 如果设置了固定宽度，使用固定宽度 + 侧边栏预留
     if (config.fixedWidth) {
-      return config.fixedWidth;
+      return config.fixedWidth + sidebarReserved;
     }
 
-    // 横版比例根据高度计算宽度
+    // 横版比例根据高度计算宽度 + 侧边栏预留
     const imageWidth = imageHeight * config.ratio;
-    return Math.ceil(imageWidth);
+    return Math.ceil(imageWidth) + sidebarReserved;
   };
 
   // ==================== 镜号操作功能 ====================
@@ -1248,8 +1344,7 @@
 <style scoped lang="scss">
   .storyboard-table-container {
     display: flex;
-    justify-content: center;
-    align-items: center;
+    gap: 0;
     width: 100%;
     height: 100%;
     position: relative;
@@ -1302,7 +1397,8 @@
     }
 
     .table-wrapper {
-      width: 100%;
+      flex: 1;
+      min-width: 0; // 允许 flex 子元素缩小
       height: 100%;
       // padding: 0px 20px 0 0;
       overflow-x: auto; // 允许横向滚动
@@ -1368,6 +1464,109 @@
         &.empty-placeholder {
           color: #c0c4cc;
           // font-style: italic;
+        }
+      }
+
+      // Seedance 2.0 提示词输入区域
+      .seedance-prompt-container {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        width: 100%;
+        transition: height 0.35s cubic-bezier(0.15, 0.75, 0.3, 1);
+      }
+
+      .seedance-prompt-input {
+        display: flex;
+        gap: 8px;
+        align-items: stretch;
+        width: 100%;
+
+        :deep(.el-textarea) {
+          flex: 4;
+        }
+
+        .upload-btn {
+          position: relative;
+          flex: 1;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          gap: 4px;
+          min-width: 60px;
+          height: 80px;
+          font-size: 12px;
+          border: 2px dotted #5252ff;
+          border-radius: 4px;
+          background: #f5f7fa;
+          color: #5252ff;
+          cursor: pointer;
+          transform: rotate(-3deg);
+          transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+
+          &:hover {
+            transform: rotate(0deg) scale(1.02);
+            background: #e8eaff;
+            border-color: #4242e0;
+            color: #4242e0;
+          }
+        }
+      }
+
+      // Seedance 图片预览区域（参考图区域）
+      .seedance-images-preview {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        width: 100%;
+        transition: height 0.35s cubic-bezier(0.15, 0.75, 0.3, 1);
+
+        .seedance-image-item {
+          position: relative;
+          width: 48px;
+          height: 64px;
+          border-radius: 2px;
+          overflow: hidden;
+          border: 1px solid #e4e7ed;
+          cursor: move;
+          transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+
+          &:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgb(0 0 0 / 15%);
+          }
+
+          .seedance-image {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+          }
+
+          .seedance-image-delete {
+            position: absolute;
+            top: 2px;
+            right: 2px;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: rgba(0, 0, 0, 0.6);
+            color: #fff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            opacity: 0;
+            transition: opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+
+            &:hover {
+              background: rgba(255, 77, 79, 0.9);
+            }
+          }
+
+          &:hover .seedance-image-delete {
+            opacity: 1;
+          }
         }
       }
 
@@ -1506,6 +1705,29 @@
         overflow: hidden;
         background-color: #fff;
         padding: 0 !important;
+
+        // 提示词列：让 .cell 撑满单元格高度，供内部编辑器继承
+        &:has(.seedance-prompt-wrapper) {
+          .cell {
+            height: 100%;
+            padding: 0 !important;
+            display: flex;
+            align-items: stretch;
+          }
+        }
+      }
+
+      // Seedance 提示词包装层：撑满 .cell
+      :deep(.seedance-prompt-wrapper) {
+        width: 100%;
+        height: 100%;
+        display: flex;
+        align-items: stretch;
+
+        // 让编辑器组件根元素也撑满
+        .seedance-prompt-container {
+          height: 100%;
+        }
       }
 
       // Fixed列在hover时也需要改变背景色

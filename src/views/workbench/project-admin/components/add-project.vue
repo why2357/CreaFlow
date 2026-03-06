@@ -119,11 +119,11 @@
 
   // 可选尺寸配置（比例与展示宽高）
   const sizeOptions = [
-    { label: '16:9', value: '16:9', boxWidth: 37, boxHeight: 22 },
-    { label: '4:3', value: '4:3', boxWidth: 26, boxHeight: 20 },
-    { label: '1:1', value: '1:1', boxWidth: 18, boxHeight: 18 },
-    { label: '3:4', value: '3:4', boxWidth: 18, boxHeight: 24 },
-    { label: '9:16', value: '9:16', boxWidth: 22, boxHeight: 32 }
+    { label: '16:9', value: '16:9', boxWidth: 37, boxHeight: 22 }
+    // { label: '4:3', value: '4:3', boxWidth: 26, boxHeight: 20 },
+    // { label: '1:1', value: '1:1', boxWidth: 18, boxHeight: 18 },
+    // { label: '3:4', value: '3:4', boxWidth: 18, boxHeight: 24 },
+    // { label: '9:16', value: '9:16', boxWidth: 22, boxHeight: 32 }
   ];
 
   // ------- 表单数据 --------

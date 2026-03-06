@@ -19,19 +19,19 @@ export const usePermissionStore = defineStore('permission', () => {
 
   // 静态菜单配置 - 这些菜单将始终显示在侧边栏
   const staticMenus = ref<RouteOption[]>([
-    // {
-    //   path: '',
-    //   component: Layout,
-    //   redirect: '/index',
-    //   children: [
-    //     {
-    //       path: '/index',
-    //       component: () => import('@/views/workbench/project-admin/index.vue'),
-    //       name: 'Index',
-    //       meta: { title: '首页', icon: 'dashboard', affix: true }
-    //     }
-    //   ]
-    // },
+    {
+      path: '',
+      component: Layout,
+      redirect: '/index',
+      children: [
+        {
+          path: '/index',
+          component: () => import('@/views/workbench/project-admin/index.vue'),
+          name: 'Index',
+          meta: { title: '首页', icon: 'dashboard', affix: true }
+        }
+      ]
+    }
   ]);
 
   const setRoutes = (newRoutes: RouteOption[]): void => {
@@ -68,17 +68,20 @@ export const usePermissionStore = defineStore('permission', () => {
       router.addRoute(route);
     });
 
-    // 将处理后的路由添加到 router
-    rewriteRoutes.forEach((route) => {
+    // 合并静态菜单和动态路由
+    const allRoutes = [...staticMenus.value, ...rewriteRoutes];
+
+    // 将合并后的路由添加到 router（包含静态菜单和动态路由）
+    allRoutes.forEach((route) => {
       router.addRoute(route);
     });
 
-    setRoutes(rewriteRoutes);
+    setRoutes(allRoutes);
     // 合并静态菜单、常量路由和动态路由
     setSidebarRouters(constantRoutes.concat(sidebarRoutes));
     setDefaultRoutes(sidebarRoutes);
     setTopbarRoutes(defaultRoutes);
-    return new Promise<RouteOption[]>((resolve) => resolve(rewriteRoutes));
+    return new Promise<RouteOption[]>((resolve) => resolve(allRoutes));
   };
 
   /**

@@ -158,19 +158,33 @@ export const constantRoutes: RouteOption[] = [
   //     }
   //   ]
   // },
-  // {
-  //   path: '',
-  //   component: Layout,
-  //   redirect: 'menu',
-  //   children: [
-  //     {
-  //       path: '/menu',
-  //       component: () => import('@/views/system/menu/index.vue'),
-  //       name: 'Menu',
-  //       meta: { title: '菜单管理', icon: 'logo-menu' }
-  //     }
-  //   ]
-  // },
+  {
+    path: '',
+    component: Layout,
+    redirect: 'menu',
+    children: [
+      {
+        path: '/menu',
+        component: () => import('@/views/system/menu/index.vue'),
+        name: 'Menu',
+        meta: { title: '菜单管理', icon: 'logo-menu' }
+      }
+    ]
+  },
+  // 临时添加：用户管理页面（用于测试）
+  {
+    path: '',
+    component: Layout,
+    redirect: 'system/user',
+    children: [
+      {
+        path: '/system/user',
+        component: () => import('@/views/system/user/index.vue'),
+        name: 'User',
+        meta: { title: '用户管理', icon: 'peoples' }
+      }
+    ]
+  },
   // {
   //   path: '',
   //   component: Layout,

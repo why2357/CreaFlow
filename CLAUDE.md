@@ -4,7 +4,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-This is **创流 (Forge HiVision)** - a video production workbench built with Vue 3 + TypeScript + Element Plus + Vite. It's a multi-tenant SaaS platform for creating AI-generated video content through a structured workflow involving scripts, storyboards, image generation, and video synthesis.
+This is **创流 (Forge HiVision)** - a video production workbench built with Vue 3 + TypeScript + Element Plus + Vite.
+It's a multi-tenant SaaS platform for creating AI-generated video content through a structured workflow involving
+scripts, storyboards, image generation, and video synthesis.
 
 ## Development Commands
 
@@ -64,17 +66,21 @@ src/
 ### Key Architectural Patterns
 
 **API Layer Pattern**: Each API domain has two files:
+
 - `index.ts` - API request functions using the axios instance from `@/utils/request`
 - `types.ts` - TypeScript types/interfaces for requests and responses
 
-**Store Pattern**: Pinia stores in `src/store/modules/` are organized by feature (app, user, permission, project, dict, etc.).
+**Store Pattern**: Pinia stores in `src/store/modules/` are organized by feature (app, user, permission, project, dict,
+etc.).
 
 **Route Structure**:
+
 - **Constant routes** - Public pages (login, home, 404, etc.)
 - **Dynamic routes** - Loaded based on user permissions from backend
 - Routes support meta properties for permissions, caching, and navigation control
 
 **Project Creation Workflow**: The core feature is a 5-step workflow in `src/views/workbench/project-creation/`:
+
 1. StepCharacter - Upload character reference images
 2. StepScene - Upload scene reference images
 3. StepScript - Generate scripts from prompts
@@ -85,6 +91,7 @@ src/
 ### Real-time Communication
 
 **SSE (Server-Sent Events)**: Used for real-time updates during AI content generation
+
 - Manager: `src/utils/sse.ts` - SSE connection management with auto-reconnect
 - Tab Coordination: `src/utils/sseTabCoordinator.ts` - Coordinates SSE across browser tabs
 - Composables: `src/composables/useSSEListener.ts` - Vue 3 hooks for listening to SSE events
@@ -94,13 +101,15 @@ src/
   - `messageType=3`: Video generation updates
 
 **Custom Events**: SSE messages are dispatched as window events:
+
 - `sse-script-update`
 - `sse-image-update`
 - `sse-video-update`
 
 ### Auto-Import Configuration
 
-**Vue APIs**: Automatically imported from `vue`, `vue-router`, `pinia`, `@vueuse/core` (configured in `vite/plugins/auto-import.ts`)
+**Vue APIs**: Automatically imported from `vue`, `vue-router`, `pinia`, `@vueuse/core` (configured in
+`vite/plugins/auto-import.ts`)
 
 **Element Plus Components**: Auto-imported via `unplugin-vue-components` with ElementPlusResolver
 
@@ -111,6 +120,7 @@ src/
 ### Request/Response Handling
 
 **Axios Configuration** (`src/utils/request.ts`):
+
 - Base URL from `VITE_APP_BASE_API` env variable
 - JWT token via `Authorization: Bearer ${token}`
 - Request encryption support (AES + RSA hybrid)
@@ -118,15 +128,16 @@ src/
 - Duplicate request prevention (500ms interval)
 
 **Response Handling**:
+
 - Success: `code === 200`
 - Custom error codes in `src/utils/errorCode.ts`
 - Loading states for downloads
 
 ### Permission System
 
-**Route Permissions**: Dynamic routes filtered by backend permissions
-**Directive Permissions**: `v-hasPermi` directive for element-level permission control
-**Project Permissions**: Additional permission system for project-based access control
+**Route Permissions**: Dynamic routes filtered by backend permissions **Directive Permissions**: `v-hasPermi` directive
+for element-level permission control **Project Permissions**: Additional permission system for project-based access
+control
 
 ### i18n Support
 
