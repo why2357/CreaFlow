@@ -7,10 +7,16 @@
     @dragenter="handleDragEnter"
     @dragleave="handleDragLeave"
   >
+    <!-- 分镜画面 + 侧边任务栏 整体容器 -->
+    <div
+      class="visual-wrapper"
+      @mouseenter="isHovered = true"
+      @mouseleave="isHovered = false"
+    >
     <!-- 分镜内容容器 -->
     <div class="scene-content-wrapper">
-      <!-- 悬浮操作层 -->
-      <div class="hover-overlay" @click.self="handleOverlayClick">
+      <!-- 悬浮操作层：仅在 hover 且非生成中/排队中状态时显示 -->
+      <div v-show="isHovered && !isOperationDisabled" class="hover-overlay" @click.self="handleOverlayClick">
         <!-- 顶部操作按钮 -->
         <div class="top-actions">
           <el-tooltip content="本地上传" placement="top">
@@ -96,8 +102,6 @@
       <div
         class="scene-image-cell"
         :data-aspect-ratio="aspectRatio"
-        @mouseenter="isHovered = true"
-        @mouseleave="isHovered = false"
       >
         <!-- 排队中状态 (taskStatus === 0 或 loading) -->
         <div v-if="effectiveTaskStatus === 0" class="queue-overlay">
@@ -151,6 +155,20 @@
           </div>
         </div>
 
+        <!-- Seedance 模式：有视频数据时显示视频播放器 -->
+        <div
+          v-else-if="workflowMode === 'seedance' && seedanceVideoUrl"
+          class="seedance-video-container"
+        >
+          <video
+            :src="seedanceVideoUrl"
+            class="seedance-video"
+            controls
+            playsinline
+            loop
+          />
+        </div>
+
         <!-- 有图片数据：显示图片 (materialInfoVoList有数据，不管taskStatus是什么值) -->
         <div
           v-else-if="materialInfoVoList && materialInfoVoList.length > 0"
@@ -188,6 +206,49 @@
         <input ref="fileInputRef" type="file" accept="image/*" style="display: none" @change="handleFileSelected" />
       </div>
     </div>
+
+    <!-- 侧边任务栏：始终占位，避免有任务时布局跳动 -->
+    <div class="task-sidebar">
+      <TransitionGroup name="task-card" tag="div" class="task-sidebar-inner">
+        <div
+          v-for="task in shotTasks"
+          :key="task.id"
+          class="task-card"
+          :class="{
+            'task-card--loading': task.status === 0 || task.status === 1,
+            'task-card--success': task.status === 2,
+            'task-card--failed': task.status === 3
+          }"
+          @click="task.status === 2 && emit('showHistory')"
+        >
+          <!-- 加载中 -->
+          <div v-if="task.status === 0 || task.status === 1" class="task-card-loading">
+            <div class="mini-spinner"></div>
+          </div>
+          <!-- 成功：显示缩略图 -->
+          <template v-else-if="task.status === 2">
+            <div v-if="task.resultUrls && task.resultUrls.length > 0" class="task-card-result">
+              <img :src="task.resultUrls[0]" class="task-card-thumb" />
+              <!-- 多图网格指示 -->
+              <div v-if="task.resultUrls.length > 1" class="task-card-multi-grid">
+                <div v-for="(url, i) in task.resultUrls.slice(0, 4)" :key="i" class="mini-grid-item">
+                  <img :src="url" />
+                </div>
+              </div>
+            </div>
+            <div v-else class="task-card-loading">
+              <div class="mini-spinner"></div>
+            </div>
+          </template>
+          <!-- 失败 -->
+          <div v-else-if="task.status === 3" class="task-card-failed-state">
+            <svg-icon icon-class="fy-gen-failed" class="task-failed-icon" />
+          </div>
+        </div>
+      </TransitionGroup>
+    </div>
+
+    </div><!-- end visual-wrapper -->
   </div>
 
   <!-- 历史记录弹窗 - 使用 teleport 传送到 body -->
@@ -216,7 +277,8 @@
   import { computed, ref } from 'vue';
   import { Vue3Lottie } from 'vue3-lottie';
   import { useTaskQueue } from '@/composables/useTaskQueue';
-  import { useTaskQueueStore } from '@/store/modules/taskQueue';
+  import type { TaskQueueItem } from '@/api/workbench/project/types';
+  import type { ReferenceImage } from '@/types/mention';
   import SceneImageEditDialog from './SceneImageEditDialog.vue';
   import SceneImageHistoryDialog from './SceneImageHistoryDialog.vue';
 
@@ -249,6 +311,13 @@
     sceneDescription?: string; // 画面描述
     sceneHint?: string; // 场景描述
     dialogue?: string; // 台词
+    // Seedance 2.0 专属
+    workflowMode?: string; // 工作流模式
+    seedancePrompt?: string; // Seedance 提示词 HTML
+    seedancePromptImages?: ReferenceImage[]; // Seedance 参考图片列表
+    seedanceVideoUrl?: string; // Seedance 生成完成后的视频地址
+    // 侧边任务栏
+    shotTasks?: TaskQueueItem[]; // 当前镜头的任务列表
   }
 
   const props = withDefaults(defineProps<Props>(), {
@@ -262,7 +331,12 @@
     modelPoints: 0,
     sceneDescription: '',
     sceneHint: '',
-    dialogue: ''
+    dialogue: '',
+    workflowMode: '',
+    seedancePrompt: '',
+    seedancePromptImages: () => [],
+    seedanceVideoUrl: '',
+    shotTasks: () => []
   });
 
   const emit = defineEmits<{
@@ -277,27 +351,32 @@
   }>();
 
   // ==================== 任务队列集成 ====================
-  const { canAddTaskForShot, addImageGenerationTask } = useTaskQueue();
-  const taskQueueStore = useTaskQueueStore();
+  const { canAddTaskForShot, addImageGenerationTask, addSeedanceVideoTask } = useTaskQueue();
 
-  // 判断当前镜头是否可以添加新任务
+  // 判断当前镜头是否可以添加新任务（使用 basicId 作为全局唯一标识）
   const canAddTask = computed(() => {
-    return canAddTaskForShot(props.shotId);
+    return canAddTaskForShot(props.basicId ?? props.shotId);
   });
 
-  // 获取当前镜头的活跃任务数量
+  // 获取当前镜头的活跃任务数量（基于 prop 的 shotTasks）
   const activeTaskCount = computed(() => {
-    return taskQueueStore.getActiveTaskCountByShotId(props.shotId);
+    return props.shotTasks.filter((t) => t.status === 0 || t.status === 1).length;
   });
 
-  // 获取当前镜头在队列中的第一个任务
+  // 获取当前镜头在队列中的第一个任务（基于 prop 的 shotTasks）
   const queueTask = computed(() => {
-    const tasks = taskQueueStore.getTasksByShotId(props.shotId);
-    return tasks.length > 0 ? tasks[0] : null;
+    return props.shotTasks.length > 0 ? props.shotTasks[0] : null;
   });
 
   // 使用任务队列的状态覆盖原有的 taskStatus
+  // 但如果当前有图片（materialInfoVoList 有数据），则不使用队列状态覆盖主展示框
+  // 待生成动画只显示在侧边任务栏中
   const effectiveTaskStatus = computed(() => {
+    // 如果有图片数据，不使用队列状态覆盖，保持原有图片显示
+    if (props.materialInfoVoList && props.materialInfoVoList.length > 0) {
+      return props.taskStatus;
+    }
+    // 没有图片时，使用队列任务状态（排队/生成中状态覆盖空状态）
     if (queueTask.value) {
       return queueTask.value.status;
     }
@@ -743,47 +822,60 @@
   };
 
   // 重新生成
-  const handleRegenerate = () => {
+  const handleRegenerate = async () => {
     // 如果没有 basicId，回退到原有逻辑
     if (!props.basicId) {
       emit('regenerate');
       return;
     }
 
-    // 构造分镜数据
+    // Seedance 2.0 模式：生成视频
+    if (props.workflowMode === 'seedance') {
+      const shotData = {
+        basicId: props.basicId,
+        id: props.basicId,
+        shotNumber: props.shotNumber,
+        seedancePrompt: props.seedancePrompt,
+        seedancePromptImages: props.seedancePromptImages
+      };
+
+      const task = await addSeedanceVideoTask(shotData);
+      if (!task) {
+        emit('regenerate');
+      }
+      return;
+    }
+
+    // 经典模式：生成图片
     const shotData = {
       basicId: props.basicId,
-      id: props.shotId,
+      id: props.basicId,
       shotNumber: props.shotNumber,
       sceneDescription: props.sceneDescription || props.sceneHint || '',
       dialogue: props.dialogue
     };
 
-    // 调用任务队列添加生成任务（内部会检查队列是否满）
     const task = addImageGenerationTask(shotData);
-
     if (!task) {
-      // 添加失败（addImageGenerationTask内部已显示提示信息）
-      // 回退到原有逻辑
       emit('regenerate');
     }
   };
 
   // 生成按钮文本
   const generateButtonText = computed(() => {
-    const activeCount = taskQueueStore.getActiveTaskCountByShotId(props.shotId);
+    const activeCount = activeTaskCount.value;
     if (!canAddTask.value) {
-      return `队列满 (${activeCount}/4)`;
+      return `队列满 (${activeCount}/3)`;
     }
     if (activeCount > 0) {
-      return `${props.modelPoints} 生成 (${activeCount}/4)`;
+      return `${props.modelPoints} 生成 (${activeCount}/3)`;
     }
     return `${props.modelPoints} 生成`;
   });
 
   // 生成按钮是否禁用 - 只检查队列是否满，不使用isOperationDisabled
   const generateButtonDisabled = computed(() => {
-    // 只检查是否达到并发上限（4个）
+    // 只检查是否达到并发上限（3个）
     return !canAddTask.value;
   });
 
@@ -871,10 +963,179 @@
     }
   }
 
+  // ==================== visual-wrapper：主画面 + 侧边栏 ====================
+  .visual-wrapper {
+    position: relative;
+    display: flex;
+    width: 100%;
+    height: 100%;
+    gap: 6px;
+  }
+
   // ==================== 内容容器 ====================
   .scene-content-wrapper {
     position: relative;
+    flex: 0 0 auto;
+    height: 100%;
+    overflow: hidden;
+  }
+
+  // ==================== 侧边任务栏 ====================
+  .task-sidebar {
+    width: 52px;
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+    overflow-x: hidden;
+    gap: 0;
+
+    // 隐藏滚动条
+    &::-webkit-scrollbar {
+      width: 0;
+    }
+  }
+
+  .task-sidebar-inner {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
     width: 100%;
+  }
+
+  // 任务卡片
+  .task-card {
+    width: 52px;
+    height: 52px;
+    flex-shrink: 0;
+    border-radius: 8px;
+    border: 2px solid transparent;
+    overflow: hidden;
+    cursor: pointer;
+    position: relative;
+    background: #fff;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+    transition: all 0.25s ease;
+
+    &:hover {
+      border-color: #8b5cf6;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 10px rgba(139, 92, 246, 0.2);
+    }
+
+    &--loading {
+      border-color: #e5e7eb;
+      background: #fafafa;
+    }
+
+    &--success {
+      border-color: #e5e7eb;
+    }
+
+    &--failed {
+      border-color: #fee2e2;
+      background: #fff5f5;
+    }
+  }
+
+  // 任务卡片 - loading 状态
+  .task-card-loading {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .mini-spinner {
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    border: 2px solid #ede9fe;
+    border-top-color: #8b5cf6;
+    animation: spin 0.9s infinite linear;
+  }
+
+  @keyframes spin {
+    to {
+      transform: rotate(360deg);
+    }
+  }
+
+  // 任务卡片 - 成功态（单张缩略图）
+  .task-card-result {
+    width: 100%;
+    height: 100%;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .task-card-thumb {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+
+  // 多张图片时的 2x2 小网格覆盖层
+  .task-card-multi-grid {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: 1fr 1fr;
+    gap: 1px;
+
+    .mini-grid-item {
+      overflow: hidden;
+
+      img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        display: block;
+      }
+    }
+  }
+
+  // 任务卡片 - 失败态
+  .task-card-failed-state {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    .task-failed-icon {
+      width: 24px;
+      height: 24px;
+      opacity: 0.7;
+    }
+  }
+
+  // TransitionGroup 动画
+  .task-card-enter-active {
+    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .task-card-leave-active {
+    transition: all 0.25s ease-in;
+    position: absolute;
+  }
+
+  .task-card-enter-from {
+    opacity: 0;
+    transform: scale(0.5) translateY(-10px);
+  }
+
+  .task-card-leave-to {
+    opacity: 0;
+    transform: scale(0.5);
+    margin-bottom: -58px; // 卡片高度 + gap，收缩时不留空白
+  }
+
+  .task-card-move {
+    transition: transform 0.3s ease;
   }
 
   .hover-overlay {
@@ -889,8 +1150,9 @@
     justify-content: space-between;
     padding: 12px;
     background: linear-gradient(0deg, rgba(0, 0, 0, 0.4) 0%, rgba(0, 0, 0, 0.4) 100%);
-    pointer-events: auto; // 允许点击触发历史记录弹窗
+    pointer-events: auto;
     cursor: pointer;
+    transition: opacity 0.2s ease;
 
     .top-actions {
       display: flex;
@@ -1297,5 +1559,23 @@
   .fade-enter-from,
   .fade-leave-to {
     opacity: 0;
+  }
+
+  // Seedance 2.0 视频容器
+  .seedance-video-container {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #000;
+
+    .seedance-video {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      display: block;
+    }
   }
 </style>

@@ -4,11 +4,11 @@ import { defineStore } from 'pinia';
 /**
  * 单个镜头最大并发任务数量
  */
-const MAX_CONCURRENT_PER_SHOT = 4;
+const MAX_CONCURRENT_PER_SHOT = 3;
 
 /**
  * 任务队列状态管理
- * 改为镜头级别：每个镜头最多4个并发任务
+ * 改为镜头级别：每个镜头最多3个并发任务
  */
 export const useTaskQueueStore = defineStore('taskQueue', () => {
   // ==================== 状态 ====================
@@ -147,6 +147,10 @@ export const useTaskQueueStore = defineStore('taskQueue', () => {
       return null;
     }
 
+    // 判断该镜头是否为首次生成（队列中没有任何该镜头的历史任务）
+    const existingTasks = getTasksByShotId(request.shotId);
+    const isFirstGeneration = existingTasks.length === 0;
+
     // 创建任务对象
     const task: TaskQueueItem = {
       id: generateTaskId(),
@@ -159,7 +163,8 @@ export const useTaskQueueStore = defineStore('taskQueue', () => {
       mode: request.mode,
       prompt: request.prompt,
       dialogue: request.dialogue,
-      startTime: Date.now()
+      startTime: Date.now(),
+      isFirstGeneration
     };
 
     tasks.value.push(task);

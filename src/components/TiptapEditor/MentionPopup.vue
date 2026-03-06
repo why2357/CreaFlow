@@ -190,10 +190,12 @@
     const episodes = projectStore.episodeInfoList || [];
     return [
       { episodeId: null, episodeName: '全部' },
-      ...episodes.map((ep) => ({
-        episodeId: ep.episodeId,
-        episodeName: ep.episodeName
-      }))
+      ...episodes
+        .filter((ep) => ep.episodeId != null)
+        .map((ep) => ({
+          episodeId: ep.episodeId!,
+          episodeName: ep.episodeName || ''
+        }))
     ];
   });
 

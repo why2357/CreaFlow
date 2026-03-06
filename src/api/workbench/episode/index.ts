@@ -2,7 +2,7 @@ import request from '@/utils/request';
 import { AxiosPromise } from 'axios';
 import { EpisodeCreateRequest, EpisodeTemplateUploadRequest, ShotForm } from '../project/types';
 import type { SceneCommentVo } from '../storyboard/types';
-import type { CharacterMatchResponse, HivisionProjectEpisodeVo, SceneEnvSetRequest, VideoPromptTQuery } from './types';
+import type { CharacterMatchResponse, HivisionProjectEpisodeVo, SceneEnvSetRequest, SeedanceGenerateRequest, VideoPromptTQuery } from './types';
 
 /**
  * 查询剧集列表
@@ -235,6 +235,18 @@ export interface EpisodeGenerateImgRequest {
 export const generateEpisodeImg = (data: EpisodeGenerateImgRequest): AxiosPromise<void> => {
   return request({
     url: '/hivision/story/episode/generate-img',
+    method: 'post',
+    data
+  });
+};
+
+/**
+ * Seedance 2.0 生成视频接口
+ * @param data Seedance 生成请求数据（含提示词和有序参考图 ossId 列表）
+ */
+export const generateSeedanceVideo = (data: SeedanceGenerateRequest): AxiosPromise<void> => {
+  return request({
+    url: '/hivision/story/episode/generate-seedance',
     method: 'post',
     data
   });

@@ -21,9 +21,14 @@
   import { computed } from 'vue';
   import type { Node } from '@tiptap/core';
 
+  // 定义带 attrs 的 Node 类型
+  interface NodeWithAttrs extends Node {
+    attrs: Record<string, any>;
+  }
+
   // 定义 NodeView Props 接口
   interface ImageMentionProps {
-    node: Node;
+    node: NodeWithAttrs;
   }
 
   const props = defineProps<ImageMentionProps>();

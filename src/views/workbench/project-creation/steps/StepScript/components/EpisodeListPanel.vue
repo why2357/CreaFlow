@@ -29,6 +29,12 @@
             <el-tooltip :content="episode.name" placement="top" :disabled="!isNameOverflow(episode.name)">
               <span class="episode-name">{{ episode.name }}</span>
             </el-tooltip>
+
+            <!-- 工作流模式徽标 -->
+            <span v-if="episode.workflowMode === 'seedance'" class="mode-badge mode-badge--seedance">
+              Seedance
+            </span>
+
             <div v-if="showProgress" class="progress-badge">{{ episode.progress || 0 }}%</div>
 
             <!-- 任务状态显示 -->
@@ -266,6 +272,22 @@
             text-overflow: ellipsis;
             white-space: nowrap;
             width: 100px;
+          }
+
+          .mode-badge {
+            flex-shrink: 0;
+            padding: 1px 5px;
+            border-radius: 4px;
+            font-size: 10px;
+            font-weight: 600;
+            line-height: 16px;
+            letter-spacing: 0.2px;
+
+            &--seedance {
+              color: #5252ff;
+              background: #f0f0ff;
+              border: 0.5px solid #d6d7ff;
+            }
           }
 
           .status-badge {

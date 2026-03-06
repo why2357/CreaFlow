@@ -154,25 +154,6 @@
       ></div>
     </div>
 
-    <!-- 提及标签预览 -->
-    <div v-if="mentionTags.length > 0" class="mention-tags-preview">
-      <div
-        v-for="tag in mentionTags"
-        :key="tag.id"
-        class="mention-tag-item"
-        :class="[`mention-tag-${tag.type}`, { 'is-selected': selectedPreviewTagId === tag.id }]"
-        @click="handlePreviewTagClick(tag)"
-        @dblclick="handleInsertTagToEditor(tag)"
-      >
-        <img v-if="tag.src" :src="tag.src" class="mention-tag-thumb" @click.stop.prevent />
-        <svg-icon v-else :icon-class="getTagIcon(tag.type)" class="mention-tag-icon" />
-        <span class="mention-tag-label">{{ tag.label }}</span>
-        <span v-if="tag.subtitle" class="mention-tag-subtitle">{{ tag.subtitle }}</span>
-        <div class="mention-tag-delete" @click.stop.prevent="handleRemoveMentionTag($event, tag.id)">
-          <svg-icon icon-class="fy-del" style="width: 10px; height: 10px" />
-        </div>
-      </div>
-    </div>
 
     <!-- 提及弹窗 -->
     <MentionPopup
@@ -204,6 +185,7 @@
 
 <script setup lang="ts">
   import { useProjectStore } from '@/store/modules/project';
+  import { uploadFile } from '@/utils/uploadFile';
   import { ElMessage } from 'element-plus';
   import type { ReferenceImage, DragData, MentionOption, MentionType } from '@/types/mention';
   import { MentionType as MentionTypeEnum } from '@/types/mention';
@@ -264,27 +246,11 @@
   const dragCounter = ref(0);
 
   // 文本内容（处理后的，不包含提及标签）
-  const textValue = ref('');
-
-  // 提及标签列表
-  const mentionTags = ref<
-    Array<{
-      id: string;
-      type: MentionType;
-      src?: string;
-      label: string;
-      subtitle?: string;
-      alias?: string;
-      category?: string;
-    }>
-  >([]);
-
-  // 当前选中的预览标签ID
-  const selectedPreviewTagId = ref<string | null>(null);
-
   // 提及弹窗相关
   const mentionTriggerPos = ref<{ start: number; end: number } | null>(null);
   const mentionQuery = ref('');
+  // 保存触发弹窗时的 range，用于后续插入图片
+  let savedMentionRange: Range | null = null;
 
   // 图库对话框相关
   const sceneLibraryVisible = ref(false);
@@ -294,119 +260,15 @@
   const projectId = computed(() => Number(projectStore.currentProjectId) || 0);
   const episodes = computed(() => projectStore.episodes || []);
 
-  // 获取标签图标
-  const getTagIcon = (type: MentionType) => {
-    switch (type) {
-      case MentionTypeEnum.CHARACTER:
-        return 'fy-user';
-      case MentionTypeEnum.SCENE:
-        return 'fy-sence-tupian';
-      default:
-        return 'fy-tupian';
-    }
-  };
-
-  // 解析 modelValue，分离文本和提及标签
-  const parseModelValue = (value: string) => {
-    const tags: typeof mentionTags.value = [];
-
-    // 先尝试解析 HTML 格式的提及标签（向后兼容）
-    const htmlMentionRegex =
-      /<span[^>]*data-type="(reference|character|scene)"[^>]*data-id="([^"]*)"[^>]*>(?:<span[^>]*>.*?<\/span>)?<\/span>/gi;
-
-    let match;
-    while ((match = htmlMentionRegex.exec(value)) !== null) {
-      const type = match[1] as MentionType;
-      const id = match[2];
-
-      // 提取其他属性
-      const srcMatch = match[0].match(/data-src="([^"]*)"/);
-      const labelMatch = match[0].match(/data-label="([^"]*)"/);
-      const aliasMatch = match[0].match(/data-alias="([^"]*)"/);
-      const categoryMatch = match[0].match(/data-category="([^"]*)"/);
-
-      tags.push({
-        id,
-        type,
-        src: srcMatch?.[1] || undefined,
-        label: labelMatch?.[1] || '',
-        alias: aliasMatch?.[1],
-        category: categoryMatch?.[1]
-      });
-    }
-
-    // 使用 DOMParser 解析内联提及格式（更可靠的方法）
-    const parser = new DOMParser();
-    const doc = parser.parseFromString(`<div>${value}</div>`, 'text/html');
-    const mentionElements = doc.querySelectorAll('.inline-mention');
-
-    mentionElements.forEach((el, index) => {
-      const img = el.querySelector('img');
-      const src = img?.getAttribute('src');
-      const label = el.getAttribute('data-label');
-      const type = el.getAttribute('data-type') as MentionType;
-      const id = el.getAttribute('data-id') || `mention-${Date.now()}-${index}`;
-
-      if (src && label) {
-        tags.push({
-          id,
-          type: type || MentionTypeEnum.REFERENCE,
-          src,
-          label
-        });
-      }
-    });
-
-    // 兼容旧的独立 img 格式
-    const imgRegex = /<img[^>]*class="inline-image"[^>]*>/gi;
-    while ((match = imgRegex.exec(value)) !== null) {
-      const srcMatch = match[0].match(/src="([^"]*)"/);
-      const labelMatch = match[0].match(/data-label="([^"]*)"/);
-      const typeMatch = match[0].match(/data-type="([^"]*)"/);
-
-      if (srcMatch && labelMatch) {
-        tags.push({
-          id: `img-${Date.now()}-${Math.random()}`,
-          type: (typeMatch?.[1] || MentionTypeEnum.REFERENCE) as MentionType,
-          src: srcMatch[1],
-          label: labelMatch[1]
-        });
-      }
-    }
-
-    mentionTags.value = tags;
-    textValue.value = value; // 保留原始 HTML
-
-    // 设置编辑器内容
-    nextTick(() => {
-      if (editorRef.value && editorRef.value.innerHTML !== value) {
-        editorRef.value.innerHTML = value;
-      }
-    });
-  };
-
-  // 构建包含提及标签的文本
-  const buildHtmlWithMentions = (text: string, tags: typeof mentionTags.value) => {
-    let result = text;
-
-    // 为每个提及标签创建文本格式
-    const tagsText = tags
-      .map((tag) => {
-        // 根据类型添加前缀（不包含 @）
-        const prefix =
-          tag.type === MentionTypeEnum.CHARACTER ? '角色:' : tag.type === MentionTypeEnum.SCENE ? '场景:' : '';
-        return prefix + tag.label;
-      })
-      .join(' ');
-
-    return result + (tagsText ? ' ' + tagsText : '');
-  };
-
-  // 监听 modelValue 变化
+  // 监听 modelValue 变化，同步编辑器内容
   watch(
     () => props.modelValue,
     (newValue) => {
-      parseModelValue(newValue);
+      nextTick(() => {
+        if (editorRef.value && editorRef.value.innerHTML !== newValue) {
+          editorRef.value.innerHTML = newValue;
+        }
+      });
     },
     { immediate: true }
   );
@@ -429,7 +291,42 @@
       if (textNode.nodeType === Node.TEXT_NODE) {
         const textContent = textNode.textContent || '';
         if (offset > 0) {
-          charBeforeCursor = textContent[offset - 1];
+          // 光标在文本节点中间或末尾，直接取前一个字符
+          // 但要跳过零宽空格
+          let checkOffset = offset - 1;
+          while (checkOffset >= 0) {
+            const char = textContent[checkOffset];
+            if (char === '\u200B' || char === '\uFEFF') {
+              // 跳过零宽空格，继续向前查找
+              checkOffset--;
+            } else {
+              charBeforeCursor = char;
+              break;
+            }
+          }
+        } else {
+          // 光标在文本节点开头，检查前一个兄弟节点
+          let prevSibling = (textNode as Text).previousSibling;
+          while (prevSibling) {
+            if (prevSibling.nodeType === Node.TEXT_NODE) {
+              const text = prevSibling.textContent || '';
+              if (text.length > 0) {
+                // 从末尾向前查找，跳过零宽空格
+                let checkIdx = text.length - 1;
+                while (checkIdx >= 0) {
+                  const char = text[checkIdx];
+                  if (char === '\u200B' || char === '\uFEFF') {
+                    checkIdx--;
+                  } else {
+                    charBeforeCursor = char;
+                    break;
+                  }
+                }
+                if (charBeforeCursor) break;
+              }
+            }
+            prevSibling = prevSibling.previousSibling;
+          }
         }
       } else {
         // 如果不在文本节点中（比如在元素后面），尝试检查前一个节点
@@ -573,6 +470,14 @@
   const showMentionPopup = () => {
     if (!editorRef.value) return;
 
+    // 保存当前的 selection range，用于后续插入图片
+    const selection = window.getSelection();
+    if (selection && selection.rangeCount > 0) {
+      savedMentionRange = selection.getRangeAt(0).cloneRange();
+    } else {
+      savedMentionRange = null;
+    }
+
     const rect = editorRef.value.getBoundingClientRect();
 
     // 计算光标位置（简化版，使用编辑器底部）
@@ -620,6 +525,8 @@
       e.stopPropagation();
       const selection = window.getSelection();
 
+      if (!selection) return;
+
       // 检查是否已经选中了这个元素
       const isSelected = selection.rangeCount > 0 && selection.containsNode(container, true);
 
@@ -647,11 +554,14 @@
 
     let range: Range;
 
-    // 检查当前选择是否在编辑器内
-    if (selection.rangeCount === 0 || !editorRef.value.contains(selection.anchorNode)) {
-      // 如果不在编辑器内，将光标移动到编辑器末尾
+    // 优先使用保存的 range（因为弹窗打开时编辑器可能失去焦点）
+    if (savedMentionRange && editorRef.value.contains(savedMentionRange.startContainer)) {
+      range = savedMentionRange;
+    } else if (selection.rangeCount > 0 && editorRef.value.contains(selection.anchorNode)) {
+      range = selection.getRangeAt(0);
+    } else {
+      // 都不在编辑器内，将光标移动到编辑器末尾
       range = document.createRange();
-      // 找到编辑器的最后一个文本节点或直接在编辑器末尾
       if (editorRef.value.lastChild) {
         range.setStartAfter(editorRef.value.lastChild);
         range.collapse(true);
@@ -659,11 +569,11 @@
         range.setStart(editorRef.value, 0);
         range.collapse(true);
       }
-      selection.removeAllRanges();
-      selection.addRange(range);
-    } else {
-      range = selection.getRangeAt(0);
     }
+
+    // 恢复 selection 到编辑器
+    selection.removeAllRanges();
+    selection.addRange(range);
 
     // 找到并删除 @ 符号及其后的查询文本
     // 光标应该位于查询文本之后
@@ -726,7 +636,7 @@
         insertRange.collapse(true);
         insertRange.insertNode(img);
 
-        // 确保元素后面有文本节点供用户输入
+        // 确保元素后面有零宽空格供用户继续输入
         let nextSibling = img.nextSibling;
         if (!nextSibling || nextSibling.nodeType !== Node.TEXT_NODE) {
           const textNodeToInsert = document.createTextNode('\u200B'); // 零宽空格
@@ -734,9 +644,10 @@
           nextSibling = textNodeToInsert;
         }
 
-        // 移动光标到图片后面的文本节点
+        // 移动光标到图片后面的文本节点开头
         const newRange = document.createRange();
         if (nextSibling && nextSibling.nodeType === Node.TEXT_NODE) {
+          // 将光标放在文本节点的开头，这样用户输入的 @ 就是第一个字符
           newRange.setStart(nextSibling, 0);
           newRange.setEnd(nextSibling, 0);
         } else {
@@ -747,6 +658,9 @@
         selection.addRange(newRange);
       }
     }
+
+    // 清除保存的 range
+    savedMentionRange = null;
 
     // 更新输出
     emit('update:modelValue', editorRef.value.innerHTML);
@@ -773,6 +687,7 @@
   const handleMentionClose = () => {
     mentionTriggerPos.value = null;
     mentionQuery.value = '';
+    savedMentionRange = null; // 清除保存的 range
   };
 
   // 打开图库
@@ -909,80 +824,6 @@
     ElMessage.success(`已插入${image.label}`);
   };
 
-  // 点击预览标签切换选中状态
-  const handlePreviewTagClick = (tag: (typeof mentionTags.value)[0]) => {
-    if (selectedPreviewTagId.value === tag.id) {
-      // 如果已选中，取消选中
-      selectedPreviewTagId.value = null;
-    } else {
-      // 如果未选中，选中该标签
-      selectedPreviewTagId.value = tag.id;
-    }
-  };
-
-  // 点击标签插入到编辑器（改为双击触发）
-  const handleInsertTagToEditor = (tag: (typeof mentionTags.value)[0]) => {
-    if (!editorRef.value || !tag.src) return;
-
-    const selection = window.getSelection();
-    if (!selection || selection.rangeCount === 0) return;
-
-    const range = selection.getRangeAt(0);
-
-    // 插入内联提及元素
-    const mention = createInlineImage(tag.src, tag.label, tag.type);
-    range.deleteContents();
-    range.insertNode(mention);
-
-    // 移动光标到提及元素后面
-    range.setStartAfter(mention);
-    range.setEndAfter(mention);
-    selection.removeAllRanges();
-    selection.addRange(range);
-
-    // 更新输出
-    emit('update:modelValue', editorRef.value.innerHTML);
-
-    // 聚焦编辑器
-    nextTick(() => {
-      editorRef.value?.focus();
-    });
-  };
-
-  // 删除提及标签
-  const handleRemoveMentionTag = (e: Event | string, id?: string) => {
-    // 支持两种调用方式：(event, id) 或
-    let actualId: string;
-    if (typeof e === 'string') {
-      actualId = e;
-    } else {
-      e.preventDefault();
-      e.stopPropagation();
-      actualId = id as string;
-    }
-
-    // 找到对应的 tag 获取其 label
-    const tagToRemove = mentionTags.value.find((tag) => tag.id === actualId);
-    if (!tagToRemove) {
-      mentionTags.value = mentionTags.value.filter((tag) => tag.id !== actualId);
-      return;
-    }
-
-    // 从 mentionTags 数组中删除
-    mentionTags.value = mentionTags.value.filter((tag) => tag.id !== actualId);
-
-    // 同时从编辑器中删除对应的内联提及元素（通过 label 匹配）
-    if (editorRef.value) {
-      const mentionElements = editorRef.value.querySelectorAll('.inline-mention');
-      mentionElements.forEach((el) => {
-        const element = el as HTMLElement;
-        if (element.dataset.label === tagToRemove.label && element.dataset.type === tagToRemove.type) {
-          element.remove();
-        }
-      });
-      emit('update:modelValue', editorRef.value.innerHTML);
-    }
-  };
 
   // 处理参考图拖拽开始
   const handleReferenceDragStart = (e: DragEvent, image: ReferenceImage) => {
@@ -1238,8 +1079,14 @@
     // 从本地图片列表中删除
     const newImages = localImages.value.filter((img) => img.id !== id);
     emit('update:images', newImages);
-    // 同时删除提及标签
-    handleRemoveMentionTag(id);
+    // 同步删除编辑器里对应的内联提及元素（通过 data-id 精准匹配）
+    if (editorRef.value) {
+      const el = editorRef.value.querySelector(`.inline-mention[data-id="${id}"]`);
+      if (el) {
+        el.remove();
+        emit('update:modelValue', editorRef.value.innerHTML);
+      }
+    }
   };
 
   // 添加图片到本地列表
@@ -1281,22 +1128,69 @@
     // 生成标签
     const label = `图片${currentMaxIndex + 1}`;
 
-    // 创建参考图对象
+    // 创建参考图对象（先用 blob URL 作为本地预览）
     const referenceImage: ReferenceImage = {
       id,
       src: localUrl,
       thumbnail: localUrl,
       label,
       file,
-      uploadStatus: 'pending',
+      uploadStatus: 'uploading',
       uploadProgress: 0
     };
 
-    // 添加到列表
+    // 添加到列表，emit 后等一个 tick 让父组件更新 prop
+    // 保证串行上传时下一次调用能读到最新的 localImages.value
     const newImages = [...localImages.value, referenceImage];
     emit('update:images', newImages);
+    await nextTick();
+
+    // 立即上传到 OSS，上传完成后更新图片状态
+    uploadImageToOSS(referenceImage, file);
 
     return referenceImage;
+  };
+
+  /**
+   * 将参考图异步上传到 OSS，上传完成后更新列表中对应图片的状态
+   */
+  const uploadImageToOSS = async (image: ReferenceImage, file: File) => {
+    try {
+      const fileSuffix = file.name.includes('.')
+        ? file.name.substring(file.name.lastIndexOf('.'))
+        : '.jpg';
+
+      const uploadRes = await uploadFile({
+        file,
+        fileSuffix,
+        originalFileName: file.name,
+        fileType: 'image',
+        resourceType: 2,
+        needSync: 0
+      });
+
+      // 上传成功：用 OSS URL 替换 blob URL，写入 serverId
+      const updated = localImages.value.map((img) =>
+        img.id === image.id
+          ? {
+              ...img,
+              src: uploadRes.url || img.src,
+              thumbnail: uploadRes.url || img.thumbnail,
+              serverId: String(uploadRes.ossId),
+              uploadStatus: 'success' as const,
+              uploadProgress: 100,
+              file: undefined // 清除 File 引用，已不再需要
+            }
+          : img
+      );
+      emit('update:images', updated);
+    } catch (err) {
+      console.error('[SeedancePromptEditor] 参考图上传 OSS 失败:', image.id, err);
+      const updated = localImages.value.map((img) =>
+        img.id === image.id ? { ...img, uploadStatus: 'error' as const } : img
+      );
+      emit('update:images', updated);
+    }
   };
 
   // 上传前验证
@@ -1315,111 +1209,85 @@
     return true;
   };
 
-  // 处理上传
-  const handleUpload = async (options: any) => {
+  // 串行上传队列：多文件并发时 el-upload 会同时触发多次 http-request，
+  // 但 addImageToList 依赖 localImages.value（prop 驱动），并发时读到的是同一个旧值，
+  // 导致后面的文件覆盖前面的。用队列把每次调用串行化解决此问题。
+  let uploadQueue: Promise<void> = Promise.resolve();
+
+  const handleUpload = (options: any): Promise<void> => {
     const file = options.file;
-    try {
-      await addImageToList(file);
-      // 单个文件上传成功时不显示消息，避免多文件上传时消息过多
-    } catch (error) {
-      console.error('上传失败:', error);
-      ElMessage.error(`图片 "${file.name}" 上传失败`);
-    }
+    uploadQueue = uploadQueue.then(async () => {
+      try {
+        await addImageToList(file);
+      } catch (error) {
+        console.error('上传失败:', error);
+        ElMessage.error(`图片 "${file.name}" 上传失败`);
+      }
+    });
+    return uploadQueue;
   };
 
   // ==================== 堆叠样式计算 ====================
 
-  // 获取堆叠图片样式
-  const getImageStackStyle = (index: number, isExpanded: boolean) => {
-    // 收起状态的旋转角度（5张）
-    const rotations = [0, -10.567, -19.954, 8, -5];
-    const stackOrder = index + 1;
+  /**
+   * 通用的堆叠位置计算，图片和添加按钮都用这个函数
+   * index: 在所有卡片（图片 + 按钮）中的位置，0 = 最底层
+   * total: 所有卡片总数（包含按钮）
+   */
+  const getStackStyle = (index: number, total: number, isExpanded: boolean) => {
+    // 收起状态：卡片轻微错位叠放（模拟扑克牌）
+    // 每张向右偏移 4px、向下偏移 2px，并有微小旋转
+    const collapsedRotations = [0, -8, -15, 6, -4, -11];
+    const COLLAPSED_OFFSET_X = 4; // px per card
+    const COLLAPSED_OFFSET_Y = 2;
+
+    // 展开状态：每张卡片横向展开，间距 68px（卡片宽60px + 8px间隔）
+    const EXPANDED_STEP = 68;
+    const expandedRotations = [-5, 3, -7, 8, -3, 5];
 
     if (isExpanded) {
-      // 展开状态：紧凑重叠排列（保持重叠效果，参考即梦AI）
-      // 图片之间保持重叠，偏移较小
-      const expandedOffsets = [
-        { left: '0px', top: '0px' },
-        { left: '20px', top: '0px' },
-        { left: '40px', top: '0px' },
-        { left: '60px', top: '0px' },
-        { left: '80px', top: '0px' }
-      ];
-      const expandedRotations = [-8, 4, -6, 10, -3];
-
+      // 向左展开：index 越大的卡片越靠左，最后一张（按钮）在最左
+      // 用 right 定位，index=0（第一张图）在最右（right: 0），依次向左排开
       return {
-        transform: `rotate(${expandedRotations[index]}deg)`,
-        transformOrigin: 'center center',
-        zIndex: 10 + index,
         position: 'absolute' as const,
-        ...expandedOffsets[index],
+        left: '',
+        top: '0px',
+        right: `${index * EXPANDED_STEP}px`,
+        bottom: '',
+        transform: `rotate(${expandedRotations[index] ?? 0}deg)`,
+        transformOrigin: 'center center',
+        zIndex: index + 1,
         transition: 'all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)'
       };
     } else {
-      // 收起状态：堆叠（5张）
-      const collapsedOffsets = [
-        { left: '0px', top: '0px' },
-        { left: '5px', top: '2px' },
-        { left: '10px', top: '4px' },
-        { left: '15px', top: '6px' },
-        { left: '20px', top: '8px' }
-      ];
-
-      let transformOrigin = 'center center';
-      if (index > 0) {
-        const offset = collapsedOffsets[index];
-        const offsetX = -parseFloat(offset.left);
-        const offsetY = -parseFloat(offset.top);
-        transformOrigin = `calc(50% + ${offsetX}px) calc(50% + ${offsetY}px)`;
-      }
-
+      // 收起：所有卡片叠在右侧原点，向左微小偏移（与展开方向一致）
+      const offsetX = index * COLLAPSED_OFFSET_X;
+      const offsetY = index * COLLAPSED_OFFSET_Y;
       return {
-        transform: `rotate(${rotations[index]}deg)`,
-        transformOrigin,
-        zIndex: stackOrder,
         position: 'absolute' as const,
-        ...collapsedOffsets[index],
+        left: '',
+        top: `${offsetY}px`,
+        right: `${offsetX}px`,
+        bottom: '',
+        transform: `rotate(${collapsedRotations[index] ?? 0}deg)`,
+        transformOrigin: 'center center',
+        // 最上层（最后一张）z-index 最高，视觉上在最顶部
+        zIndex: total - index,
         transition: 'all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)'
       };
     }
   };
 
-  // 获取添加按钮位置样式
+  // 获取堆叠图片样式（图片在按钮之前，index 就是图片在数组中的位置）
+  const getImageStackStyle = (index: number, isExpanded: boolean) => {
+    const total = localImages.value.length + (localImages.value.length < props.maxImages ? 1 : 0);
+    return getStackStyle(index, total, isExpanded);
+  };
+
+  // 获取添加按钮位置样式（按钮始终排在所有图片之后）
   const getAddButtonStyle = (currentCount: number, isExpanded: boolean) => {
-    if (currentCount === 0) {
-      return {
-        position: 'relative' as const,
-        width: '100%',
-        height: '100%',
-        left: '0px',
-        top: '0px',
-        zIndex: 1,
-        transition: 'all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)'
-      };
-    }
-
-    // 收起状态：始终在右下角
-    const collapsedPosition = { right: '-8px', bottom: '-8px' };
-
-    // 展开状态：紧凑排列，按钮位置 = currentCount * 20px
-    const expandedLeft = `${currentCount * 20}px`;
-    const expandedPosition = { left: expandedLeft, top: '0px' };
-
-    if (isExpanded) {
-      return {
-        position: 'absolute' as const,
-        ...expandedPosition,
-        zIndex: 20 + currentCount,
-        transition: 'all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)'
-      };
-    } else {
-      return {
-        position: 'absolute' as const,
-        ...collapsedPosition,
-        zIndex: 5,
-        transition: 'all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)'
-      };
-    }
+    const total = currentCount + 1; // 图片数 + 按钮自身
+    return getStackStyle(currentCount, total, isExpanded);
   };
 
   // 处理图片区域hover进入
@@ -1474,20 +1342,18 @@
     flex-direction: column;
     gap: 8px;
     width: 100%;
+    // 当父容器有明确高度时（如表格单元格），撑满父容器
+    height: 100%;
   }
 
   // ==================== 参考图堆叠区域 ====================
   .reference-images-section {
     flex-shrink: 0;
+    // 宽度始终固定为一张卡片的宽度，卡片通过 absolute 定位叠在一起
+    // 展开时卡片溢出容器，靠 overflow: visible 显示
     width: 60px;
     height: 80px;
     position: relative;
-    transition: width 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
-
-    // 有图片时展开宽度（紧凑布局：5张图片 * 40px + 上传按钮宽度）
-    &.has-images {
-      width: 260px;
-    }
 
     // 拖拽悬停状态
     &.drag-over {
@@ -1514,32 +1380,41 @@
       width: 100%;
       height: 100%;
       cursor: pointer;
+      // 允许卡片溢出，展开时才能看到所有卡片
+      overflow: visible;
+      // 展开时用伪元素扩大鼠标响应区，防止鼠标移到展开的卡片上时触发 mouseleave
+      // 向左展开，所以从右侧起向左延伸
+      &.is-expanded::after {
+        content: '';
+        position: absolute;
+        top: -8px;
+        right: -8px;
+        // 6张卡片 * 68px + 一些余量
+        width: calc(6 * 68px + 24px);
+        height: calc(100% + 16px);
+        pointer-events: auto;
+        z-index: 0;
+      }
 
       .reference-image-item {
         width: 60px;
         height: 80px;
         border: 2px solid white;
         border-radius: 4px;
-        overflow: visible;
+        overflow: hidden;
         box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
         cursor: pointer;
-        transition: transform 0.3s ease;
-        position: relative;
-
-        &:hover {
-          transform: scale(1.133);
-        }
+        position: absolute;
 
         .reference-thumbnail {
           width: 100%;
           height: 100%;
-          border-radius: 2px;
-          overflow: hidden;
 
-          :deep(img) {
+          img {
             width: 100%;
             height: 100%;
             object-fit: cover;
+            display: block;
           }
         }
 
@@ -1559,8 +1434,9 @@
           color: white;
           box-shadow: 0 2px 8px rgba(255, 77, 79, 0.4);
           transition: all 0.2s;
-          z-index: 3;
+          z-index: 100;
           pointer-events: auto;
+          overflow: visible;
 
           &:hover {
             background: #ff7875;
@@ -1574,14 +1450,12 @@
 
         // 添加按钮
         &.add-more-button {
-          border-radius: 4px;
           background: #f7f8fa;
-          transform: rotate(-5deg);
           display: flex;
           align-items: center;
           justify-content: center;
           cursor: pointer;
-          transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+          overflow: visible;
 
           .add-more-content {
             display: flex;
@@ -1591,38 +1465,15 @@
             width: 100%;
             height: 100%;
             gap: 6px;
-            color: #5252ff;
-            transition: all 0.3s;
+            color: #86909c;
+            transition: color 0.3s;
           }
 
           &:hover {
             background: #f3f3ff;
-            transform: scale(1.133);
 
             .add-more-content {
-              transform: rotate(90deg) scale(1.1);
-            }
-          }
-
-          &:active {
-            transform: rotate(-5deg) scale(0.95);
-          }
-
-          &.is-hovered {
-            box-shadow: 0 4px 16px rgba(82, 82, 255, 0.15);
-          }
-
-          &.is-empty {
-            .add-more-content {
-              color: #86909c;
-            }
-
-            &:hover {
-              transform: scale(1.133);
-
-              .add-more-content {
-                color: #5252ff;
-              }
+              color: #5252ff;
             }
           }
         }
@@ -1649,10 +1500,15 @@
     display: flex;
     align-items: stretch;
     gap: 8px;
+    // 当容器有明确高度时撑满，独立使用时由内容撑开
+    flex: 1;
+    min-height: 0;
   }
 
   .input-wrapper-alone {
     width: 100%;
+    flex: 1;
+    min-height: 0;
   }
 
   .prompt-editor {
@@ -1776,297 +1632,10 @@
     display: flex;
     align-items: center;
     flex-shrink: 0;
-
-    // 参考图上传区域（堆叠样式）
-    .reference-images-section {
-      flex-shrink: 0;
-      width: 60px;
-      height: 80px;
-      position: relative;
-      transition: width 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
-
-      // 有图片时展开宽度（紧凑布局：5张图片 * 40px + 上传按钮宽度）
-      &.has-images {
-        width: 260px;
-      }
-
-      .reference-images-stack {
-        position: relative;
-        width: 100%;
-        height: 100%;
-        cursor: pointer;
-
-        // el-upload 包装器
-        .add-more-upload {
-          :deep(.el-upload) {
-            display: block;
-            width: 100%;
-            height: 100%;
-          }
-        }
-
-        .reference-image-item {
-          width: 60px;
-          height: 80px;
-          border: 2px solid white;
-          border-radius: 4px;
-          overflow: visible;
-          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
-          cursor: pointer;
-          transition: transform 0.3s ease;
-          position: relative;
-
-          &:hover {
-            transform: scale(1.133);
-          }
-
-          .reference-thumbnail {
-            width: 100%;
-            height: 100%;
-            border-radius: 2px;
-            overflow: hidden;
-
-            :deep(img) {
-              width: 100%;
-              height: 100%;
-              object-fit: cover;
-            }
-          }
-
-          .delete-button {
-            position: absolute;
-            top: -8px;
-            right: -8px;
-            width: 24px;
-            height: 24px;
-            border-radius: 50%;
-            background: #ff4d4f;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            color: white;
-            box-shadow: 0 2px 8px rgba(255, 77, 79, 0.4);
-            transition: all 0.2s;
-            z-index: 3;
-
-            &:hover {
-              background: #ff7875;
-              transform: scale(1.15);
-            }
-
-            &:active {
-              transform: scale(0.95);
-            }
-          }
-        }
-
-        // 添加按钮样式（继承 reference-image-item 的基础样式）
-        .add-more-button {
-          width: 60px;
-          height: 80px;
-          border: 2px solid white;
-          border-radius: 4px;
-          background: #f7f8fa;
-          transform: rotate(-5deg);
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          cursor: pointer;
-          transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
-          position: relative;
-          overflow: visible;
-          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
-
-          .add-more-content {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            width: 100%;
-            height: 100%;
-            gap: 6px;
-            color: #5252ff;
-            transition: all 0.3s;
-
-            .svg-icon {
-              color: #86909c;
-              transition: all 0.3s;
-            }
-
-            .empty-text {
-              font-size: 12px;
-              color: #86909c;
-              margin: 0;
-              white-space: nowrap;
-              transition: color 0.3s;
-            }
-          }
-
-          &:hover {
-            background: #f3f3ff;
-            transform: scale(1.133);
-
-            .add-more-content {
-              color: #5252ff;
-
-              .svg-icon {
-                transform: rotate(90deg) scale(1.1);
-              }
-            }
-
-            .empty-text {
-              color: #5252ff;
-            }
-          }
-
-          &:active {
-            transform: rotate(-5deg) scale(0.95);
-          }
-
-          &.is-hovered {
-            box-shadow: 0 4px 16px rgba(82, 82, 255, 0.15);
-          }
-
-          // 空状态样式
-          &.is-empty {
-            .add-more-content {
-              color: #86909c;
-            }
-
-            &:hover {
-              transform: scale(1.133);
-
-              .add-more-content {
-                color: #5252ff;
-              }
-            }
-          }
-        }
-      }
-    }
+    // input-actions 内的堆叠区样式直接复用顶层 .reference-images-section 的规则
+    // 此处只做容器对齐，不重复写堆叠逻辑
   }
 
-  // ==================== 提及标签预览 ====================
-  .mention-tags-preview {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    flex-wrap: wrap;
-  }
-
-  .mention-tag-item {
-    position: relative;
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;
-    padding: 4px 8px;
-    border-radius: 4px;
-    background: rgba(0, 0, 0, 0.05);
-    border: 1px solid #e4e7ed;
-    font-size: 14px;
-    cursor: pointer;
-    transition: all 0.2s;
-
-    &:hover {
-      background: rgba(0, 0, 0, 0.08);
-
-      .mention-tag-delete {
-        opacity: 1;
-      }
-    }
-
-    // 选中状态
-    &.is-selected {
-      border-color: #5252ff;
-      background: rgba(82, 82, 255, 0.15);
-      box-shadow: 0 0 0 2px rgba(82, 82, 255, 0.2);
-    }
-
-    &.mention-tag-reference {
-      border-color: #409eff;
-      background: rgba(64, 158, 255, 0.05);
-    }
-
-    &.mention-tag-character {
-      border-color: #67c23a;
-      background: rgba(103, 194, 58, 0.05);
-    }
-
-    &.mention-tag-scene {
-      border-color: #e6a23c;
-      background: rgba(230, 162, 60, 0.05);
-    }
-  }
-
-  .mention-tag-thumb {
-    width: 16px;
-    height: 16px;
-    border-radius: 2px;
-    object-fit: cover;
-  }
-
-  .mention-tag-icon {
-    width: 16px;
-    height: 16px;
-    color: #909399;
-  }
-
-  .mention-tag-label {
-    color: rgb(83, 100, 113);
-    font-size: 13px;
-  }
-
-  .mention-tag-subtitle {
-    font-size: 11px;
-    color: #909399;
-    margin-left: 2px;
-  }
-
-  .mention-tag-delete {
-    width: 14px;
-    height: 14px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    margin-left: 4px;
-    border-radius: 50%;
-    cursor: pointer;
-    opacity: 0;
-    transition: opacity 0.2s;
-    pointer-events: auto;
-
-    &:hover {
-      background: rgba(255, 0, 0, 0.1);
-    }
-  }
-
-  // ==================== 提及标签内联样式 ====================
-  :deep(.mention-tag-inline) {
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;
-    padding: 2px 6px;
-    margin: 0 2px;
-    border-radius: 4px;
-    background: rgba(0, 0, 0, 0.05);
-    color: rgb(83, 100, 113);
-    font-size: 14px;
-    line-height: 1.5;
-    user-select: none;
-    cursor: pointer;
-
-    &:hover {
-      background: rgba(0, 0, 0, 0.08);
-    }
-
-    .mention-thumb {
-      width: 16px;
-      height: 16px;
-      border-radius: 2px;
-      object-fit: cover;
-    }
-  }
 
   // ==================== 过渡动画 ====================
   // 堆叠滑动过渡

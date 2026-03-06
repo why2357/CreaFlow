@@ -139,6 +139,34 @@ export interface EpisodeSceneItemInfo {
   commentCount: number;
   /** 最新一条评论信息 */
   commentInfo?: any;
+  /** Seedance 2.0 生成的视频地址 */
+  seedanceVideoUrl?: string;
+}
+
+/**
+ * Seedance 2.0 参考图位置信息
+ */
+export interface SeedanceImagePosition {
+  /** OSS 图片 ID */
+  ossId: number;
+  /** 在提示词内容序列中的位置索引（0-based） */
+  position: number;
+}
+
+/**
+ * Seedance 2.0 生成视频请求
+ */
+export interface SeedanceGenerateRequest {
+  /** 场景基础信息ID */
+  basicId: number;
+  /** 剧集ID */
+  episodeId: number;
+  /** 模型码 */
+  modelCode: string;
+  /** 纯文本提示词（去掉 HTML 标签后的内容） */
+  prompt: string;
+  /** 参考图 ossId 列表，按在提示词中出现的顺序排列 */
+  imageOssIds: SeedanceImagePosition[];
 }
 
 /**

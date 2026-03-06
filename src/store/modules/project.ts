@@ -284,7 +284,8 @@ export const useProjectStore = defineStore('project', {
             currentStep: 1,
             progress: parseFloat(ep.episodePercent || '0') || 0,
             scriptContent: ep.storyText,
-            taskStatus: ep.taskStatus // 添加任务状态字段
+            taskStatus: ep.taskStatus,
+            workflowMode: ep.workflowMode
           }));
 
         // 如果剧集列表为空，清除当前剧集ID

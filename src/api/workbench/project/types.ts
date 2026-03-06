@@ -305,6 +305,7 @@ export interface Episode {
   createTime?: string;
   updateTime?: string;
   taskStatus?: number; // 文生文任务状态 0-待执行 1-执行中 2-执行成功 3-执行失败
+  workflowMode?: 'classic' | 'seedance' | null; // 工作流模式
 }
 
 /**
@@ -473,6 +474,7 @@ export interface Shot {
   imgStatus?: number; // 图片状态 0-白色 1-橙色 2-绿色 3-红色
   seedancePrompt?: string; // Seedance 2.0 模式提示词
   seedancePromptImages?: ReferenceImage[]; // Seedance 2.0 模式上传的参考图片列表
+  seedanceVideoUrl?: string; // Seedance 2.0 生成完成后的视频地址
   createTime?: string;
   updateTime?: string;
 }
@@ -710,7 +712,7 @@ export enum TaskStatus {
 /**
  * 生成模式类型
  */
-export type GenerationMode = 't2i' | 'i2v' | 'r2v';
+export type GenerationMode = 't2i' | 'i2v' | 'r2v' | 'seedance';
 
 /**
  * 任务队列项
@@ -754,6 +756,8 @@ export interface TaskQueueItem {
   isCollect?: boolean;
   /** 历史明细ID */
   historyDetailId?: number;
+  /** 是否为该镜头的第一次生成（第一次生成时不在任务列表中显示） */
+  isFirstGeneration?: boolean;
 }
 
 /**

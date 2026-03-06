@@ -362,7 +362,7 @@
             storyText: form.value.storyText.trim(),
             modelCode: form.value.modelCode,
             promptPreFix: form.value.promptPreFix,
-            workflowMode: props.workflowMode
+            workflowMode: props.workflowMode ?? undefined
           };
           console.log('[AddEpisodeDialog] 发送创建剧集请求:', JSON.stringify(requestData, null, 2));
           const result = await createEpisodeByText(requestData);
@@ -379,7 +379,7 @@
             projectId: form.value.projectId,
             episodeName: form.value.episodeName,
             file: uploadedFile.value,
-            workflowMode: props.workflowMode
+            workflowMode: props.workflowMode ?? undefined
           });
           console.log('[AddEpisodeDialog] 上传剧集结果:', result);
           console.log('[AddEpisodeDialog] result.data:', result.data);

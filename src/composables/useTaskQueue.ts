@@ -1,22 +1,27 @@
-import { generateEpisodeImg, generateVideo } from '@/api/workbench/episode';
+import { generateEpisodeImg, generateSeedanceVideo, generateVideo } from '@/api/workbench/episode';
 import type { AddTaskRequest, TaskQueueItem, TaskStatus } from '@/api/workbench/project/types';
+import type { ReferenceImage } from '@/types/mention';
+import { buildSeedancePayload } from '@/utils/seedanceParser';
 import { useProjectStore } from '@/store/modules/project';
 import { useTaskQueueStore } from '@/store/modules/taskQueue';
 import { ElMessage } from 'element-plus';
 import { computed } from 'vue';
 
 /**
+ * 模块级单例：防重复提交记录表，所有 useTaskQueue() 实例共享
+ * 必须放在函数外部，否则每次调用都会创建新实例导致跨组件冷却失效
+ */
+const pendingApiCalls = new Map<string | number, number>();
+const API_CALL_COOLDOWN = 1000; // API调用冷却时间（毫秒），须大于后端防重提交间隔
+
+/**
  * 任务队列管理 Composable
  * 封装任务队列的操作逻辑，包括添加任务、调用生成接口、处理任务状态更新等
- * 改为镜头级别：每个镜头最多4个并发任务
+ * 改为镜头级别：每个镜头最多3个并发任务
  */
 export function useTaskQueue() {
   const taskQueueStore = useTaskQueueStore();
   const projectStore = useProjectStore();
-
-  // 防重复提交：记录每个镜头的最近API调用时间
-  const pendingApiCalls = new Map<string | number, number>();
-  const API_CALL_COOLDOWN = 600; // API调用冷却时间（毫秒），比后端的500ms稍长
 
   // ==================== 计算属性 ====================
 
@@ -85,10 +90,10 @@ export function useTaskQueue() {
       return null;
     }
 
-    // 检查该镜头是否可以添加新任务
-    if (!canAddTaskForShot(shot.id)) {
-      const activeCount = getActiveTaskCountByShotId(shot.id);
-      ElMessage.warning(`该镜头正在生成中（${activeCount}/4），请稍后再试`);
+    // 检查该镜头是否可以添加新任务（使用 basicId 作为唯一标识）
+    if (!canAddTaskForShot(shot.basicId)) {
+      const activeCount = getActiveTaskCountByShotId(shot.basicId);
+      ElMessage.warning(`该镜头正在生成中（${activeCount}/3），请稍后再试`);
       return null;
     }
 
@@ -108,8 +113,8 @@ export function useTaskQueue() {
       return null;
     }
 
-    // 清理该镜头的旧已完成任务（保留最近4个）
-    cleanupOldCompletedTasks(shot.id);
+    // 清理该镜头的旧已完成任务（保留最近3个），使用 basicId 作为唯一标识
+    cleanupOldCompletedTasks(shot.basicId);
 
     // 构造提示词
     const prompt = shot.sceneDescription || shot.sceneHint || '';
@@ -117,7 +122,7 @@ export function useTaskQueue() {
     // 构造请求参数
     const request: AddTaskRequest = {
       basicId: shot.basicId,
-      shotId: shot.id,
+      shotId: shot.basicId,
       shotNumber: String(shot.shotNumber),
       episodeId,
       projectId: Number(projectId),
@@ -165,10 +170,10 @@ export function useTaskQueue() {
       return null;
     }
 
-    // 检查该镜头是否可以添加新任务
-    if (!canAddTaskForShot(shot.id)) {
-      const activeCount = getActiveTaskCountByShotId(shot.id);
-      ElMessage.warning(`该镜头正在生成中（${activeCount}/4），请稍后再试`);
+    // 检查该镜头是否可以添加新任务（使用 basicId 作为唯一标识）
+    if (!canAddTaskForShot(shot.basicId)) {
+      const activeCount = getActiveTaskCountByShotId(shot.basicId);
+      ElMessage.warning(`该镜头正在生成中（${activeCount}/3），请稍后再试`);
       return null;
     }
 
@@ -191,7 +196,7 @@ export function useTaskQueue() {
     // 构造请求参数
     const request: AddTaskRequest = {
       basicId: shot.basicId,
-      shotId: shot.id,
+      shotId: shot.basicId,
       shotNumber: String(shot.shotNumber),
       episodeId,
       projectId: Number(projectId),
@@ -214,6 +219,110 @@ export function useTaskQueue() {
     }
 
     return task;
+  };
+
+  /**
+   * 添加 Seedance 2.0 视频生成任务到队列
+   * @param shot 分镜数据（需含 basicId、seedancePrompt、seedancePromptImages）
+   * @param modelCode 模型代码（可选，从项目Store获取）
+   * @returns 创建的任务对象，失败返回 null
+   */
+  const addSeedanceVideoTask = async (
+    shot: {
+      basicId?: number;
+      id: string | number;
+      shotNumber: string | number;
+      seedancePrompt?: string;
+      seedancePromptImages?: ReferenceImage[];
+    },
+    modelCode?: string
+  ): Promise<TaskQueueItem | null> => {
+    if (!shot.basicId) {
+      ElMessage.warning('镜头基础信息不存在，无法生成');
+      return null;
+    }
+
+    if (!canAddTaskForShot(shot.basicId)) {
+      const activeCount = getActiveTaskCountByShotId(shot.basicId);
+      ElMessage.warning(`该镜头正在生成中（${activeCount}/3），请稍后再试`);
+      return null;
+    }
+
+    const episodeId = projectStore.currentEpisodeId;
+    const projectId = projectStore.currentProjectId;
+
+    if (!episodeId || !projectId) {
+      ElMessage.error('项目或剧集信息不存在');
+      return null;
+    }
+
+    const finalModelCode = modelCode || projectStore.selectedModeCodeImage?.modelCode;
+    if (!finalModelCode) {
+      ElMessage.error('请先选择生成模型');
+      return null;
+    }
+
+    cleanupOldCompletedTasks(shot.basicId);
+
+    const request: AddTaskRequest = {
+      basicId: shot.basicId,
+      shotId: shot.basicId,
+      shotNumber: String(shot.shotNumber),
+      episodeId,
+      projectId: Number(projectId),
+      mode: 'seedance',
+      prompt: shot.seedancePrompt || ''
+    };
+
+    const task = taskQueueStore.addTask(request);
+
+    if (task) {
+      task.modelCode = finalModelCode;
+      callSeedanceGenerateAPI(
+        shot.basicId,
+        Number(episodeId),
+        finalModelCode,
+        shot.seedancePrompt || '',
+        shot.seedancePromptImages || []
+      );
+    }
+
+    return task;
+  };
+
+  /**
+   * 调用 Seedance 2.0 视频生成接口
+   * 内部先解析 HTML + 上传图片，再调用后端接口
+   */
+  const callSeedanceGenerateAPI = async (
+    basicId: number,
+    episodeId: number,
+    modelCode: string,
+    promptHtml: string,
+    images: ReferenceImage[]
+  ) => {
+    try {
+      const { prompt, imageOssIds } = await buildSeedancePayload(promptHtml, images);
+
+      await generateSeedanceVideo({
+        basicId,
+        episodeId,
+        modelCode,
+        prompt,
+        imageOssIds
+      });
+
+      console.log('[useTaskQueue] Seedance 视频生成接口调用成功:', basicId);
+    } catch (error: any) {
+      console.error('[useTaskQueue] Seedance 视频生成接口调用失败:', error);
+
+      const task = taskQueueStore.getTaskByBasicId(basicId);
+      if (task) {
+        taskQueueStore.updateTask(task.id, 3, undefined, '接口调用失败');
+      }
+
+      ElMessage.error('Seedance 视频生成请求失败');
+    }
   };
 
   /**
@@ -316,13 +425,12 @@ export function useTaskQueue() {
     // 更新任务状态
     taskQueueStore.updateTask(task.id, status, resultUrls, errorMessage);
 
-    // 根据状态显示提示
+    // 根据状态和模式显示提示
+    const modeName = task.mode === 'seedance' ? '视频' : '图片';
     if (status === 2) {
-      // 成功
-      ElMessage.success(`镜头 ${task.shotNumber} 生成完成`);
+      ElMessage.success(`镜头 ${task.shotNumber} ${modeName}生成完成`);
     } else if (status === 3) {
-      // 失败
-      ElMessage.error(`镜头 ${task.shotNumber} 生成失败${errorMessage ? ': ' + errorMessage : ''}`);
+      ElMessage.error(`镜头 ${task.shotNumber} ${modeName}生成失败${errorMessage ? ': ' + errorMessage : ''}`);
     }
   };
 
@@ -408,16 +516,16 @@ export function useTaskQueue() {
   };
 
   /**
-   * 清理指定镜头的旧已完成任务（保留最近4个）
+   * 清理指定镜头的旧已完成任务（保留最近3个）
    * @param shotId 镜头ID
    */
   const cleanupOldCompletedTasks = (shotId: string | number) => {
     const allTasks = taskQueueStore.getTasksByShotId(shotId);
     const completedTasks = allTasks.filter((t) => t.status === 2 || t.status === 3);
 
-    // 如果完成的任务超过4个，删除最旧的
-    if (completedTasks.length > 4) {
-      const tasksToRemove = completedTasks.slice(0, completedTasks.length - 4);
+    // 如果完成的任务超过3个，删除最旧的
+    if (completedTasks.length > 3) {
+      const tasksToRemove = completedTasks.slice(0, completedTasks.length - 3);
       tasksToRemove.forEach((task) => {
         taskQueueStore.removeTask(task.id);
       });
@@ -439,6 +547,7 @@ export function useTaskQueue() {
     // 任务操作
     addImageGenerationTask,
     addVideoGenerationTask,
+    addSeedanceVideoTask,
     handleTaskStatusUpdate,
     handleBatchTaskUpdate,
     removeCompletedTask,
